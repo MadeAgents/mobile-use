@@ -63,7 +63,7 @@ class Worker:
     def run(self, input_content: str):
         self._stop = False
         img_file = None
-        for step_data in self._agent.iter_run(input_content, stream=False):
+        for step_data in self._agent.iter_run(input_content):
             if step_data is None:
                 break
             if step_data.curr_env_state is not None:

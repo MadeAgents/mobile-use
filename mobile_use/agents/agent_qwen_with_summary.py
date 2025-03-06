@@ -166,12 +166,7 @@ class QwenWithSummaryAgent(Agent):
         else:
             return None
 
-    def _process_response(self, response, stream=False):
-        step_data = self.trajectory[-1]
-        step_data.content = response.choices[0].message.content
-        logger.info("Content from VLM:\n%s" % step_data.content)
-
-    def step(self, stream: bool=False):
+    def step(self):
         """Execute the task with maximum number of steps.
 
         Returns: Answer
@@ -226,13 +221,15 @@ class QwenWithSummaryAgent(Agent):
         ))
 
         step_data = self.trajectory[-1]
-        response = self.vlm.predict(self.messages, stream=stream)
-        self._process_response(response, stream=stream)
+        response = self.vlm.predict(self.messages)
+
         counter = self.max_reflection_action
         reason, action = None, None
         while counter > 0:
             try:
-                content = step_data.content
+                content = response.choices[0].message.content
+                step_data.content = content
+                logger.info("Content from VLM:\n%s" % step_data.content)
                 step_data.vlm_call_history.append(VLMCallingData(self.messages, response))
                 reason, action, action_s, summary = _parse_response(content, (resized_width, resized_height), env_state.pixels.size)
                 logger.info("REASON: %s" % reason)
@@ -254,7 +251,6 @@ Thought: The process of thinking.
                 }
                 self.messages[-1]['content'].append(msg)
                 response = self.vlm.predict(self.messages)
-                self._process_response(response, stream=stream)
                 counter -= 1
 
         if action is None:
@@ -310,7 +306,7 @@ Thought: The process of thinking.
         self.messages[-1]['content'] = self.messages[-1]['content'][:user_message_length]
         if self.curr_step_idx == 0:
             self.messages[-1]['content'][0]['text'] = f'The user query: {self.goal}\nTask progress (You have done the following operation on the current device): '
-        
+
         if action is None:
             self.messages[-1]['content'][0]['text'] += f'\nStep {self.curr_step_idx + 1}: None'
         else:
@@ -322,7 +318,7 @@ Thought: The process of thinking.
         return answer
 
 
-    def iter_run(self, input_content: str, stream: bool=False) -> Iterator[StepData]:
+    def iter_run(self, input_content: str) -> Iterator[StepData]:
         """Execute the agent with user input content.
 
         Returns: Iterator[StepData]
@@ -337,7 +333,7 @@ Thought: The process of thinking.
         for step_idx in range(self.curr_step_idx, self.max_steps):
             self.curr_step_idx = step_idx
             try:
-                self.step(stream=stream)
+                self.step()
                 yield self._get_curr_step_data()
             except Exception as e:
                 self.status = AgentStatus.FAILED

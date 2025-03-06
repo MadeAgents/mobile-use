@@ -29,14 +29,14 @@ class Agent(ABC, Registrable):
         """Reset Agent to init state"""
 
     @abstractmethod
-    def step(self, stream: bool=False) -> Iterator[StepData]:
+    def step(self) -> StepData:
         """Get the next step action based on the current environment state.
 
-        Returns: The content is an iterator for StepData
+        Returns: StepData
         """
 
     @abstractmethod
-    def iter_run(self, input_content: str, stream: bool=True) -> Iterator[StepData]:
+    def iter_run(self, input_content: str) -> Iterator[StepData]:
         """Execute all step with maximum number of steps base on user input content.
 
         Returns: The content is an iterator for StepData

@@ -1,5 +1,5 @@
-import logging
 import re
+import logging
 from typing import Iterator
 
 from mobile_use.action import ACTION_SPACE
@@ -171,37 +171,7 @@ class ReActAgent(Agent):
         else:
             return None
 
-    def _process_response(self, response, stream) -> Iterator[StepData]:
-        step_data = self.trajectory[-1]
-        step_data.content = ''
-        if stream:
-            though_start, though_end = False, False
-            for chunk in response:
-                # print('chunk: ', chunk)
-                delta = chunk.choices[0].delta
-                if not delta.content:
-                    continue
-                step_data.content += delta.content
-                content = step_data.content
-                # print(content)
-                if not though_start and 'Thought:' in content:
-                    though_start = True
-                    step_data.thought = content.split('Thought:')[-1].strip()
-                    yield step_data
-                elif though_start and not though_end:
-                    if 'Action' in content:
-                        though_end = True
-                        step_data.thought = content.split('Thought:')[-1].split('Action')[0].strip()
-                    else:
-                        step_data.thought += delta.content
-                    yield step_data
-        else:
-            step_data.content = response.choices[0].message.content
-            step_data.thought = step_data.content.split('Thought:')[-1].split('Action')[0].strip()
-
-        logger.info("Content from VLM:\n%s" % step_data.content)
-
-    def step(self, stream: bool=False) -> Iterator[StepData]:
+    def step(self) -> StepData:
         """Execute the task with maximum number of steps.
 
         Returns: StepData
@@ -257,17 +227,18 @@ class ReActAgent(Agent):
             self.messages[-1]['content'].append(img_msg)
 
         step_data = self.trajectory[-1]
-        yield step_data
 
         self._remain_most_recent_images()
-        response = self.vlm.predict(self.messages, stream=stream, stop=['Observation'])
-        for _step_data in self._process_response(response, stream=stream):
-            yield _step_data
+        
+        response = self.vlm.predict(self.messages, stop=['Observation'])
+
         counter = self.max_reflection_action
         reason, action = None, None
         while counter > 0:
             try:
-                content = step_data.content
+                content = response.choices[0].message.content
+                step_data.content = content
+                logger.info("Content from VLM:\n%s" % step_data.content)
                 step_data.vlm_call_history.append(VLMCallingData(self.messages, response))
                 reason, action, action_r = parse_reason_and_action(content, pixels.size, env_state.pixels.size)
                 logger.info("REASON: %s" % reason)
@@ -286,16 +257,12 @@ class ReActAgent(Agent):
                 self.messages[-1]['content'].append(msg)
                 self._remain_most_recent_images()
                 response = self.vlm.predict(self.messages, stop=['Observation'])
-                for _step_data in self._process_response(response, stream=stream):
-                    yield _step_data
                 counter -= 1
         if action is None:
             raise Exception("Action parse error after max retry")
 
         step_data.action = action
-        if not stream:
-            step_data.thought = reason
-        yield step_data
+        step_data.thought = reason
 
         if action.name.upper() == 'FINISHED':
             logger.info(f"Finished: {action}")
@@ -309,7 +276,9 @@ class ReActAgent(Agent):
             self.env.execute_action(action)
             step_data.exec_env_state = self.env.get_state()
 
-    def iter_run(self, input_content: str, stream: bool=True) -> Iterator[StepData]:
+        return step_data
+
+    def iter_run(self, input_content: str) -> Iterator[StepData]:
         """Execute the agent with user input content.
 
         Returns: Iterator[StepData]
@@ -328,8 +297,8 @@ class ReActAgent(Agent):
         for step_idx in range(self.curr_step_idx, self.max_steps):
             self.curr_step_idx = step_idx
             try:
-                for step_data in self.step(stream=stream):
-                    yield step_data
+                self.step()
+                yield self._get_curr_step_data()
             except Exception as e:
                 self.status = AgentStatus.FAILED
                 self.episode_data.status = self.status
