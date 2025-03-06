@@ -19,7 +19,7 @@ class VLMWrapper:
             base_url: str,
             max_retry: int = 3, 
             retry_waiting_seconds: int = 2, 
-            max_tokens: int = 128, 
+            max_tokens: int = 256, 
             temperature: float = 0.0,
             **vlm_kwargs
         ):
