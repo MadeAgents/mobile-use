@@ -1,6 +1,6 @@
 from PIL import Image
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
 
 from .action import ACTION_SPACE
@@ -88,6 +88,7 @@ class StepData:
     answer: Optional[str] = None        # The final answer for the task goal
     exec_env_state: Optional[EnvState] = None
     vlm_call_history: Optional[List[VLMCallingData]] = None
+    additional_info: Optional[Dict[str, Any]] = field(default_factory=dict)
 
 @dataclass
 class EpisodeData:

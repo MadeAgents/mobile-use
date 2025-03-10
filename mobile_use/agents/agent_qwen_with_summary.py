@@ -43,16 +43,14 @@ You are provided with function signatures within <tools></tools> XML tags:
 * `long_press`: Press the point on the screen with coordinate (x, y) for specified seconds.
 * `swipe`: Swipe from the starting point with coordinate (x, y) to the end point with coordinates2 (x2, y2).
 * `type`: Input the specified text into the activated input box.
-* `answer`: Output the answer.
 * `system_button`: Press the system button.
 * `open`: Open an app on the device.
 * `wait`: Wait specified seconds for the change to happen.
-* `terminate`: Terminate the current task and report its completion status.", "enum": ["key", "click", "long_press", "swipe", "type", "answer", "system_button", "open", "wait", "terminate"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click`, `action=long_press`, and `action=swipe`.", "type": "array"}}, "coordinate2": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=swipe`.", "type": "array"}}, "text": {{"description": "Required only by `action=key`, `action=type`, `action=answer`, and `action=open`.", "type": "string"}}, "time": {{"description": "The seconds to wait. Required only by `action=long_press` and `action=wait`.", "type": "number"}}, "button": {{"description": "Back means returning to the previous interface, Home means returning to the desktop, Menu means opening the application background menu, and Enter means pressing the enter. Required only by `action=system_button`", "enum": ["Back", "Home", "Menu", "Enter"], "type": "string"}}, "status": {{"description": "The status of the task. Required only by `action=terminate`.", "type": "string", "enum": ["success", "failure"]}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
+* `terminate`: Terminate the current task and report its completion status.", "enum": ["key", "click", "long_press", "swipe", "type", "system_button", "open", "wait", "terminate"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click`, `action=long_press`, and `action=swipe`.", "type": "array"}}, "coordinate2": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=swipe`.", "type": "array"}}, "text": {{"description": "Required only by `action=key`, `action=type`, and `action=open`.", "type": "string"}}, "time": {{"description": "The seconds to wait. Required only by `action=long_press` and `action=wait`.", "type": "number"}}, "button": {{"description": "Back means returning to the previous interface, Home means returning to the desktop, Menu means opening the application background menu, and Enter means pressing the enter. Required only by `action=system_button`", "enum": ["Back", "Home", "Menu", "Enter"], "type": "string"}}, "status": {{"description": "The status of the task. Required only by `action=terminate`.", "type": "string", "enum": ["success", "failure"]}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
 </tools>
 
 Here are some useful guidelines you need to follow:
 - If the task is finished, you should terminate the task in time! Do not repeat the action!
-- Before terminate, always remember to use the "answer" action to reply to user explicitly if user asks a question or requests you to answer! Do not repeat the action, you should terminate the task in time after answering once!
 - Action click, long_press and swipe must contain coordinates within.
 - You may be given some history plan and actions, this is the response from the previous loop.
 - You should carefully consider your plan base on the task, screenshot, and history actions.
@@ -91,13 +89,23 @@ SUMMARY_PROMPT_TEMPLATE = (
     ' wrong), what should/should not be done next and so on. Some more'
     ' rules/tips you should follow:\n'
     '- Keep it short (better less than 50 words) and in a single line\n'
-    "- Some actions (like `answer`, `wait`) don't involve screen change,"
+    "- Some actions (like `wait`) don't involve screen change,"
     ' you can just assume they work as expected.\n'
     '- Given this summary will be added into action history, it can be used as'
     ' memory to include information that needs to be remembered, or shared'
     ' between different apps.\n\n'
     'Summary of this step: '
 )
+
+ANSWER_PROMPT_TEMPLATE = """
+The (overall) user query is: {goal}
+Now you have finished the task. I want you to provide an answer to the user query.
+Answer with the following format:
+
+## Format
+<tool_call>
+{{"name": "mobile_use", "arguments": {{"action": "answer", "text": <your-answer>}}}}
+</tool_call>"""
 
 ACTION_SPACE = ["key", "click", "left_click", "long_press", "swipe", "scroll", "type", "answer", "system_button", "open", "wait", "terminate"]
 
@@ -221,7 +229,7 @@ class QwenWithSummaryAgent(Agent):
         ))
 
         step_data = self.trajectory[-1]
-        response = self.vlm.predict(self.messages)
+        response = self.vlm.predict(self.messages, stop=['Summary'])
 
         counter = self.max_reflection_action
         reason, action = None, None
@@ -250,7 +258,7 @@ Thought: The process of thinking.
                 """.strip()
                 }
                 self.messages[-1]['content'].append(msg)
-                response = self.vlm.predict(self.messages)
+                response = self.vlm.predict(self.messages, stop=['Summary'])
                 counter -= 1
 
         if action is None:
@@ -267,7 +275,7 @@ Thought: The process of thinking.
                 logger.info(f"Execute the action: {action}")
 
                 try:
-                    answer = self.env.execute_action(action)
+                    self.env.execute_action(action)
                 except Exception as e:
                     logger.warning(f"Failed to execute the action: {action}. Error: {e}")
                     action = None
@@ -312,8 +320,26 @@ Thought: The process of thinking.
         else:
             self.messages[-1]['content'][0]['text'] += f'\nStep {self.curr_step_idx + 1}: Thought: {reason}\n<tool_call>\n{action_s}\n</tool_call>\nSummary: {summary}'
 
+        # Answer
+        if self.status == AgentStatus.FINISHED:
+            msg = {
+                'type': 'text', 'text': ANSWER_PROMPT_TEMPLATE.format(goal=self.goal)
+            }
+            self.messages[-1]['content'].append(msg)
+            try:
+                response = self.vlm.predict(self.messages)
+                content = response.choices[0].message.content
+                logger.info("Answer from VLM:\n%s" % content)
+                _, answer, _, _ = _parse_response(content, (resized_width, resized_height), env_state.pixels.size)
+                answer = answer.parameters['text']
+                logger.info("Answer from VLM:\n%s" % answer)
+            except Exception as e:
+                logger.warning(f"Failed to get the answer. Error: {e}")
+
         step_data.action = action
         step_data.thought = reason
+        step_data.additional_info['summary'] = summary
+        step_data.additional_info['answer'] = answer
 
         return answer
 

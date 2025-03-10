@@ -47,6 +47,7 @@ class Environment:
         return state
     
     def execute_action(self, action: Action):
+        answer = None
         if action.name == 'open_app' or action.name == 'open':
             package_name = action.parameters['package_name']
             self._d.app_start(package_name)
@@ -93,10 +94,8 @@ class Environment:
             duration = action.parameters.get('time', 5.0)
             time.sleep(duration)
         elif action.name == 'answer':
-            text = action.parameters['text']
+            answer = action.parameters['text']
             os.system(f'adb -s {self._d.get_serialno()} shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{text}"')
-            time.sleep(self.wait_after_action_seconds)
-            return text
         elif action.name == 'system_button':
             button = action.parameters['button']
             if button == 'Back':
@@ -110,4 +109,4 @@ class Environment:
         else:
             raise ValueError(f"Unknown action: {action.name}")
         time.sleep(self.wait_after_action_seconds)
-        return None
+        return answer
