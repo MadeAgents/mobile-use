@@ -69,6 +69,21 @@ Thought: The process of thinking.
 {{"name": <function-name>, "arguments": <args-json-object>}}
 </tool_call>"""
 
+MEMORY_PROMPT = """
+New observation: {observation}
+Carefully examine the information above to identify any important content that needs to be recorded.
+IMPORTANT: Do not take notes on low-level actions! Do not take notes on action plans! Do not take notes on progress! Do not take notes on current status! 
+Only keep track of **significant textual or visual information on the screenshot** relevant to the user's request that might be useful for future actions!
+The information you record is usually some numbers or texts displayed on the screen relevant to the user's request!
+If the information is only useful for the next action, you should not record it.
+Output the updated important notes, combining the old and new ones. If nothing new to record, copy the existing important notes.
+
+## Format
+Important notes:
+- ...
+- ...
+"""
+
 SUMMARY_PROMPT_TEMPLATE = (
     '\nThe (overall) user goal/request is: {goal}\n'
     'Now I want you to summerize the latest step.\n'
@@ -163,10 +178,13 @@ class QwenWithSummaryAgent(Agent):
         self.max_retry_vlm = max_retry_vlm
         self.retry_vlm_waiting_seconds = retry_vlm_waiting_seconds
 
+        self.memory = 'None'
+
     def reset(self, goal: str='') -> None:
         """Reset the state of the agent.
         """
         self._init_data(goal=goal)
+        self.memory = 'None'
 
     def _get_curr_step_data(self) -> StepData:
         if len(self.trajectory) > self.curr_step_idx:
@@ -196,7 +214,8 @@ class QwenWithSummaryAgent(Agent):
             self.messages.append({
                 'role': 'user', 
                 'content': [
-                    {'type': 'text','text': f'The user query: {self.goal}\nTask progress (You have done the following operation on the current device): None'},
+                    {'type': 'text','text': f'The user query: {self.goal}\nTask progress (You have done the following operation on the current device): None\n'},
+                    {'type': 'text','text': f'Important notes (During the operations, you record the following contents on the screenshot for use in subsequent operations): {self.memory}\n'},
                     {}, # Place holder for observation
                     {}, # Place holder for image
                 ]
@@ -206,7 +225,7 @@ class QwenWithSummaryAgent(Agent):
         # Fixed Picture sequence inconsistency problem in vllm0.7.2 
         # and Compatible QwenAPI error: '<400> InternalError.Algo.InvalidParameter: Invalid text: <|image_pad|>'
         observation = '' if 'dashscope.aliyuncs.com' in str(self.vlm.client.base_url) else IMAGE_PLACEHOLDER
-        self.messages[-1]['content'][1] = {
+        self.messages[-1]['content'][2] = {
             'type': 'text',
             'text': f'Observation: {observation}'
         }
@@ -219,7 +238,7 @@ class QwenWithSummaryAgent(Agent):
             "type": "image_url",
             "image_url": {"url": encode_image_url(pixels)}
         }
-        self.messages[-1]['content'][2] = img_msg
+        self.messages[-1]['content'][3] = img_msg
 
         # Add new step data
         self.trajectory.append(StepData(
@@ -320,6 +339,38 @@ Thought: The process of thinking.
         else:
             self.messages[-1]['content'][0]['text'] += f'\nStep {self.curr_step_idx + 1}: Thought: {reason}\n<tool_call>\n{action_s}\n</tool_call>\nSummary: {summary}'
 
+        # Memory
+        memory_messages = []
+        memory_messages.append({
+            'role': 'system',
+            'content': [
+                {"type": "text", "text": "You are a helpful AI assistant for operating mobile phones. Your goal is to take notes of important content relevant to the user's request."}
+            ]
+        })
+        memory_messages.append({
+            'role': 'user',
+            'content': [
+                self.messages[-1]['content'][0],
+                self.messages[-1]['content'][1],
+                {"type": "text", "text": MEMORY_PROMPT.format(observation=observation)},
+                {
+                "type": "image_url",
+                "image_url": {"url": encode_image_url(step_data.exec_env_state.pixels)}
+                }
+            ]
+        })
+        print("MEMORY MESSAGES")
+        print(memory_messages[0])
+        print(memory_messages[1]['content'][:3])
+        try:
+            response = self.vlm.predict(memory_messages)
+            memory = response.choices[0].message.content
+            logger.info("Memory from VLM:\n%s" % memory)
+            self.memory = memory
+            self.messages[-1]['content'][1]['text'] = f'Important notes (During the operations, you record the following contents on the screenshot for use in subsequent operations): {self.memory}\n'
+        except Exception as e:
+            logger.warning(f"Failed to get the memory. Error: {e}")
+
         # Answer
         if self.status == AgentStatus.FINISHED:
             msg = {
@@ -332,6 +383,7 @@ Thought: The process of thinking.
                 logger.info("Answer from VLM:\n%s" % content)
                 _, answer, _, _ = _parse_response(content, (resized_width, resized_height), env_state.pixels.size)
                 answer = answer.parameters['text']
+                step_data.answer = answer
                 logger.info("Answer from VLM:\n%s" % answer)
             except Exception as e:
                 logger.warning(f"Failed to get the answer. Error: {e}")
@@ -339,7 +391,6 @@ Thought: The process of thinking.
         step_data.action = action
         step_data.thought = reason
         step_data.additional_info['summary'] = summary
-        step_data.additional_info['answer'] = answer
 
         return answer
 
