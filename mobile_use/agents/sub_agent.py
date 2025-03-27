@@ -9,7 +9,7 @@ from mobile_use.utils import encode_image_url, smart_resize
 # If you are using QwenAPI from 'dashscope.aliyuncs.com', replace IMAGE_PLACEHOLDER with ''
 IMAGE_PLACEHOLDER = '<|vision_start|><|image_pad|><|vision_end|>'
 
-ACTION_SPACE = ["key", "click", "left_click", "long_press", "swipe", "scroll", "type", "answer", "system_button", "open", "wait", "terminate"]
+ACTION_SPACE = ["key", "click", "left_click", "long_press", "swipe", "scroll", "type", "answer", "system_button", "open", "wait", "call_user", "terminate"]
 
 
 class SubAgent(ABC):
@@ -152,7 +152,8 @@ You are provided with function signatures within <tools></tools> XML tags:
 * `system_button`: Press the system button.
 * `open`: Open an app on the device.
 * `wait`: Wait specified seconds for the change to happen.
-* `terminate`: Terminate the current task and report its completion status.", "enum": ["key", "click", "long_press", "swipe", "type", "system_button", "open", "wait", "terminate"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click`, `action=long_press`, and `action=swipe`.", "type": "array"}}, "coordinate2": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=swipe`.", "type": "array"}}, "text": {{"description": "Required only by `action=key`, `action=type`, and `action=open`.", "type": "string"}}, "time": {{"description": "The seconds to wait. Required only by `action=long_press` and `action=wait`.", "type": "number"}}, "button": {{"description": "Back means returning to the previous interface, Home means returning to the desktop, Menu means opening the application background menu, and Enter means pressing the enter. Required only by `action=system_button`", "enum": ["Back", "Home", "Menu", "Enter"], "type": "string"}}, "status": {{"description": "The status of the task. Required only by `action=terminate`.", "type": "string", "enum": ["success", "failure"]}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
+* `call_user`: Call user when you need help or need additional information from the user.
+* `terminate`: Terminate the current task and report its completion status.", "enum": ["key", "click", "long_press", "swipe", "type", "system_button", "open", "wait", "call_user", "terminate"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click`, `action=long_press`, `action=wait`, and `action=swipe`.", "type": "array"}}, "coordinate2": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=swipe`.", "type": "array"}}, "text": {{"description": "Required only by `action=key`, `action=type`, `action=call_user`, and `action=open`.", "type": "string"}}, "time": {{"description": "The seconds to wait. Required only by `action=long_press` and `action=wait`.", "type": "number"}}, "button": {{"description": "Back means returning to the previous interface, Home means returning to the desktop, Menu means opening the application background menu, and Enter means pressing the enter. Required only by `action=system_button`", "enum": ["Back", "Home", "Menu", "Enter"], "type": "string"}}, "status": {{"description": "The status of the task. Required only by `action=terminate`.", "type": "string", "enum": ["success", "failure"]}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
 </tools>
 """
                 }
@@ -185,12 +186,12 @@ You are provided with function signatures within <tools></tools> XML tags:
                 step_list.append(f"<tool_call> {trajectory[i].action_s} </tool_call>")
                 if hasattr(trajectory[i], "summary") and trajectory[i].summary is not None:
                     step_list.append(f"Summary: {trajectory[i].summary}")
-                if hasattr(trajectory[i], "reflection_outcome") and trajectory[i].reflection_outcome is not None:
-                    if trajectory[i].reflection_outcome == "A":
-                        step_list.append("Successful")
-                    else:
-                        step_list.append("Failed")
-                        step_list.append(f"Feedback: {trajectory[i].reflection_error}")
+                # if hasattr(trajectory[i], "reflection_outcome") and trajectory[i].reflection_outcome is not None:
+                #     if trajectory[i].reflection_outcome == "A":
+                #         step_list.append("Successful")
+                #     else:
+                #         step_list.append("Failed")
+                #         step_list.append(f"Feedback: {trajectory[i].reflection_error}")
                 prompt += f"Step-{i+1}: {'; '.join(step_list)}\n"
             prompt += "\n"
         else:
@@ -208,21 +209,29 @@ You are provided with function signatures within <tools></tools> XML tags:
                 prompt += "During the operations, you record the following contents on the screenshot for use in subsequent operations:\n"
                 prompt += f"{previous_step.memory}\n\n"
 
-            if hasattr(previous_step, "reflection_outcome") and previous_step.reflection_outcome is not None and previous_step.reflection_outcome != "A":
-                prompt += "### Latest operation ###\n"
-                prompt += f"You previously wanted to perform the operation \"{previous_step.action_desc}\" on this page and executed the Action \"{previous_step.action_s}\". But you find that this operation does not meet your expectation.\nFeedback:{previous_step.reflection_error}\n You need to reflect and revise your operation this time."
-                prompt += "\n\n"
+        if hasattr(current_step, "reflection_outcome") and current_step.reflection_outcome is not None and current_step.reflection_outcome != "A":
+            prompt += "### Latest operation ###\n"
+            prompt += f"You previously wanted to perform the operation \"{current_step.action_desc}\" on this page and executed the Action \"{current_step.action_s}\". But you find that this operation does not meet your expectation.\nFeedback:{current_step.reflection_error}\n You need to reflect and revise your operation this time."
+            prompt += "\n\n"
 
         prompt += "### Observation ###\n"
         prompt += f"This is the current screenshot of the phone. The screen's resolution is {resized_width}x{resized_height}."
         prompt += f"{IMAGE_PLACEHOLDER}\n\n"
 
         prompt += "### Guidance ###\n"
-        prompt += """Here are some useful guidelines you need to follow:
-- If the task is finished, you should terminate the task in time!
+        prompt += "Here are some useful guidelines you need to follow:\n"
+        if len(trajectory) == 1:
+            prompt += "- The app is opening, you don't need to open it. Wait if it is loading. \n"
+            prompt += """
+"- If it shows an advertisement, Use the action wait, do not use the action click!!! If it can be closed, add the coordinate of the close button in wait action: 
+<tool_call>
+{{"name": "mobile_use", "arguments": {"action": "wait", "time": 2, "coordinate": [x, y]}}}
+</tool_call>
+"""
+        prompt += """- If the task is finished, you should terminate the task in time!
 - If you stuck in an action, you should try to change the action or the correspoinding parameters. Do not always repeat the same action!
-- Sometimes there is some default text in the text field you want to type in, remember to delete them before typing.
-- To delete some text, you can place the cursor at the right place and long press the backspace to delete all the text.
+- If you want to type in some text, remember to click the input field first.
+- When there is ad, countdown, or progress bar on the screen, you should wait until the ad, countdown, or progress bar disappears.
 
 """
 
@@ -281,6 +290,110 @@ Action: ... (Your action description)
         action_a = Action(name=name, parameters=params)
 
         return thought_s, action_a, action_s, action_desc_s
+
+
+class ReflectorBeforeExecution(SubAgent):
+    def get_message(self, episodedata: EpisodeData) -> list:
+        messages = []
+        trajectory = episodedata.trajectory
+        current_step = trajectory[-1]
+
+        pixels_before = current_step.curr_env_state.pixels.copy()
+        resized_height, resized_width = smart_resize(height=pixels_before.height, width=pixels_before.width)
+        
+        # Add system prompt
+        messages.append({
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "You are a helpful AI assistant for operating mobile phones. Your goal is to verify whether the latest action is reasonable."
+                }
+            ]
+        })
+
+        # Add user prompt
+        prompt = "### User Instruction ###\n"
+        prompt += f"{episodedata.goal}\n\n"
+
+        if hasattr(current_step, "sub_goal") and current_step.sub_goal is not None:
+            prompt += "### Current Subgoal ###\n"
+            prompt += f"{current_step.sub_goal}\n\n"
+
+        prompt += "### History Operations ###\n"
+        prompt += "You have done the following operation on the current device):\n"
+        if len(trajectory) > 1:
+            for i in range(len(trajectory) - 1):
+                step_list = []
+                step_list.append(f"Action: {trajectory[i].action_desc}")
+                step_list.append(f"<tool_call> {trajectory[i].action_s} </tool_call>")
+                if hasattr(trajectory[i], "summary") and trajectory[i].summary is not None:
+                    step_list.append(f"Summary: {trajectory[i].summary}")
+                # if hasattr(trajectory[i], "reflection_outcome") and trajectory[i].reflection_outcome is not None:
+                #     if trajectory[i].reflection_outcome == "A":
+                #         step_list.append("Successful")
+                #     else:
+                #         step_list.append("Failed")
+                #         step_list.append(f"Feedback: {trajectory[i].reflection_error}")
+                prompt += f"Step-{i+1}: {'; '.join(step_list)}\n"
+            prompt += "\n"
+        else:
+            prompt += "No actions have been taken yet.\n\n"
+
+        prompt += "### Guidance ###\n"
+        prompt += "Here are some useful guidelines you need to follow:\n"
+        if len(trajectory) == 1:
+            prompt += "- The app is opening, you don't need to open it. Wait if it is loading. \n"
+            prompt += """
+"- If it shows an advertisement, Use the action wait, do not use the action click!!! If it can be closed, add the coordinate of the close button in wait action: 
+<tool_call>
+{{"name": "mobile_use", "arguments": {"action": "wait", "time": <time>, "coordinate": [x, y]}}}
+</tool_call>
+"""
+        prompt += """- If the task is finished, you should terminate the task in time!
+- If you stuck in an action, you should try to change the action or the correspoinding parameters. Do not always repeat the same action!
+- If you want to type in some text, remember to click the input field first.
+- When there is ad, countdown, or progress bar on the screen, you should wait until the ad, countdown, or progress bar disappears.
+
+"""
+
+        prompt += "---\n"
+        prompt += f"{IMAGE_PLACEHOLDER}\n"
+        prompt += f"This is the screenshot before executing the latest action." 
+        prompt += f"The width and height are {resized_width} and {resized_height} pixels, respectively.\n\n"
+
+        prompt += "---\n"
+        prompt += "### Latest Action ###\n"
+        prompt += f"Action Thought: {current_step.thought}\n"
+        prompt += f"Action Description: {current_step.action_desc}\n"
+        prompt += f"Action: {current_step.action_s}\n\n"
+
+        prompt += "---\n"
+        prompt += "Carefully examine the information provided above to determine whether the last action is reasonable and can produce the expected behavior. If you think the action is incorrect, provide your reason.\n\n"
+
+        prompt += "Provide your output in the following format containing three parts:\n\n"
+        prompt += "### Outcome ###\n"
+        prompt += "Choose from the following options. Give your answer as \"A\" or \"B\":\n"
+        prompt += "A: Correct. The last action is reasonable.\n"
+        prompt += "B: Wrong. The last action will results in a wrong page or produce no changes. It can't meet the goal.\n"
+
+        prompt += "### Error Description ###\n"
+        prompt += "If the action is wrong, provide a detailed description of the error and the potential reason causing the failure. If the action is correct, put \"None\" here.\n\n"
+
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text","text": prompt},
+                {"type": "image_url","image_url": {"url": encode_image_url(pixels_before)}},
+            ]
+        })
+
+        return messages
+
+    def parse_response(self, response: str) -> dict:
+        outcome = response.split("### Outcome ###")[-1].split("### Error Description ###")[0].replace("\n", " ").replace("  ", " ").strip()
+        error_description = response.split("### Error Description ###")[-1].replace("\n", " ").replace("  ", " ").strip()
+        return outcome, error_description
 
 
 """
