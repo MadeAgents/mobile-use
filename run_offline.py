@@ -105,15 +105,10 @@ def Action_map(action: Action) -> Dict:
     return result
         
 
-
-VLM_API_KEY="EMPTY"
-VLM_BASE_URL="http://hammer-llm.oppo.test/v1/"
-
-
 vlm = VLMWrapper(
             model_name="qwen2.5-vl-72b-instruct", 
-            api_key=VLM_API_KEY,
-            base_url=VLM_BASE_URL,
+            api_key=os.getenv('VLM_API_KEY'),
+            base_url=os.getenv('VLM_BASE_URL'),
             max_tokens=1024,
             max_retry=1,
             temperature=0.0
