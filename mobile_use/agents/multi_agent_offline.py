@@ -9,7 +9,7 @@ from mobile_use.vlm import VLMWrapper
 from mobile_use.utils import encode_image_url, smart_resize
 from mobile_use.agents import Agent
 
-from mobile_use.agents.sub_agent import Planner, Operator, NoteTaker, Processor, ReflectorBeforeExecution
+from mobile_use.agents.sub_agent import Planner, Operator, NoteTaker, Processor, ReflectorBeforeExecution, Evaluator
 
 
 logger = logging.getLogger(__name__)
@@ -49,10 +49,11 @@ class MultiAgentOffline(Agent):
             reflection_action_waiting_seconds: float=1.0,
             max_retry_vlm: int=3,
             retry_vlm_waiting_seconds: float=1.0,
-            use_planner: bool=True,
-            use_reflector: bool=True,
-            use_note_taker: bool=True,
-            use_processor: bool=True,
+            use_planner: bool=False,
+            use_reflector: bool=False,
+            use_note_taker: bool=False,
+            use_processor: bool=False,
+            use_evaluator: bool=False,
         ):
         super().__init__(env=env, vlm=vlm, max_steps=max_steps)
         self.num_latest_screenshot = num_latest_screenshot
@@ -66,12 +67,14 @@ class MultiAgentOffline(Agent):
         self.use_reflector = use_reflector
         self.use_note_taker = use_note_taker
         self.use_processor = use_processor
+        self.use_evaluator = use_evaluator
 
         self.planner = Planner()
         self.operator = Operator()
         self.reflector = ReflectorBeforeExecution()
         self.note_taker = NoteTaker()
         self.processor = Processor()
+        self.evaluator = Evaluator()
 
     def reset(self, goal: str='') -> None:
         """Reset the state of the agent.
@@ -82,6 +85,7 @@ class MultiAgentOffline(Agent):
         self.reflector = ReflectorBeforeExecution()
         self.note_taker = NoteTaker()
         self.processor = Processor()
+        self.evaluator = Evaluator()
 
     def _get_curr_step_data(self) -> StepData:
         if len(self.trajectory) > self.curr_step_idx:
@@ -96,6 +100,7 @@ class MultiAgentOffline(Agent):
         """
         logger.info("Step %d ... ..." % self.curr_step_idx)
         show_step = [0,3]
+        is_finish = False
 
         # Get the current environment screen
         env_state = EnvState(pixels=pixels, package="")
@@ -251,7 +256,25 @@ class MultiAgentOffline(Agent):
                 logger.warning(f"Failed to parse the progress. Error: {e}")
             logger.info("Finish call processor.")
         
-        return action
+        # Call Evaluator
+        if self.use_evaluator:
+            logger.info("Start call evaluator.")
+            evaluator_messages = self.evaluator.get_message(self.episode_data)
+            show_message(evaluator_messages, "Evaluator")
+            response = self.vlm.predict(evaluator_messages)
+            try:
+                content = response.choices[0].message.content
+                logger.info("Evaluation from VLM:\n%s" % content)
+                evaluation = self.evaluator.parse_response(content)
+                logger.info("Evaluation: %s" % evaluation)
+                if evaluation == 'Finished':
+                    step_data.answer = evaluation
+                    is_finish = True
+            except Exception as e:
+                logger.warning(f"Failed to parse the evaluation. Error: {e}")
+            logger.info("Finish call evaluator.")
+        
+        return action, is_finish
 
     def iter_run(self, input_content):
         pass
@@ -270,20 +293,15 @@ class MultiAgentOffline(Agent):
         self.reset(goal=input_content)
         max_steps = len(screenshots)
 
+        logger.info(f"Running task: {input_content}.")
+
         for step_idx in range(max_steps):
             self.curr_step_idx = step_idx
 
-            action = self.step(screenshots[step_idx])
-            actions.append(action)
+            action, is_finish = self.step(screenshots[step_idx])
+            actions.append((action, is_finish))
 
             self.episode_data.num_steps = step_idx + 1
             self.episode_data.status = self.status
-
-            if self.status == AgentStatus.FINISHED:
-                logger.info("Agent indicates task is done.")
-                self.episode_data.message = 'Agent indicates task is done'
-                return actions
-            else:
-                logger.info("Agent indicates one step is done.")
 
         return actions

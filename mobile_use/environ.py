@@ -19,6 +19,7 @@ class Environment:
             go_home: bool = True,
             wait_after_action_seconds: float=2.0
         ):
+        self.port = port
         self._d = self._setup_device(serial_no, host, port)
         self.reset(go_home=go_home)
         self.window_size = self._d.window_size(landscape=False)
@@ -74,10 +75,13 @@ class Environment:
             # self._d.send_keys(text)
             if contains_chinese(text):
                 charsb64 = str(base64.b64encode(text.encode('utf-8')))[1:]
-                self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
-                self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
-                os.system(f"adb -s {self._d.get_serialno()} shell am broadcast -a ADB_INPUT_B64 --es msg %s" %charsb64)
-                self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
+                re = self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
+                print(re)
+                re = self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
+                print(re)
+                os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_INPUT_B64 --es msg %s" %charsb64)
+                re = self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
+                print(re)
             else:
                 self._d.shell(["input", "text", text])
         elif action.name == 'key':
@@ -100,7 +104,7 @@ class Environment:
             time.sleep(duration)
         elif action.name == 'answer':
             answer = action.parameters['text']
-            os.system(f'adb -s {self._d.get_serialno()} shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{text}"')
+            os.system(f'adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{text}"')
         elif action.name == 'system_button':
             button = action.parameters['button']
             if button == 'Back':
