@@ -22,6 +22,7 @@ def compare_action2(a, b):
 
 output_path = r"E:\模拟点击调试数据\result.xlsx"
 df = pd.read_excel(output_path)
+new_df = pd.DataFrame()
 
 grouped = df.groupby(['app', '屏幕尺寸', 'query_id'])
 task_count, task_success_count = 0, 0
@@ -90,6 +91,10 @@ for (app, screen_size, query_id), group in grouped:
             raise ValueError(f"Unknown action type: {gt_action_type}")
         if step_success == False:
             task_success = False
+
+        new_row = row.copy()
+        new_row['step_success'] = step_success
+        new_df = pd.concat([new_df, pd.DataFrame([new_row])], ignore_index=True)
     
     task_count += 1
     if task_success:
@@ -111,3 +116,5 @@ print(f"abort_count: {abort_count}, abort_success_count: {abort_success_count}, 
 print(f"total_success_rate: {(click_success_count + wait_success_count + type_success_count + abort_success_count) / (click_count + wait_count + type_count + abort_count):.2%}")
 print(f"grounding_count: {grounding_count}, grounding_success_count: {grounding_success_count}, grounding_success_rate: {grounding_success_count / grounding_count:.2%}")
 print(f"text_count: {text_count}, text_success_count: {text_success_count}, text_success_rate: {text_success_count / text_count:.2%}")
+
+new_df.to_excel(r"E:\模拟点击调试数据\result_with_step_success.xlsx", index=False)
