@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 INIT_TIPS = """- Click the correct text field before typing!
 - If the task is finished, you should terminate the task in time!
 - If you stuck in an action, you should try to change the action or the correspoinding parameters. Do not always repeat the same action!
-- If you want to open an app, always first try to use the `open` action with app name to open the app.
 - If you want to delete, move, copy, or rename a file, always first try to long press the file and select the corresponding action.
 - Remember to add or change the correct suffix when naming a file.
 - Always remember to save the file after you create or modify it.
