@@ -15,7 +15,9 @@ We recommand use Docker on Linux (x86_64).
 
 
 **Install mobile-use**
-Install mobile-use by following the guidance in [README.md](../README.md).
+```
+pip install -e .
+```
 
 
 ## Step 2: Perform the benchmark
