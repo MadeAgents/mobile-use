@@ -218,7 +218,8 @@ You are provided with function signatures within <tools></tools> XML tags:
                 ]
             })
 
-        prompt = 'The following experience can help you to solve the user instruction better:\n' + episodedata.experience + '\nBefore using the above experience, you must open the corresponding application firstly!!\n'
+        prompt = '### App guidelines experience ###\n'
+        prompt += episodedata.experience + '\nAttention!!\nBefore using the above experience, please open the corresponding application firstly!!\n\n'
         #prompt = 'The following experience can help you to solve the user instruction better:\n' + episodedata.experience + '\n\n'
         # Add user prompt
         prompt += "### User Instruction ###\n"

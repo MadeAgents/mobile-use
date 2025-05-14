@@ -1,9 +1,9 @@
 task2app = {
     "AudioRecorderRecordAudio": "audiorecorder",
     "AudioRecorderRecordAudioWithFileName": "audiorecorder",
-    "BrowserDraw": "",
-    "BrowserMaze": "",
-    "BrowserMultiply": "",
+    "BrowserDraw": "chrome",
+    "BrowserMaze": "chrome",
+    "BrowserMultiply": "chrome",
     "CameraTakePhoto": "Camera",
     "CameraTakeVideo": "Camera",
     "ClockStopWatchPausedVerify": "",
@@ -113,6 +113,6 @@ task2app = {
     "TasksIncompleteTasksOnDate": "Tasks",
     "TurnOffWifiAndTurnOnBluetooth": "",
     "TurnOnWifiAndOpenApp": "",
-    "VlcCreatePlaylist": "",
-    "VlcCreateTwoPlaylists": "",
+    "VlcCreatePlaylist": "VLC",
+    "VlcCreateTwoPlaylists": "VLC",
 }
