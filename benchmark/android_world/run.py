@@ -146,10 +146,7 @@ _FIXED_TASK_SEED = flags.DEFINE_boolean(
 _SKIP_EMPTY_EXPLORED_SUMMARY = flags.DEFINE_boolean(
     'skip_empty_explored_summary',
     False,
-    'Whether to skip tasks that have no explored summary key.',
-    short_name='skip_empty_explored_summary',
-    default=False,
-    help='Skip tasks that have no explored summary key.'
+    'Whether to skip tasks that have no explored summary key.'
 )
 
 
