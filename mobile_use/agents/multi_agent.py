@@ -19,6 +19,10 @@ from mobile_use.agents.sub_agent import *
 logger = logging.getLogger(__name__)
 
 
+with open(os.path.join(os.path.dirname(__file__), 'assets', 'explored_knowledge.json'), 'r') as f:
+    EXPLORED_SUMMARY: dict = json.load(f)
+
+
 INIT_TIPS = """- Click the correct text field before typing!
 - If the task is finished, you should terminate the task in time!
 - If you stuck in an action, you should try to change the action or the correspoinding parameters. Do not always repeat the same action!
@@ -185,6 +189,8 @@ class MultiAgent(Agent):
         self.evolutor = Evolutor()
         self.task_summarizer = TaskSummarizer()
         self.experience_extractor = ExperienceExtractor()
+        self.goal_pre = ''
+        
     
     def _get_device_time(self) -> str:
         date_str = self.env.get_time()
@@ -358,6 +364,20 @@ class MultiAgent(Agent):
 
         Returns: Answer
         """
+        
+        if self.goal_pre != self.episode_data.goal:  # = is origin, != is using exp
+            self.goal_pre = self.episode_data.goal
+            explored_summary = ''
+            if hasattr(self, 'explored_summary_key'):
+                print('self.explored_summary_key is set to:', self.explored_summary_key)
+                explored_summary = EXPLORED_SUMMARY.get(self.explored_summary_key, '')
+            else:
+                print("self.explored_summary_key is not set.")
+            if not explored_summary:
+                print("No explored summary found.")
+            self.episode_data.experience = self.vlm.predict([ { "role": "user", "content": [ {"type": "text", "text": "The summary of pages explored:\n"+explored_summary+"\nuser query:\n"+self.episode_data.goal+"\nPlease extract the text snippet that helps complete the user's request without exceeding 100 tokens and must keeping the original description. Don't answer user query! Extract only!"} ] }]).choices[0].message.content
+            print("experience=================", self.episode_data.experience)
+            
         start_time = time.time()
         logger.info("Step %d ... ..." % self.curr_step_idx)
         answer = None
@@ -367,6 +387,7 @@ class MultiAgent(Agent):
         env_state = self.env.get_state()
         pixels = env_state.pixels
         resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
+        
 
         # Add new step data
         if len(self.trajectory) == 0:
@@ -405,6 +426,7 @@ class MultiAgent(Agent):
         action_thought, action, action_s, action_desc = None, None, None, None
         skip_reflector = False
         # operator_messages = self.operator.get_message(self.episode_data)
+        
         operator_messages = self.operator.get_message(self.episode_data, device_time=self.device_time)
         if self.curr_step_idx in show_step:
             show_message(operator_messages, "Operator")

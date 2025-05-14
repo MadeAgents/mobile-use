@@ -73,7 +73,6 @@ class Planner(SubAgent):
                 }
             ]
         })
-
         # Add user prompt
         prompt = "### User Instruction ###\n"
         prompt += f"{episodedata.goal}\n\n"
@@ -219,8 +218,10 @@ You are provided with function signatures within <tools></tools> XML tags:
                 ]
             })
 
+        prompt = 'The following experience can help you to solve the user instruction better:\n' + episodedata.experience + '\nBefore using the above experience, you must open the corresponding application firstly!!\n'
+        #prompt = 'The following experience can help you to solve the user instruction better:\n' + episodedata.experience + '\n\n'
         # Add user prompt
-        prompt = "### User Instruction ###\n"
+        prompt += "### User Instruction ###\n"
         prompt += f"{episodedata.goal}\n\n"
 
         if device_time is not None:
@@ -306,7 +307,7 @@ You are provided with function signatures within <tools></tools> XML tags:
             prompt += "### Tips ###\n"
             prompt += "From previous experience interacting with the device, you have collected the following tips that might be useful for deciding what to do next:\n"
             prompt += f"{episodedata.input_tips}\n\n"
-
+            
             if hasattr(episodedata, "retrieved_tips") and episodedata.retrieved_tips is not None:
                 prompt += "### Retrieved Tips ###\n"
                 prompt += "You have also retrieved the following tips from similar tasks that might be useful for deciding what to do next:\n"

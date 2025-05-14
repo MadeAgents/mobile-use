@@ -143,9 +143,101 @@ _FIXED_TASK_SEED = flags.DEFINE_boolean(
     ' (n_task_combinations > 1).',
 )
 
+_SKIP_EMPTY_EXPLORED_SUMMARY = flags.DEFINE_boolean(
+    'skip_empty_explored_summary',
+    False,
+    'Whether to skip tasks that have no explored summary key.',
+    short_name='skip_empty_explored_summary',
+    default=False,
+    help='Skip tasks that have no explored summary key.'
+)
+
 
 # MiniWoB is very lightweight and new screens/View Hierarchy load quickly.
 _MINIWOB_TRANSITION_PAUSE = 0.2
+
+
+
+from android_world.suite_utils import Suite, _run_task_suite, _display_goal, _allocate_step_budget, task_eval, episode_runner, miniwob_base, adb_utils
+from typing import Callable, Any
+from task_app import task2app
+
+def custom_run_suite(
+    suite: Suite,
+    agent: base_agent.EnvironmentInteractingAgent,
+    checkpointer: checkpointer_lib.Checkpointer = checkpointer_lib.NullCheckpointer(),
+    demo_mode: bool = False,
+    return_full_episode_data: bool = False,
+    process_episodes_fn=None,
+    check_episode_fn: Callable[[dict[str, Any]], bool] | None = None,
+    skip_empty_explored_summary: bool = False,
+) -> list[dict[str, Any]]:
+  """Create suite and runs eval suite.
+
+  Args:
+    suite: The suite of tasks to run on.
+    agent: An agent that interacts on the environment.
+    checkpointer: Checkpointer that loads from existing run and resumes from
+      there. NOTE: It will resume from the last fully completed task template.
+      Relatedly, data for a task template will not be saved until all instances
+      are executed.
+    demo_mode: Whether to run in demo mode, which displays a scoreboard and the
+      task instruction as a notification.
+    return_full_episode_data: Whether to return full episode data instead of
+      just metadata.
+    process_episodes_fn: The function to process episode data. Usually to
+      compute metrics. Deafaults to process_episodes from this file.
+    check_episode_fn: The function to check episode data.
+
+  Returns:
+    Step-by-step data from each episode.
+  """
+
+  def run_episode(task: task_eval.TaskEval) -> episode_runner.EpisodeResult:
+    if demo_mode:
+      _display_goal(agent.env, task)
+
+    if isinstance(agent, mobile_use_agent.MobileUse):
+      explored_summary_key = task2app.get(task.name, '')
+      if skip_empty_explored_summary and not explored_summary_key:
+        raise ValueError(
+            f'Explored summary key not found for task {task.name}. '
+            'Please check the task name and ensure it is mapped correctly.'
+        )
+      agent.agent.explored_summary_key = explored_summary_key
+    return episode_runner.run_episode(
+        goal=task.goal,
+        agent=agent,
+        max_n_steps=_allocate_step_budget(task.complexity),
+        start_on_home_screen=task.start_on_home_screen,
+        termination_fn=(
+            miniwob_base.is_episode_terminated
+            if task.name.lower().startswith('miniwob')
+            else None
+        ),
+    )
+
+  if demo_mode:
+    adb_utils.send_android_intent(
+        'broadcast',
+        'com.example.ACTION_UPDATE_SCOREBOARD',
+        agent.env.controller,
+        extras={'player_name': agent.name, 'scoreboard_value': '00/00'},
+    )
+
+  results = _run_task_suite(
+      suite,
+      run_episode,
+      agent.env,
+      checkpointer=checkpointer,
+      demo_mode=demo_mode,
+      agent_name=agent.name,
+      return_full_episode_data=return_full_episode_data,
+      process_episodes_fn=process_episodes_fn,
+      check_episode_fn=check_episode_fn,
+  )
+
+  return results
 
 
 def _get_agent(env: interface.AsyncEnv, family: str | None = None) -> base_agent.EnvironmentInteractingAgent:
@@ -226,11 +318,12 @@ def _main() -> None:
       f'Starting eval with agent {_AGENT_NAME.value} and writing to'
       f' {checkpoint_dir}'
   )
-  suite_utils.run(
+  custom_run_suite(
       suite,
       agent,
       checkpointer=checkpointer_lib.IncrementalCheckpointer(checkpoint_dir),
       demo_mode=False,
+      skip_empty_explored_summary=_SKIP_EMPTY_EXPLORED_SUMMARY.value
   )
   print(
       f'Finished running agent {_AGENT_NAME.value} on {_SUITE_FAMILY.value}'
