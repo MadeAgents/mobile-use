@@ -156,7 +156,7 @@ def _get_agent(env: interface.AsyncEnv, family: str | None = None) -> base_agent
   if _AGENT_NAME.value == 'mobile_use':
     # Modify the parameters if needed.
     android_adb_server_port = int(os.environ.get('ANDROID_ADB_SERVER_PORT', '5037'))
-    mobile_use_env = mobile_use.Environment(serial_no='emulator-5554', port=android_adb_server_port)
+    mobile_use_env = mobile_use.Environment(serial_no=f'emulator-{_DEVICE_CONSOLE_PORT.value}', port=android_adb_server_port)
     mobile_use_vlm = mobile_use.VLMWrapper(
         model_name="qwen2.5-vl-72b-instruct",
         api_key=os.getenv('VLM_API_KEY', 'EMPTY'),

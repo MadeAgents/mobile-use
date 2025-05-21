@@ -13,23 +13,23 @@ class VLMWrapper:
     """
 
     def __init__(
-            self, 
-            model_name: str, 
+            self,
+            model_name: str,
             api_key: str,
             base_url: str,
-            max_retry: int = 3, 
-            retry_waiting_seconds: int = 2, 
-            max_tokens: int = 1024, 
+            max_retry: int = 3,
+            retry_waiting_seconds: int = 2,
+            max_tokens: int = 1024,
             temperature: float = 0.0,
             **vlm_kwargs
         ):
         self.model_name = model_name
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         # self.aclient = AsyncOpenAI(api_key=api_key, base_url=base_url)
-    
+
         self.max_retry = max_retry
         self.retry_waiting_seconds = retry_waiting_seconds
-        
+
         self.max_tokens = max_tokens
         self.temperature = temperature
 
@@ -73,4 +73,5 @@ class VLMWrapper:
                 logger.warning(f'Error calling VLM API with message: {err}')
                 time.sleep(wait_seconds)
                 counter -= 1
-                if counter <= 0: raise  # re-raise after max retry.
+                if counter <= 0:
+                    raise ValueError("Max tries for predict failure.") from err  # re-raise after max retry.
