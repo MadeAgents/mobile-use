@@ -97,6 +97,12 @@ class StepData:
     memory: Optional[str] = None
     reflection_outcome: Optional[str] = None
     reflection_error: Optional[str] = None
+    ad_detection_thought: Optional[str] = None
+    ad_detection_action_name: Optional[str] = None
+    ad_detection_bounding_box: Optional[str] = None
+    finish_status: Optional[str] = None
+    finish_thought: Optional[str] = None
+    finish_result: Optional[str] = None
 
 @dataclass
 class EpisodeData:

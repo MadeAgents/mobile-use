@@ -331,7 +331,7 @@ You are provided with function signatures within <tools></tools> XML tags:
 * `click`: Click the point on the screen with coordinate (x, y). If the screen shows an advertisement, Do not click the close button, use the action `wait` instead.
 * `type`: Input the specified text into the activated input box.
 * `wait`: Wait for a while, used when there is an advertisement, countdown, or progress bar on the screen, or the screen is loading.
-* `abort`: Abort to require the user attention. It is used when the current screenshot applies for system permission, terms and conditions, asks user performance, or other information that requires user attention.", "enum": ["click", "type", "wait", "abort"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click` and `action=wait`.", "type": "array"}}, "text": {{"description": "Required only by `action=type`.", "type": "string"}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
+* `abort`: Abort to require the user attention. It is used when the current screenshot applies for system permission (e.g. Notification permission), terms and conditions, asks user performance, or other information that requires user attention.", "enum": ["click", "type", "wait", "abort"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click` and `action=wait`.", "type": "array"}}, "text": {{"description": "Required only by `action=type`.", "type": "string"}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
 </tools>
 """
                 }
@@ -360,12 +360,13 @@ You are provided with function signatures within <tools></tools> XML tags:
         prompt += "### Requirements ###\n"
         prompt += "- If you think the current screenshot shows an advertisement, you should use the action `wait` to wait for the advertisement to disappear. You also need to provide the coordinate of the close button in the `wait` action if it can be closed.\n"
         prompt += "- Before typing in some text, you need to make sure the keyboard is activated.\n"
+        prompt += "- If you want to type in some text, you should make sure the text is consistent with the user's instruction.\n"
         prompt += "- If it shows an advertisement, you must use the action `wait`. Do not click!!!\n"
-        prompt += "- If the screenshot shows any popups, you must use the action `wait`. Do not click!!!\n"
-        # prompt += "- If it requests any permissions, you must use the action `wait`. Do not click!!!\n"
-        # prompt += "- If the screenshot shows any terms and conditions, you must use the action `wait`. Do not click!!!\n"
+        # prompt += "- If the screenshot shows any popups, you must use the action `wait`. Do not click!!!\n"
+        prompt += "- If it requests any permissions (e.g. Notification permission), you must use the action `abort`. Do not click!!!\n"
+        prompt += "- If the screenshot shows any terms and conditions for user to agree, asks user preference or profile, or other information that requires user attention, you must use the action `abort`. Do not click!!!\n"
         # prompt += "- If the screenshot asks user preference or profile, you must use the action `wait`. Do not click!!!\n"
-        prompt += "- If the screenshot shows any other information that you think requires user attention, you must use the action `abort`. Do not click!!!\n"
+        # prompt += "- If the screenshot shows any other information that you think requires user attention, you must use the action `abort`. Do not click!!!\n"
         prompt += "\n"
 
         prompt += "### Response Format ###\n"
@@ -380,9 +381,8 @@ Action: ... (Your action description)
 """
         prompt += "### Finish Status ###\n"
         # prompt += "If you think the task is finished after performing the action, put `Finish` here. Otherwise, put `Not Finish` here.\n\n"
-        prompt += "Thought: Think about whether the task is finished after performing the current action. Put your thinking process here in one sentence.\n"
-        prompt += "Result: If you think the task is finished after performing the current action, put `Finish` here. Otherwise, put `Not Finish` here."
-
+        prompt += "Thought: Think about whether the task is finished after performing the current action. You needn't wait for the final response. Put your thinking process here in one sentence.\n"
+        prompt += "Result: If you think this is the final action, the task is finished after performing the current action, put `Finish` here. Otherwise, put `Not Finish` here."
 
         messages.append({
             "role": "user",

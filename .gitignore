@@ -24,3 +24,4 @@ output
 poetry.lock
 **/proto
 **/.eggs
+*.log

@@ -9,7 +9,7 @@ from mobile_use.vlm import VLMWrapper
 from mobile_use.utils import encode_image_url, smart_resize
 from mobile_use.agents import Agent
 
-from mobile_use.agents.sub_agent import Planner, Operator, NoteTaker, Processor, ReflectorBeforeExecution, Evaluator
+from mobile_use.agents.sub_agent import Planner, Operator, NoteTaker, Processor, ReflectorBeforeExecution, Evaluator, AdvertisementDetector
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,8 @@ class MultiAgentOffline(Agent):
             use_note_taker: bool=False,
             use_processor: bool=False,
             use_evaluator: bool=False,
+            use_operator: bool=True,
+            use_advertisement_detector: bool=False,
         ):
         super().__init__(env=env, vlm=vlm, max_steps=max_steps)
         self.num_latest_screenshot = num_latest_screenshot
@@ -68,24 +70,28 @@ class MultiAgentOffline(Agent):
         self.use_note_taker = use_note_taker
         self.use_processor = use_processor
         self.use_evaluator = use_evaluator
+        self.use_operator = use_operator
+        self.use_advertisement_detector = use_advertisement_detector
 
         self.planner = Planner()
-        self.operator = Operator()
+        self.operator = Operator(num_histories=self.num_histories)
         self.reflector = ReflectorBeforeExecution()
         self.note_taker = NoteTaker()
         self.processor = Processor()
         self.evaluator = Evaluator()
+        self.advertisement_detector = AdvertisementDetector()
 
     def reset(self, goal: str='') -> None:
         """Reset the state of the agent.
         """
         self._init_data(goal=goal)
         self.planner = Planner()
-        self.operator = Operator()
+        self.operator = Operator(num_histories=self.num_histories)
         self.reflector = ReflectorBeforeExecution()
         self.note_taker = NoteTaker()
         self.processor = Processor()
         self.evaluator = Evaluator()
+        self.advertisement_detector = AdvertisementDetector()
 
     def _get_curr_step_data(self) -> StepData:
         if len(self.trajectory) > self.curr_step_idx:
@@ -93,13 +99,12 @@ class MultiAgentOffline(Agent):
         else:
             return None
 
-    def step(self, pixels: Image.Image) -> None:
+    def step(self, pixels: Image.Image, show_step = ()) -> None:
         """Execute the task with maximum number of steps.
 
         Returns: Action
         """
         logger.info("Step %d ... ..." % self.curr_step_idx)
-        show_step = [0,3]
         is_finish = False
 
         # Get the current environment screen
@@ -135,46 +140,68 @@ class MultiAgentOffline(Agent):
                 logger.warning(f"Failed to parse the plan. Error: {e}")
             logger.info("finish call planner.")
 
-        # Call Operator
-        logger.info("Start call operator.")
-        action_thought, action, action_s, action_desc = None, None, None, None
-        operator_messages = self.operator.get_message(self.episode_data)
-        if self.curr_step_idx in show_step:
-            show_message(operator_messages, "Operator")
-        response = self.vlm.predict(operator_messages, stop=['Summary'])
-
-        for counter in range(self.max_reflection_action):
+        if self.use_advertisement_detector:
+            logger.info("Start call advertisement detector.")
+            ad_messages = self.advertisement_detector.get_message(self.episode_data)
+            if self.curr_step_idx in show_step:
+                show_message(ad_messages, "Advertisement Detector")
+            response = self.vlm.predict(ad_messages)
             try:
-                raw_action = response.choices[0].message.content
-                logger.info("Action from VLM:\n%s" % raw_action)
-                step_data.content = raw_action
+                content = response.choices[0].message.content
+                logger.info("Advertisement Detection from VLM:\n%s" % content)
                 resized_size = (resized_width, resized_height)
-                action_thought, action, action_s, action_desc = self.operator.parse_response(raw_action, resized_size, pixels.size)
-                logger.info("ACTION THOUGHT: %s" % action_thought)
-                logger.info("ACTION: %s" % str(action))
-                logger.info("ACTION DESCRIPTION: %s" % action_desc)
-                break
+                ad_thought, ad_action_name, ad_bounding_box = self.advertisement_detector.parse_response(content, resized_size, pixels.size)
+                step_data.ad_detection_thought = ad_thought
+                step_data.ad_detection_action_name = ad_action_name
+                step_data.ad_detection_bounding_box = str(ad_bounding_box)
             except Exception as e:
-                logger.warning(f"Failed to parse the action. Error is {e.args}")
-                msg = {
-                    'type': 'text', 
-                    'text': f"Failed to parse the action.\nError is {e.args}\nPlease follow the output format to provide a valid action:"
-                }
-                operator_messages[-1]['content'].append(msg)
-                response = self.vlm.predict(operator_messages, stop=['Summary'])
-        if counter > 0:
-            operator_messages[-1]['content'] = operator_messages[-1]['content'][:-counter]
+                logger.warning(f"Failed to parse the advertisement detection. Error: {e}")
+            logger.info("Finish call advertisement detector.")
 
-        if action is None:
-            logger.warning("Action parse error after max retry.")
-        
-        if action is not None:
-            step_data.thought = action_thought
-            step_data.action_desc = action_desc
-            step_data.action_s = action_s
-            step_data.action = action
+        action, is_finish = None, None
+        if self.use_operator:
+            # Call Operator
+            logger.info("Start call operator.")
+            action_thought, action, action_s, action_desc = None, None, None, None
+            operator_messages = self.operator.get_message(self.episode_data)
+            if self.curr_step_idx in show_step:
+                show_message(operator_messages, "Operator")
+            response = self.vlm.predict(operator_messages, stop=['Summary'])
 
-        logger.info("finish call operator.")
+            for counter in range(self.max_reflection_action):
+                try:
+                    raw_action = response.choices[0].message.content
+                    logger.info("Action from VLM:\n%s" % raw_action)
+                    step_data.content = raw_action
+                    resized_size = (resized_width, resized_height)
+                    action_thought, action, action_s, action_desc, finish_thought, finish_result = self.operator.parse_response(raw_action, resized_size, pixels.size)
+                    logger.info("ACTION THOUGHT: %s" % action_thought)
+                    logger.info("ACTION: %s" % str(action))
+                    logger.info("ACTION DESCRIPTION: %s" % action_desc)
+                    logger.info("FINISH THOUGHT: %s" % finish_thought)
+                    logger.info("FINISH RESULT: %s" % finish_result)
+                    step_data.thought = action_thought
+                    step_data.action_desc = action_desc
+                    step_data.action_s = action_s
+                    step_data.action = action
+                    step_data.finish_thought = finish_thought
+                    step_data.finish_result = finish_result
+                    break
+                except Exception as e:
+                    logger.warning(f"Failed to parse the action. Error is {e.args}")
+                    msg = {
+                        'type': 'text', 
+                        'text': f"Failed to parse the action.\nError is {e.args}\nPlease follow the output format to provide a valid action:"
+                    }
+                    operator_messages[-1]['content'].append(msg)
+                    response = self.vlm.predict(operator_messages, stop=['Summary'])
+            if counter > 0:
+                operator_messages[-1]['content'] = operator_messages[-1]['content'][:-counter]
+
+            if action is None:
+                logger.warning("Action parse error after max retry.")
+
+            logger.info("finish call operator.")
 
         # Call Reflector
         if self.use_reflector and action is not None:
@@ -267,7 +294,7 @@ class MultiAgentOffline(Agent):
                 logger.info("Evaluation from VLM:\n%s" % content)
                 evaluation = self.evaluator.parse_response(content)
                 logger.info("Evaluation: %s" % evaluation)
-                if evaluation == 'Finished':
+                if evaluation.startswith("Finished"):
                     step_data.answer = evaluation
                     is_finish = True
             except Exception as e:
@@ -282,7 +309,8 @@ class MultiAgentOffline(Agent):
     def run(
             self,
             input_content: str, 
-            screenshots: List[Image.Image]
+            screenshots: List[Image.Image],
+            show: bool = False
     ) -> List[Action]:
         """Execute the agent with user input content.
 
@@ -294,14 +322,49 @@ class MultiAgentOffline(Agent):
         max_steps = len(screenshots)
 
         logger.info(f"Running task: {input_content}.")
-
+        if show:
+            show = (0, max_steps - 1)
+        else:
+            show = ()
         for step_idx in range(max_steps):
             self.curr_step_idx = step_idx
 
-            action, is_finish = self.step(screenshots[step_idx])
+            self.step(screenshots[step_idx], show_step=show)
+            action = self.trajectory[-1].action
+            is_finish = self.trajectory[-1].finish_result
             actions.append((action, is_finish))
 
             self.episode_data.num_steps = step_idx + 1
             self.episode_data.status = self.status
 
         return actions
+
+
+    def run_ad_detector(
+            self,
+            input_content: str, 
+            screenshots: List[Image.Image]
+    ):
+        """Execute the agent with user input content.
+
+        Returns: List[Action]
+        """
+        thoughts, action_names, bboxes = [], [], []
+
+        self.reset(goal=input_content)
+        max_steps = len(screenshots)
+
+        logger.info(f"Running task: {input_content}.")
+
+        for step_idx in range(max_steps):
+            self.curr_step_idx = step_idx
+
+            self.step(screenshots[step_idx])
+            thoughts.append(self.trajectory[-1].ad_detection_thought)
+            action_names.append(self.trajectory[-1].ad_detection_action_name)
+            bboxes.append(self.trajectory[-1].ad_detection_bounding_box)
+
+            self.episode_data.num_steps = step_idx + 1
+            self.episode_data.status = self.status
+
+        return thoughts, action_names, bboxes
