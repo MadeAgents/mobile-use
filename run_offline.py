@@ -182,8 +182,8 @@ agent = MultiAgentOffline(
 
 excel_path = r"E:\模拟点击调试数据\一键执行数据\一键执行-步骤合并数据集-1.24.xlsx"
 data_path = r"E:\模拟点击调试数据\一键执行数据"
-log_path = r"E:\模拟点击调试数据\一键执行数据\logs_in_one_finish_thought2"
-output_path = r"E:\模拟点击调试数据\一键执行数据\result_in_one_finish_thought2.xlsx"
+log_path = r"E:\模拟点击调试数据\一键执行数据\logs_in_one_finish_thought3"
+output_path = r"E:\模拟点击调试数据\一键执行数据\result_in_one_finish_thought3.xlsx"
 
 df = pd.read_excel(excel_path, dtype=str)
 print(df.columns)
@@ -213,7 +213,7 @@ for (date, app, screen_size, query_id), group in grouped:
             imgs.append(img)
         
         t = time.time()
-        actions = agent.run(query, screenshots=imgs, show=show)
+        results = agent.run(query, screenshots=imgs, show=show)
         delta_t = time.time() - t
         logger.info(f"Query {query_id} processed in {delta_t:.2f} seconds.")
         total_time += delta_t
@@ -221,12 +221,19 @@ for (date, app, screen_size, query_id), group in grouped:
 
         if show:
             show = False  # Only show the first query
+        actions = [result['action'] for result in results]
         logger.info(f"Actions: {actions}")
-        maped_actions = [Action_map(action[0]) for action in actions]
-        coordinate1s = [action[0].parameters.get('coordinate', None) for action in actions]
-        text1s = [action[0].parameters.get('text', None) for action in actions]
-        action1s = [action[0].name for action in actions]
-        # logger.info(f"Maped Actions: {maped_actions}")
+        maped_actions = [Action_map(action) for action in actions]
+        coordinate1s = [action.parameters.get('coordinate', None) for action in actions]
+        text1s = [action.parameters.get('text', None) for action in actions]
+        action1s = [action.name for action in actions]
+        for i, result in enumerate(results):
+            result.update({
+            'action1': action1s[i],
+            'coordinate1': coordinate1s[i],
+            'text1': text1s[i],
+            'maped_action': maped_actions[i]
+        })
 
     except Exception as e:
         logger.error(f"Error processing query {query_id}: {e}")
@@ -247,13 +254,7 @@ for (date, app, screen_size, query_id), group in grouped:
         updated_rows = []
         for index, row in group.iterrows():
             new_data = row.to_dict()
-            new_data.update({'action': actions[index][0], 
-                                'action2': actions[index][1], 
-                                'maped_action': maped_actions[index],
-                                'action1': action1s[index],
-                                'coordinate1': coordinate1s[index],
-                                'text1': text1s[index]
-                            })
+            new_data.update(results[index])
             updated_rows.append(new_data)
         updated_df = pd.concat([existing_df, pd.DataFrame(updated_rows)], ignore_index=True)
         with pd.ExcelWriter(output_path, mode='w', engine='openpyxl') as writer:
@@ -261,6 +262,7 @@ for (date, app, screen_size, query_id), group in grouped:
 
     except Exception as e:
         logger.error(f"Error saving query {query_id} to excel: {e}")
+        traceback.print_exc()
         continue
 
 logger.info(f"Total time: {total_time:.2f} seconds, Total steps: {total_steps}")

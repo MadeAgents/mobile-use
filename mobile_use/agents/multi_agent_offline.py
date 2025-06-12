@@ -311,12 +311,8 @@ class MultiAgentOffline(Agent):
             input_content: str, 
             screenshots: List[Image.Image],
             show: bool = False
-    ) -> List[Action]:
-        """Execute the agent with user input content.
-
-        Returns: List[Action]
-        """
-        actions = []
+    ) -> List[Dict]:
+        results = []
 
         self.reset(goal=input_content)
         max_steps = len(screenshots)
@@ -330,14 +326,19 @@ class MultiAgentOffline(Agent):
             self.curr_step_idx = step_idx
 
             self.step(screenshots[step_idx], show_step=show)
-            action = self.trajectory[-1].action
-            is_finish = self.trajectory[-1].finish_result
-            actions.append((action, is_finish))
+            latest_step = self.trajectory[-1]
+            results.append({
+                'thought': latest_step.thought,
+                'action_desc': latest_step.action_desc,
+                'action': latest_step.action,
+                'finish_thought': latest_step.finish_thought,
+                'action2': latest_step.finish_result,
+            })
 
             self.episode_data.num_steps = step_idx + 1
             self.episode_data.status = self.status
 
-        return actions
+        return results
 
 
     def run_ad_detector(
