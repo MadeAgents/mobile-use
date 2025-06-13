@@ -14,8 +14,10 @@ https://github.com/user-attachments/assets/5c4d3ce8-0135-4e6e-b003-b20f81f834d4
 **⚠️特别提醒**：操作动作由智能体自主决定，可能存在不可控的操作风险，建议体验是时刻关注手机动态如遇到操作风险及时终止任务或者使用测试手机进行体验，避免误操作带来问题。
 
 ## 🎉 News
+- **[2025/06/13]**: 我们的[论文](../paper/MobileUse_2025_06_13.pdf) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 现已发布！
+- **[2025/05/13]**: Mobile Use v0.3.0 现已发布！支持 AndroidLab 动态环境评估！在 [AndroidLab](https://github.com/THUDM/Android-Lab) 和 [AndroidWorld](https://github.com/google-research/android_world) 评估基准测试中均取得了显著的改进.
 - **[2025/03/28]**: 在 AndroidWorld 动态环境中运行 Mobile Use 的[文档](AndroidWorld.md)现已发布！
-- **[2025/03/17]**: MMobile Use 现在支持[多智能体](../mobile_use/agents/multi_agent.py)框架！配备了规划、反思、记忆和进展机制，Mobile Use 在 AndroidWorld 上实现了令人印象深刻的性能！
+- **[2025/03/17]**: Mobile Use 现在支持[多智能体](../mobile_use/agents/multi_agent.py)框架！配备了规划、反思、记忆和进展机制，Mobile Use 在 AndroidWorld 上实现了令人印象深刻的性能！
 - **[2025/03/04]**: Mobile Use 已发布！我们还发布了 [mobile-use](https://github.com/MadeAgents/mobile-use) 库的 v0.1.0 版本，为您提供移动设备的 AI 助手——任何应用，任何任务！
 
 ## 📊 Benchmark
