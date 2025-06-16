@@ -6,8 +6,7 @@ git checkout test
 pip install -e .
 
 说明：
-run_offline.py 提供了一个离线运行的例子，可以用来测试模拟点击的效果；
-Action_map 函数对输出的action进行了调整，如需进一步调整可以按需修改；
+Action_map 函数对输出的action进行了调整，暂时可以忽略掉这个函数
 当前的agent是一个MultiAgentOffline，可以根据需要选择其他的agent；
 当前agent对于广告页的action预测效果不是特别好，容易点击跳过或不输出跳过广告的坐标。
 """
@@ -22,6 +21,7 @@ from typing import Dict
 import traceback
 from dotenv import load_dotenv
 import time
+import argparse
 
 from mobile_use import VLMWrapper, Action
 from mobile_use import MultiAgentOffline
@@ -142,7 +142,7 @@ def Action_map(action: Action) -> Dict:
             text = action.parameters['text']
             result['action_type'] = 'type'
             result['args'] = {"text": text}
-        elif action.name == 'wait':
+        elif action.name == 'wait' or action.name == 'close_adv':
             # duration = action.parameters['time'] * 1000
             result['action_type'] = 'wait'
             # result['args'] = {"duration": duration}
@@ -180,10 +180,18 @@ agent = MultiAgentOffline(
     num_histories=None,
 )
 
-excel_path = r"E:\模拟点击调试数据\一键执行数据\一键执行-步骤合并数据集-1.24.xlsx"
-data_path = r"E:\模拟点击调试数据\一键执行数据"
-log_path = r"E:\模拟点击调试数据\一键执行数据\logs_in_one_finish_thought3"
-output_path = r"E:\模拟点击调试数据\一键执行数据\result_in_one_finish_thought3.xlsx"
+
+argument_parser = argparse.ArgumentParser(description="Run offline agent on a dataset.")
+argument_parser.add_argument('--excel_path', type=str, help='Path to the input Excel file containing the dataset.', default=r"E:\模拟点击调试数据\一键执行数据\一键执行-步骤合并数据集-1.24.xlsx")
+argument_parser.add_argument('--data_path', type=str, help='Path to the directory containing the screenshots.', default=r"E:\模拟点击调试数据\一键执行数据")
+argument_parser.add_argument('--log_path', type=str, help='Path to save the log files.', default=None)
+argument_parser.add_argument('--output_path', type=str, required=True, help='Path to save the output results (xlsx file).')
+args = argument_parser.parse_args()
+
+excel_path = args.excel_path
+data_path = args.data_path
+log_path = args.log_path
+output_path = args.output_path
 
 df = pd.read_excel(excel_path, dtype=str)
 print(df.columns)
@@ -197,11 +205,12 @@ for (date, app, screen_size, query_id), group in grouped:
 
         query = group.iloc[0]['query']
 
-        log_dir = os.path.join(log_path, date, app, screen_size)
-        log_file = os.path.join(log_dir, f"{query_id}.pkl")
-        if os.path.exists(log_file):
-            logger.info(f"Task {(date, app, screen_size, query_id)} already exists, skipping...")
-            continue
+        if log_path is None:
+            log_dir = os.path.join(log_path, date, app, screen_size)
+            log_file = os.path.join(log_dir, f"{query_id}.pkl")
+            if os.path.exists(log_file):
+                logger.info(f"Task {(date, app, screen_size, query_id)} already exists, skipping...")
+                continue
 
         agent.reset(query)
         imgs = []
@@ -240,10 +249,11 @@ for (date, app, screen_size, query_id), group in grouped:
         traceback.print_exc()
         continue
 
-    # Save the episode
-    episode_data = agent.episode_data
-    os.makedirs(log_dir, exist_ok=True)
-    save(episode_data, log_file)
+    if log_path is None:
+        # Save the episode
+        episode_data = agent.episode_data
+        os.makedirs(log_dir, exist_ok=True)
+        save(episode_data, log_file)
 
     try:
         # Save the result to a new excel file

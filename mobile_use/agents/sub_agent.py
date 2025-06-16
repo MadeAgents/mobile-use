@@ -112,187 +112,142 @@ class Planner(SubAgent):
         return thought, plan, current_subgoal
 
 
-# class Operator(SubAgent):
-#     def __init__(self, num_histories: int = None):
-#         super().__init__()
-#         self.num_histories = num_histories
+class OperatorV2(SubAgent):
+    def __init__(self, num_histories: int = None):
+        super().__init__()
+        self.num_histories = num_histories
 
-#     def get_message(self, episodedata: EpisodeData) -> list:
-#         messages = []
-#         trajectory = episodedata.trajectory
-#         current_step = trajectory[-1]
+    def get_message(self, episodedata: EpisodeData) -> list:
+        messages = []
+        trajectory = episodedata.trajectory
+        current_step = trajectory[-1]
         
-#         pixels = current_step.curr_env_state.pixels.copy()
-#         resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
+        pixels = current_step.curr_env_state.pixels.copy()
+        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
 
-#         # Add system prompt
-#         messages.append({
-#             "role": "system",
-#             "content": [
-#                 {
-#                     "type": "text",
-#                     "text": f"""
-# You are a helpful AI assistant for operating mobile phones. Your goal is to choose the correct actions to complete the user's instruction. Think as if you are a human user operating the phone.
+        # Add system prompt
+        messages.append({
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"""
+You are a helpful AI assistant for operating mobile phones. Your goal is to choose the correct actions to complete the user's instruction. Think as if you are a human user operating the phone.
 
-# # Tools
+# Tools
 
-# You may call one or more functions to assist with the user query.
+You may call one or more functions to assist with the user query.
 
-# You are provided with function signatures within <tools></tools> XML tags:
-# <tools>
-# {{"type": "function", "function": {{"name_for_human": "mobile_use", "name": "mobile_use", "description": "Use a touchscreen to interact with a mobile device, and take screenshots.
-# * This is an interface to a mobile device with touchscreen. You can perform actions like clicking, typing, swiping, etc.
-# * Some applications may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions.
-# * The screen's resolution is {resized_width}x{resized_height}.
-# * Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.", "parameters": {{"properties": {{"action": {{"description": "The action to perform. The available actions are:
-# * `key`: Perform a key event on the mobile device.
-#     - This supports adb's `keyevent` syntax.
-#     - Examples: "volume_up", "volume_down", "power", "camera", "clear".
-# * `click`: Click the point on the screen with coordinate (x, y).
-# * `long_press`: Press the point on the screen with coordinate (x, y) for specified seconds.
-# * `swipe`: Swipe from the starting point with coordinate (x, y) to the end point with coordinates2 (x2, y2).
-# * `type`: Input the specified text into the activated input box.
-# * `system_button`: Press the system button.
-# * `open`: Open an app on the device.
-# * `wait`: Wait specified seconds for the change to happen.
-# * `call_user`: Call user when you need help or need additional information from the user.
-# * `terminate`: Terminate the current task and report its completion status.", "enum": ["key", "click", "long_press", "swipe", "type", "system_button", "open", "wait", "call_user", "terminate"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click`, `action=long_press`, `action=wait`, and `action=swipe`.", "type": "array"}}, "coordinate2": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=swipe`.", "type": "array"}}, "text": {{"description": "Required only by `action=key`, `action=type`, `action=call_user`, and `action=open`.", "type": "string"}}, "time": {{"description": "The seconds to wait. Required only by `action=long_press` and `action=wait`.", "type": "number"}}, "button": {{"description": "Back means returning to the previous interface, Home means returning to the desktop, Menu means opening the application background menu, and Enter means pressing the enter. Required only by `action=system_button`", "enum": ["Back", "Home", "Menu", "Enter"], "type": "string"}}, "status": {{"description": "The status of the task. Required only by `action=terminate`.", "type": "string", "enum": ["success", "failure"]}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
-# </tools>
-# """
-#                 }
-#             ]
-#         })
+You are provided with function signatures within <tools></tools> XML tags:
+<tools>
+{{"type": "function", "function": {{"name_for_human": "mobile_use", "name": "mobile_use", "description": "Use a touchscreen to interact with a mobile device, and take screenshots.
+* This is an interface to a mobile device with touchscreen. You can perform actions like clicking, typing, swiping, etc.
+* The screen's resolution is {resized_width}x{resized_height}.
+* Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.", "parameters": {{"properties": {{"action": {{"description": "The action to perform. The available actions are:
+* `click`: Click the point on the screen with coordinate (x, y). If the screen shows an advertisement or a splash screen, Do not use `click`!!! Use the action `close_adv` instead.
+* `type`: Input the specified text into the activated input box.
+* `close_adv`: Close the advertisement on the screen or skip the splash screen. You need to provide the coordinate of the close or skip button in the `coordinate` field if it can be closed or skipped.
+* `abort`: Abort to require the user attention. It is used when the current screenshot applies for system permission, terms and conditions, asks user performance, or other information that requires user attention.", "enum": ["click", "type", "close_adv", "abort"], "type": "string"}}, "coordinate": {{"description": "(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=click` and `action=close_adv`.", "type": "array"}}, "text": {{"description": "Required only by `action=type`.", "type": "string"}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
+</tools>
+"""
+                }
+            ]
+        })
 
-#         # Add user prompt
-#         prompt = "### User Instruction ###\n"
-#         prompt += f"{episodedata.goal}\n\n"
+        # Add user prompt
+        prompt = "### User Instruction ###\n"
+        prompt += f"{episodedata.goal}\n\n"
 
-#         if hasattr(current_step, "plan") and current_step.plan is not None:
-#             prompt += "### Overall Plan ###\n"
-#             prompt += f"{current_step.plan}\n\n"
 
-#         # if hasattr(current_step, "progress_status") and current_step.progress_status is not None:
-#         #     prompt += "### Progress Status ###\n"
-#         #     prompt += f"{current_step.progress_status}\n\n"
+        # if len(trajectory) > 1 and (self.num_histories is None or self.num_histories > 0):
+        #     prompt += "### Latest History Operations ###\n"
+        #     prompt += "You have done the following operation on the current device:\n"
+        #     start_idx = 0 if self.num_histories is None else max(0, len(trajectory) - 1 - self.num_histories)
+        #     for i in range(start_idx, len(trajectory) - 1):
+        #         prompt += f"Step-{i+1}: Action: {trajectory[i].action_desc}\n"
+        #     prompt += "\n"
 
-#         if hasattr(current_step, "sub_goal") and current_step.sub_goal is not None:
-#             prompt += "### Current Subgoal ###\n"
-#             prompt += f"{current_step.sub_goal}\n\n"
 
-#         prompt += "### Latest History Operations ###\n"
-#         prompt += "You have done the following operation on the current device):\n"
-#         if len(trajectory) > 1 and (self.num_histories is None or self.num_histories > 0):
-#             start_idx = 0 if self.num_histories is None else max(0, len(trajectory) - 1 - self.num_histories)
-#             for i in range(start_idx, len(trajectory) - 1):
-#                 step_list = []
-#                 step_list.append(f"Action: {trajectory[i].action_desc}")
-#                 step_list.append(f"<tool_call> {trajectory[i].action_s} </tool_call>")
-#                 if hasattr(trajectory[i], "summary") and trajectory[i].summary is not None:
-#                     step_list.append(f"Summary: {trajectory[i].summary}")
-#                 # if hasattr(trajectory[i], "reflection_outcome") and trajectory[i].reflection_outcome is not None:
-#                 #     if trajectory[i].reflection_outcome == "A":
-#                 #         step_list.append("Successful")
-#                 #     else:
-#                 #         step_list.append("Failed")
-#                 #         step_list.append(f"Feedback: {trajectory[i].reflection_error}")
-#                 prompt += f"Step-{i+1}: {'; '.join(step_list)}\n"
-#             prompt += "\n"
-#         else:
-#             prompt += "No actions have been taken yet.\n\n"
+        prompt += "### Observation ###\n"
+        prompt += f"This is the current screenshot of the phone. The screen's resolution is {resized_width}x{resized_height}."
+        prompt += f"{IMAGE_PLACEHOLDER}\n\n"
 
-#         if len(trajectory) > 1:
-#             previous_step = trajectory[-2]
-#             if hasattr(previous_step, "progress") and previous_step.progress is not None:
-#                 prompt += "### Progress ###\n"
-#                 prompt += "After completing the history operations, you have the following thoughts about the progress of user\'s instruction completion:\n"
-#                 prompt += f"Completed contents:\n{previous_step.progress}\n\n"
 
-#             if hasattr(previous_step, "memory") and previous_step.memory is not None:
-#                 prompt += "### Memory ###\n"
-#                 prompt += "During the operations, you record the following contents on the screenshot for use in subsequent operations:\n"
-#                 prompt += f"{previous_step.memory}\n\n"
+        prompt += "### Requirements ###\n"
+        prompt += "- If the current screenshot shows an advertisement or a splash screen, you must use the action `close_adv`!!! You also need to provide the coordinate of the close button in the `close_adv` action if it can be closed.\n"
+        prompt += "- Before typing in some text, you need to make sure the keyboard is activated.\n"
+        prompt += "- If it shows an advertisement, you must use the action `close_adv`. Do not click!!!\n"
+        prompt += "- If the screenshot shows any popups, you must use the action `close_adv`. Do not click!!!\n"
+        # prompt += "- If it requests any permissions, you must use the action `wait`. Do not click!!!\n"
+        # prompt += "- If the screenshot shows any terms and conditions, you must use the action `wait`. Do not click!!!\n"
+        # prompt += "- If the screenshot asks user preference or profile, you must use the action `wait`. Do not click!!!\n"
+        prompt += "- If the screenshot shows any other information that you think requires user attention, you must use the action `abort`. Do not click!!!\n"
+        prompt += "\n"
 
-#         if hasattr(current_step, "reflection_outcome") and current_step.reflection_outcome is not None and current_step.reflection_outcome != "A":
-#             prompt += "### Latest operation ###\n"
-#             prompt += f"You previously wanted to perform the operation \"{current_step.action_desc}\" on this page and executed the Action \"{current_step.action_s}\". But you find that this operation does not meet your expectation.\nFeedback:{current_step.reflection_error}\n You need to reflect and revise your operation this time."
-#             prompt += "\n\n"
+        prompt += "### Response Format ###\n"
+        prompt += "You need to output your response in the following format:\n"
+        prompt += "### Thought ###\n"
+        # prompt += "Carefully observe the current screenshot and think about the definition of each action. Then think about whether the task is finished after performing the action. Put your thinking process here in one sentence.\n"
+        prompt += "Carefully observe the current screenshot and think about the definition of each action. Put your thinking process here in one sentence.\n"
+        prompt += "### Action ###\n"
+        prompt += """First, provide a brief description of the chosen action. Then, execute an action in the form of function. For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+Action: ... (Your action description)
+{{"name": <function-name>, "arguments": <args-json-object>}}
+"""
+        prompt += "### Finish Status ###\n"
+        # prompt += "If you think the task is finished after performing the action, put `Finish` here. Otherwise, put `Not Finish` here.\n\n"
+        prompt += "Thought: Think about whether the task is finished after performing the current action. Put your thinking process here in one sentence.\n"
+        prompt += "Result: If you think the task is finished after performing the current action, put `Finish` here. Otherwise, put `Not Finish` here."
 
-#         prompt += "### Observation ###\n"
-#         prompt += f"This is the current screenshot of the phone. The screen's resolution is {resized_width}x{resized_height}."
-#         prompt += f"{IMAGE_PLACEHOLDER}\n\n"
 
-#         prompt += "### Guidance ###\n"
-#         prompt += "Here are some useful guidelines you need to follow:\n"
-#         if len(trajectory) == 1:
-#             prompt += "- The app is opening, you don't need to open it. Wait if it is loading. \n"
-#             prompt += """
-# "- If it shows an advertisement, Use the action wait, do not use the action click!!! If it can be closed, add the coordinate of the close button in wait action: 
-# <tool_call>
-# {{"name": "mobile_use", "arguments": {"action": "wait", "time": 2, "coordinate": [x, y]}}}
-# </tool_call>
-# """
-#         prompt += """- If the task is finished, you should terminate the task in time!
-# - If you stuck in an action, you should try to change the action or the correspoinding parameters. Do not always repeat the same action!
-# - If you want to type in some text, remember to click the input field first.
-# - When there is ad, countdown, or progress bar on the screen, you should wait until the ad, countdown, or progress bar disappears.
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text","text": prompt},
+                {"type": "image_url","image_url": {"url": encode_image_url(pixels)}}
+            ]
+        })
 
-# """
-
-#         prompt += "### Response Requirements ###\n"
-#         prompt += """First, think about the requirements that have been completed in previous operations and the requirements that need to be completed in the next one operation. Put your thinking process in one sentence in `Thought` part.
-# Secend, provide a brief description of the chosen action and the expected outcome in `Action` part.
-# Last, execute an action in the form of function. For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
-
-# ### Format ###
-# Thought: ... (Your thinking process)
-# Action: ... (Your action description)
-# <tool_call>
-# {{"name": <function-name>, "arguments": <args-json-object>}}
-# </tool_call>"""
-
-#         messages.append({
-#             "role": "user",
-#             "content": [
-#                 {"type": "text","text": prompt},
-#                 {"type": "image_url","image_url": {"url": encode_image_url(pixels)}}
-#             ]
-#         })
-
-#         return messages
+        return messages
     
-#     def parse_response(self, content: str, size: tuple[float, float], raw_size: tuple[float, float]):
-#         thought = re.search(r"Thought:(.*?)(?=\n|Action:|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
-#         if thought:
-#             thought_s = thought.group(1).strip()
-#         else:
-#             thought_s = None
-#         action_desc = re.search(r"Action:(.*?)(?=\n|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
-#         if action_desc:
-#             action_desc_s = action_desc.group(1).strip()
-#         else:
-#             action_desc_s = None
-#         action = re.search(r'{"name": "mobile_use",(.*?)}}', content, flags=re.DOTALL)
-#         if not action:
-#             raise Exception("Cannot extract action in the content.")
-#         action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
-#         action = json.loads(action_s)
-#         name = action['arguments']['action']
-#         if name not in ACTION_SPACE:
-#             raise Exception(f"Action {name} is not in the action space.")
-#         action['arguments'].pop('action')
-#         params = action['arguments']
+    def parse_response(self, content: str, size: tuple[float, float], raw_size: tuple[float, float]):
+        thought_s = content.split("### Thought ###")[-1].split("### Action ###")[0].replace("\n", " ").replace("  ", " ").strip()
+        finish_status = content.split("### Finish Status ###")
+        if len(finish_status) > 1:
+            finish_status = finish_status[-1].strip()
+            finish_thought = finish_status.split("Thought:")[-1].split("Result:")[0].strip()
+            finish_result = finish_status.split("Result:")[-1].strip()
+        else:
+            finish_status = None
+            finish_thought = None
+            finish_result = None
+        full_action = content.split("### Action ###")[-1].split("### Finish Status ###")[0].strip()
+        action_desc = re.search(r"Action:(.*?)(?=\n|<tool_call>|\{\"name\": \"mobile_use\",)", full_action, flags=re.DOTALL)
+        if action_desc:
+            action_desc_s = action_desc.group(1).strip()
+        else:
+            action_desc_s = None
+        action = re.search(r'{"name": "mobile_use",(.*?)}}', content, flags=re.DOTALL)
+        if not action:
+            raise Exception("Cannot extract action in the content.")
+        action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
+        action = json.loads(action_s)
+        name = action['arguments']['action']
+        action['arguments'].pop('action')
+        params = action['arguments']
 
-#         for k, v in params.items():
-#             if k in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point']:
-#                 try:
-#                     x = round(v[0] / size[0] * raw_size[0])
-#                     y = round(v[1] / size[1] * raw_size[1])
-#                     params[k] = (x, y)
-#                 except:
-#                     pass
-#         action_a = Action(name=name, parameters=params)
+        for k, v in params.items():
+            if k in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point']:
+                try:
+                    x = round(v[0] / size[0] * raw_size[0])
+                    y = round(v[1] / size[1] * raw_size[1])
+                    params[k] = (x, y)
+                except:
+                    pass
+        action_a = Action(name=name, parameters=params)
 
-#         return thought_s, action_a, action_s, action_desc_s
+        return thought_s, action_a, action_s, action_desc_s, finish_thought, finish_result
+
 
 
 class Operator(SubAgent):

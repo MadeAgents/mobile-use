@@ -7,7 +7,10 @@ import argparse
 from sklearn.metrics import confusion_matrix
 
 def process_action_type(action_type: str):
-    return action_type.lower().strip()
+    action_type = action_type.lower().strip()
+    if action_type == 'close_adv':
+        action_type = 'wait'
+    return action_type
 
 def process_bboxes(bboxs_str: str):
     if pd.isna(bboxs_str) or bboxs_str == '':
@@ -54,7 +57,7 @@ def process_pred_action2(action2):
     else:
         raise ValueError(f"Unknown action2 type: {action2}")
 
-def is_in_box(bboxs: List[List], coordinate):
+def is_in_box(bboxs: List[List], coordinate, is_wait=False):
     if coordinate is None:
         return False
     if len(coordinate) == 4:
@@ -66,6 +69,11 @@ def is_in_box(bboxs: List[List], coordinate):
         raise ValueError(f"Invalid coordinate format: {coordinate}")
     for bbox in bboxs:
         x1, y1, x2, y2 = bbox
+        if is_wait:
+            x1 -= (x2 - x1)*0.1
+            y1 -= (y2 - y1)*0.1
+            x2 += (x2 - x1)*0.1
+            y2 += (y2 - y1)*0.1
         if x1 <= x <= x2 and y1 <= y <= y2:
             return True
     return False
@@ -108,8 +116,10 @@ type_matches = gt_types == pred_types
 
 coordinate_matches = [True] * len(gt_bbox1s)
 for i in range(len(gt_bbox1s)):
-    if gt_types[i] in ['click', 'wait'] and gt_bbox1s[i] is not None:
-        coordinate_matches[i] = is_in_box(gt_bbox1s[i], pred_coordinate1s[i])
+    if gt_types[i] == 'click':
+        coordinate_matches[i] = is_in_box(gt_bbox1s[i], pred_coordinate1s[i], is_wait=False)
+    elif gt_types[i] == 'wait' and gt_bbox1s[i] is not None:
+        coordinate_matches[i] = is_in_box(gt_bbox1s[i], pred_coordinate1s[i], is_wait=True)
 coordinate_matches = np.array(coordinate_matches)
 
 text_matches = [True] * len(gt_text1s)
@@ -159,10 +169,16 @@ results = step_results['type']
 print(f"Action Type: type, Type Match: {results['type_match']}, Text Match: {results['text_match']}, Accuracy: {results['text_match'] / results['type_match']:.2%}")
 # for i in range(len(gt_types)):
 #     if gt_types[i] == 'type' and type_matches[i] and not text_matches[i]:
-#         print(f"Row {i}: GT Text: {gt_text1s[i]}, Pred Text: {pred_text1s[i]}")
+#         print(f"GT Text: {gt_text1s[i]}, Pred Text: {pred_text1s[i]}")
 
 results = step_results['wait']
 print(f"Action Type: wait, Wait Grounding Type Match: {results['wait_grounding_type_match']}, Wait Grounding Coordinate Match: {results['wait_grounding_coordinate_match']}, Accuracy: {results['wait_grounding_coordinate_match'] / results['wait_grounding_type_match']:.2%}")
+
+print()
+print(f"Total Steps: {len(gt_types)}, Type Match: {sum(type_matches)}, Type Match Rate: {sum(type_matches) / len(gt_types):.2%}")
+print(f"Total Steps: {len(gt_types)}, Action Match: {sum(action_matches)}, Action Match Rate: {sum(action_matches) / len(gt_types):.2%}")
+print(f"Total Steps: {len(gt_types)}, Step Match: {sum(step_matches)}, Step Match Rate: {sum(step_matches) / len(gt_types):.2%}")
+print(f"Total Steps (without wait/abort): {step_results['click']['total'] + step_results['type']['total']}, Step Match (without wait/abort): {step_results['click']['step_match'] + step_results['type']['step_match']}, Step Match Rate (without wait/abort): {(step_results['click']['step_match'] + step_results['type']['step_match']) / (step_results['click']['total'] + step_results['type']['total']):.2%}")
 
 print()
 
