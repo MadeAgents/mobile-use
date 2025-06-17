@@ -2,16 +2,17 @@ import os
 import base64
 import time
 import logging
+import traceback
 import adbutils
-from .scheme import Action, EnvState
+
 from mobile_use.utils import contains_chinese
+from .scheme import Action, EnvState
 from .adb_utils import launch_app
 
 logger = logging.getLogger(__name__)
 
 
 class Environment:
-
     def __init__(
             self,
             serial_no: str=None,
@@ -47,15 +48,15 @@ class Environment:
             # 多个屏幕需要指定ID
             pixels = self._d.screenshot(display_id=-1, error_ok=False)
         except Exception as e:
-            logger.error(f"Failed to get screenshot: {e}.")
-            raise(e)
+            logger.error(f"Failed to get screenshot: {traceback.format_exc()}.")
+            raise ValueError("Get screenshot error") from e
         package = self._d.app_current().package
         state = EnvState(pixels=pixels, package=package)
         return state
-    
+
     def get_time(self) -> str:
         re = self._d.shell('date')
-        time.sleep(2)
+        time.sleep(self.wait_after_action_seconds)
         return re
 
     def execute_action(self, action: Action):
@@ -81,7 +82,7 @@ class Environment:
                 x, y = action.parameters['start_box']
             else:
                 x, y = action.parameters['point']
-            duration = action.parameters.get('time', 2.0)
+            duration = action.parameters.get('time', 2.0)   # magic number
             self._d.swipe(x, y, x, y, duration=duration)
         elif action.name == 'type':
             if 'content' in action.parameters:

@@ -4,12 +4,12 @@ import time
 import json
 import pprint
 import logging
-import gradio as gr
-
-from dataclasses import asdict
-from dotenv import load_dotenv
-from gradio import ChatMessage
 from typing import Dict, Any
+from dataclasses import asdict
+
+import gradio as gr
+from gradio import ChatMessage
+from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 from mobile_use.logger import setup_logger
 from mobile_use.scheme import AgentState
@@ -161,7 +161,6 @@ def get_button_state(i_run: bool=None, i_stop: bool=None, i_clear: bool=None, st
     return buttons
 
 
-
 def run_agent(request: gr.Request, input_content, messages, image, *args):
     session_id = request.session_hash
     logger.info(f"instruction: {input_content}")
@@ -219,8 +218,8 @@ def run_agent(request: gr.Request, input_content, messages, image, *args):
     for msg in messages:
         try:
             msg = asdict(msg)
-        except:
-            pass      
+        except Exception:
+            pass
         if isinstance(msg, dict):
             messages_dict.append(msg)
         else:
@@ -435,7 +434,7 @@ def build_agent_ui_demo():
 
         # register listeners
         btn_list = [run_button, stop_button, clear_btn]
-    
+
         run_button.click(
             fn=run_agent,
             inputs=[textbox, chatbot, image_view] + PARAMS_COMPONENT,

@@ -157,8 +157,8 @@ def parse_args():
     group.add_argument("--output_excel", type=str, default="output.xlsx")
     group.add_argument("--total_num", type=int, default=138)
     group.add_argument("--judge_model", type=str, default="gpt-4o")
-    group.add_argument("--api_base", type=str, default="https://andesgpt-gateway-cn.heytapmobi.com/converter/openai/v1")
-    group.add_argument("--api_key", type=str, default="DataPro/5eb27606ab01440e968401bdf19311a6")
+    group.add_argument("--api_base", type=str)
+    group.add_argument("--api_key", type=str)
     args = parser.parse_args()
     return args
 
