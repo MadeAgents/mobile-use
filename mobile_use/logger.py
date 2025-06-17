@@ -64,7 +64,7 @@ class ColoredFormatter(logging.Formatter):
 def setup_logger(name: str=None, level: str='INFO', file_handler: Dict=None, callbacks: Union[Callable[[Any], Any], List[Callable[[Any], Any]]]=None):
     logger = logging.getLogger(name)
     logger.handlers.clear()
-    if level == 'OFF' or level == False:
+    if level == 'OFF' or level is False:
         return
     level = level.upper()
     logger.setLevel(level=level)

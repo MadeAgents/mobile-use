@@ -2,13 +2,15 @@ import logging
 import math
 import base64
 from io import BytesIO
-from PIL import Image
 from typing import Tuple, Union, List
+
+from PIL import Image
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 
 logger = logging.getLogger(__name__)
 
+IMAGE_PLACEHOLDER = '<|vision_start|><|image_pad|><|vision_end|>'
 
 def encode_image_url(image: Image.Image, resize: Union[Tuple, List]=None) -> str:
     """Encode an image to base64 string.
@@ -53,8 +55,6 @@ def smart_resize(
         w_bar = math.ceil(width * beta / factor) * factor
     return h_bar, w_bar
 
-IMAGE_PLACEHOLDER = '<|vision_start|><|image_pad|><|vision_end|>'
-
 def remove_img_placeholder(messages, num_latest_screenshot=None):
     # find all image content
     img_contents = []
@@ -65,7 +65,7 @@ def remove_img_placeholder(messages, num_latest_screenshot=None):
     start_idx = 0
     if num_latest_screenshot is not None:
         start_idx = max(0, len(img_contents) - num_latest_screenshot)
-    
+
     img_idx = 0
     new_msgs = []
     for msg in messages:

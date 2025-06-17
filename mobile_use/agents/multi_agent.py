@@ -105,7 +105,7 @@ def recover_tips(log_dir: str):
 @Agent.register('MultiAgent')
 class MultiAgent(Agent):
     def __init__(
-            self, 
+            self,
             env: Environment,
             vlm: VLMWrapper,
             max_steps: int=10,

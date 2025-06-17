@@ -1,8 +1,9 @@
-from PIL import Image
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+
+from PIL import Image
 
 from .action import ACTION_SPACE
 
@@ -33,7 +34,7 @@ class Action:
         name: The action type name.
         parameters: The parameters of the action.
     """
-    
+
     name: str
     parameters: Optional[dict[str, Any]] = None
 

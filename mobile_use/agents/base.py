@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from pyregister import Registrable
 from typing import Iterator, List
 
+from pyregister import Registrable
 from mobile_use.scheme import StepData, AgentState, EpisodeData
 from mobile_use.environ import Environment
 from mobile_use.vlm import VLMWrapper
