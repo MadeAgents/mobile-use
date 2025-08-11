@@ -25,3 +25,4 @@ poetry.lock
 **/proto
 **/.eggs
 *.log
+.venv
