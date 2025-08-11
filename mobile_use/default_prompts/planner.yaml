@@ -1,7 +1,9 @@
 name: planner
 
+
 system_prompt: |-
   # You are a helpful AI assistant for operating mobile phones. Your goal is to track progress and devise high-level plans to achieve the user's requests. Think as if you are a human user operating the phone.
+
 
 task_prompt: |-
   ### User Instruction ###
@@ -10,6 +12,7 @@ task_prompt: |-
   ### Current Screenshot ###
   {screen_shot}
   The image is a screenshot showing the current state of the phone. Its width and height are {resized_width} and {resized_height} pixels, respectively.
+
 
 init_plan: |-
   Think step by step and make an high-level plan to achieve the user's instruction. If the request is complex, break it down into subgoals. 
@@ -28,6 +31,7 @@ init_plan: |-
 
   ### Current Subgoal ###
   The first subgoal you should work on.
+
 
 continue_plan: |-
   ### Current Plan ###

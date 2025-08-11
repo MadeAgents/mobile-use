@@ -33,6 +33,7 @@ class PlannerPrompt(Prompt):
     init_plan: str = ""
     continue_plan: str = ""
 
+
 if __name__ == "__main__":
     prompt = load_prompt("planner")
     print(prompt)
