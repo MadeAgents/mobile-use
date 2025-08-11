@@ -8,7 +8,6 @@ from typing import Optional
 import adbutils
 from mobile_use.schema.schema import Action, EnvState
 from mobile_use.utils.utils import contains_chinese
-from mobile_use.environment.adb_utils import launch_app
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ class Environment:
         self._action_space =  ['open', 'open_app', 'click', 'long_press', 'type', 'key',
                 'scroll', 'swipe', 'press_home', 'press_back', 'wait',
                 'time', 'answer', 'system_button', 'clear_text', 'take_note']
+        self._register_function = {}
 
         self._d = self._setup_device(serial_no, host, port)
         self.window_size = self._d.window_size(landscape=False)
@@ -55,9 +55,21 @@ class Environment:
         state = EnvState(pixels=pixels, package=package)
         return state
 
+
     @property
     def action_space(self):
         return self._action_space
+
+
+    def register_action(self, action_name: str, action_func):
+        if action_name in self.action_space:
+            raise ValueError(f"Action {action_name} is already registered.")
+        if not callable(action_func):
+            raise ValueError(f"Action function for {action_name} must be callable.")
+
+        self._action_space.append(action_name)
+        self._register_function[action_name] = action_func
+
 
     def execute_action(self, action: Action) -> Optional[str]:
         answer = None
@@ -69,10 +81,6 @@ class Environment:
             case 'open_app':
                 package_name = action.parameters['package_name']
                 self._d.app_start(package_name)
-
-            case 'open':
-                text = action.parameters['text']
-                launch_app(text, self._d)
 
             case 'click':
                 x, y = action.parameters['coordinate']
@@ -159,7 +167,10 @@ class Environment:
             case 'take_note':
                 note = action.parameters['text']
                 return note
+            case _ if action.name in self.register_function:
+                answer = self._register_function[action.name](**action.parameters)
             case _:
                 raise ValueError(f"Unknown action: {action.name}")
+
         time.sleep(self.wait_after_action_seconds)
         return str(answer)
