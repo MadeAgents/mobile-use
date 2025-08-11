@@ -4,12 +4,20 @@ from pathlib import Path
 
 import yaml
 
-def load_prompt(prompt_type = Literal["planner", "operator"], prompt_config: str=None) -> Optional["Prompt"]:
+def load_prompt(prompt_type = Literal["planner", "operator", "reflector", "trajectory_reflector", "global_reflector", "progressor"], prompt_config: str=None) -> Optional["Prompt"]:
     match prompt_type:
         case "planner":
             return PlannerPrompt(config=prompt_config) if prompt_config else PlannerPrompt()
         case "operator":
             return OperatorPrompt(config=prompt_config) if prompt_config else OperatorPrompt()
+        case "reflector":
+            return ReflectorPrompt(config=prompt_config) if prompt_config else ReflectorPrompt()
+        case "trajectory_reflector":
+            return TrajectoryReflectorPrompt(config=prompt_config) if prompt_config else TrajectoryReflectorPrompt()
+        case "global_reflector":
+            return GlobalReflectorPrompt(config=prompt_config) if prompt_config else GlobalReflectorPrompt()
+        case "progressor":
+            return ProgressorPrompt(config=prompt_config) if prompt_config else ProgressorPrompt()
         case _:
             raise KeyError(f"Unknown prompt type: {prompt_type}")
 
@@ -55,12 +63,66 @@ class OperatorPrompt(Prompt):
     response_prompt: str = ""
 
 
+@dataclass
+class ReflectorPrompt(Prompt):
+    config: str = "reflector.yaml"
+    system_prompt: str = ""
+    task_prompt: str = ""
+    subgoal_prompt: str = ""
+    observation_prompt: str = ""
+    diff_image_prompt: str = ""
+    expection_prompt: str = ""
+    response_prompt: str = ""
+
+
+@dataclass
+class TrajectoryReflectorPrompt(Prompt):
+    config: str = "trajectory_reflector.yaml"
+    system_prompt: str = ""
+    task_prompt: str = ""
+    plan_prompt: str = ""
+    history_prompt: str = ""
+    progress_prompt: str = ""
+    observation_prompt: str = ""
+    error_info_prompt: str = ""
+    response_prompt: str = ""
+
+
+@dataclass
+class GlobalReflectorPrompt(Prompt):
+    config: str = "global_reflector.yaml"
+    system_prompt: str = ""
+    task_prompt: str = ""
+    plan_prompt: str = ""
+    history_prompt: str = ""
+    observation_prompt: str = ""
+    response_prompt: str = ""
+
+
+@dataclass
+class ProgressorPrompt(Prompt):
+    config: str = "progressor.yaml"
+    system_prompt: str = ""
+    init_progress: str = ""
+    continue_progress_start: str = ""
+    continue_progress_reflection: str = ""
+    continue_progress_response: str = ""
+
+
 if __name__ == "__main__":
-    # prompt = load_prompt("planner")
+    prompt = load_prompt("planner")
     # print(prompt)
-    # print(prompt.system_prompt)
-    # print(prompt.task_prompt)
+    print(prompt.system_prompt)
+    print(prompt.task_prompt)
     # print(prompt.init_plan)
     # print(prompt.continue_plan)
-    prompt = load_prompt("operator")
-    print(prompt)
+    # prompt = load_prompt("operator")
+    # print(prompt)
+    # prompt = load_prompt("reflector")
+    # print(prompt)
+    # prompt = load_prompt("trajectory_reflector")
+    # print(prompt)
+    # prompt = load_prompt("global_reflector")
+    # print(prompt)
+    # prompt = load_prompt("progressor")
+    # print(prompt)

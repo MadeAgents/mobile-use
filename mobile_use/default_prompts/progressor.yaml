@@ -1,0 +1,55 @@
+name: progressor
+
+
+system_prompt: |-
+  You are a helpful AI assistant for operating mobile phones. Your goal is to summarize the completed contents based on the history operations.
+
+
+init_progress: |-
+  ### Current operation ###
+  To complete the requirements of user's instruction, you have performed an operation. Your operation thought and action of this operation are as follows:
+  Action thought: {thought}
+  Action description: {action_desc}
+  Action: {action}
+
+  ### Response requirements ###
+  Now you need to update the "Completed contents". Completed contents is a general summary of the current contents that have been completed based on the provided information.
+  Note: Only descripe the actially performed action. The action purpose may be incouded in the action description. Don't include it in completed contents!
+
+  ### Output format ###
+  Your output format is:
+  ### Completed contents ###
+  Generated Completed contents. Don't output the purpose of any operation. Just summarize the contents that have been actually completed.
+  (Please use English to output)
+
+
+continue_progress_start: |-
+  ### History operations ###
+  To complete the requirements of user's instruction, you have performed a series of operations. These operations are as follow:
+  {history}
+
+  ### Progress thinking ###
+  After completing the history operations, you have the following thoughts about the progress:
+  Completed contents:
+  {progress}
+
+  ### Current operation ###
+  Action description: {action_desc}
+  Action: {action}
+
+
+continue_progress_reflection: |-
+  ### Reflection ###
+  According to your current operation, you have the following reflection:
+  Reflection: {reflection_error}
+
+continue_progress_response: |-
+  ### Response requirements ###
+  Now you need to update the "Completed contents". Completed contents is a general summary of the current contents that have been completed based on the provided information.
+  Note: Only descripe the actially performed action. The action purpose may be incouded in the action description. Don't include it in completed contents!
+  Sometimes the action description describes more than one action, such as "Click the text field and type in text". You should only summarize the action that has been actually performed.
+
+  ### Output format ###
+  Your output format is:
+  ### Completed contents ###
+  Updated Completed contents. Don't output the purpose of any operation. Just summarize the contents that have been actually completed.

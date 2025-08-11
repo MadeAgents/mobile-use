@@ -75,7 +75,7 @@ history_prompt: |-
 progress_prompt: |-
   ### Progress ###
   After completing the history operations, you have the following thoughts about the progress of user's instruction completion:
-  Completed contents:\n
+  Completed contents:
   {progress}
 
 
@@ -92,7 +92,7 @@ reflection_prompt: |-
   If you think it is reasonable, you need to reflect and revise your operation this time. If you think the reflector is not correct, you can ignore the feedback.
 
 
-long_reflection_prompt: |-
+trajectory_reflection_prompt: |-
   ### Reflection ###
   According to your history operations, you have the following reflection:
   Reflection: {long_reflection_error}
