@@ -5,9 +5,7 @@ from datetime import datetime
 
 from PIL import Image
 
-from .action import ACTION_SPACE
 
-############ Environment ############
 @dataclass(frozen=True)
 class EnvState:
     """State of the environment.
@@ -21,7 +19,6 @@ class EnvState:
     package: str
 
 
-############ Action ############
 @dataclass()
 class Action:
     """A structrued representation of an action.
@@ -43,14 +40,6 @@ class Action:
 
     def _validate(self):
         pass
-        # assert self.name in ACTION_SPACE, f"Invalid action name: {self.name}"
-        # action_space = ACTION_SPACE[self.name]
-        # if "parameters" in action_space:
-        #     assert self.parameters is not None, f"Missing parameters: {action_space['parameters']}"
-        #     for k, v in action_space['parameters'].items():
-        #         assert k in self.parameters, f"Missing parameter: {k}"
-        #     for k, v in self.parameters.items():
-        #         assert k in action_space['parameters'], f"Invalid parameter: {k}"
 
     def __repr__(self) -> str:
         kv = []
@@ -65,7 +54,6 @@ class Action:
         return self.__repr__()
 
 
-############ Agent ############
 class AgentState(Enum):
     READY = 'READY'
     RUNNING = 'RUNNING'
@@ -75,10 +63,12 @@ class AgentStatus(Enum):
     FINISHED = 'FINISHED'
     FAILED = 'FAILED'
 
+
 @dataclass
 class VLMCallingData:
     messages: List[Dict[str,Any]]
     response: str
+
 
 @dataclass
 class StepData:
@@ -107,6 +97,7 @@ class StepData:
     action_type_logprobs: Optional[List[float]] = None
     step_duration: Optional[float] = None
     exec_duration: Optional[float] = None
+
 
 @dataclass
 class EpisodeData:
