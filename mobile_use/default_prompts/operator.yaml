@@ -31,7 +31,6 @@ system_prompt: |-
   </tools>
 
 
-
 init_tips: |-
   - Click the correct text field before typing!
   - If the task is finished, you should terminate the task in time!
@@ -47,3 +46,81 @@ init_tips: |-
   - Before type in text, remember to first click the correct text field.
   - Always use the action `clear_text` to clear the text in the text field.
 
+
+task_prompt: |-
+  ### User Instruction ###
+  {task_description}
+
+
+device_time_prompt: |-
+  ### Current Time ###
+  {device_time}
+
+
+plan_prompt: |-
+  ### Overall Plan ###
+  {plan}
+
+
+subgoal_prompt: |-
+  ### Current Subgoal ###
+  {subgoal}
+
+
+history_prompt: |-
+  ### Latest History Operations ###
+  You have done the following operation on the current device):
+
+
+progress_prompt: |-
+  ### Progress ###
+  After completing the history operations, you have the following thoughts about the progress of user's instruction completion:
+  Completed contents:\n
+  {progress}
+
+
+memory_prompt: |-
+  ### Memory ###
+  During the operations, you record the following contents on the screenshot for use in subsequent operations:
+  {memory}
+
+
+reflection_prompt: |-
+  ### Latest operation ###
+  You previously wanted to perform the operation "{action_desc}" on this page and executed the Action "{action_s}". But the reflector find that this operation may not meet your expectation.
+  Feedback: {reflection_error}
+  If you think it is reasonable, you need to reflect and revise your operation this time. If you think the reflector is not correct, you can ignore the feedback.
+
+
+long_reflection_prompt: |-
+  ### Reflection ###
+  According to your history operations, you have the following reflection:
+  Reflection: {long_reflection_error}
+  If you think the reflection is reasonable, you need to reflect, reschedule, and revise your operation this time. Try to avoid the same mistake.
+
+
+global_reflection_prompt: |-
+  ### Evaluation Result ###
+  In the last step, you think the task is finished. However, the evaluator find that the task is not finished. This is the evaluation result:
+  Evaluation: {global_reflection_error}
+  If you think the evaluation is reasonable, perform more actions to finish the task. Otherwise, you can terminate the task.
+
+
+observation_prompt: |-
+  ### Observation ###
+  This is the current screenshot of the phone. The screen's resolution is {resized_width}x{resized_height}.
+  {image_placeholder}
+
+
+response_prompt: |-
+  Response Requirements ###
+  First, think about the requirements that have been completed in previous operations and the requirements that need to be completed in the next one operation. Put your thinking process in one sentence in `Thought` part.
+  Secend, provide a brief description of the chosen action in `Action` part. Only describe the current ONE action. Don't describe the future ones or the whole plan.
+  Last, execute an action in the form of function. For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+
+  ### Format ###
+  Thought: ... (Your thinking process)
+  Action: ... (Your action description)
+  <tool_call>
+  {{"name": <function-name>, "arguments": <args-json-object>}}
+  </tool_call>
