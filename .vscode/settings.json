@@ -1,9 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "./third_party/android_env",
-        "./third_party/android_world",
-		"./third_party/Android-Lab"
-    ],
-    "python.analysis.autoSearchPaths": true,
-    "python.analysis.useLibraryCodeForTypes": true
-}

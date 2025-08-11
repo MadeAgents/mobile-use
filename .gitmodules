@@ -4,6 +4,6 @@
 [submodule "third_party/android_env"]
 	path = third_party/android_env
 	url = https://github.com/google-deepmind/android_env.git
-[submodule "third_party/Android-Lab"]
-	path = third_party/Android-Lab
+[submodule "third_party/android_lab"]
+	path = third_party/android_lab
 	url = https://github.com/THUDM/Android-Lab.git
