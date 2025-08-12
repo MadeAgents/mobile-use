@@ -22,6 +22,13 @@ history_prompt: |-
   {history}
 
 
+progress_prompt: |-
+  ### Progress ###
+  After completing the history operations, you have the following thoughts about the progress of user's instruction completion:
+  Completed contents:
+  {progress}
+
+
 observation_prompt: |-
   ### Latest Screenshots ###
   This is the latest screenshots when you are performing operations to complete user's instruction. The width and height are {resized_width} and {resized_height} pixels, respectively.

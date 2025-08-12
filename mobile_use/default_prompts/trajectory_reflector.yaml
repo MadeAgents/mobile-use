@@ -31,7 +31,7 @@ progress_prompt: |-
 
 observation_prompt: |-
   ### Latest Screenshots
-  This is the latest screenshots when you are performing operations to complete user\'s instruction. The width and height are {resized_width} and {resized_height} pixels, respectively.
+  This is the latest screenshots when you are performing operations to complete user's instruction. The width and height are {resized_width} and {resized_height} pixels, respectively.
   {image_placeholders}
 
 
@@ -46,9 +46,9 @@ response_prompt: |-
   Provide your output in the following format containing three parts:
 
   ### Outcome ###
-  Choose from the following options. Give your answer as \"A\" or \"B\":
+  Choose from the following options. Give your answer as "A" or "B":
   A: Successful or Partially Successful. The latest history operations meets the expectation. Or although there is something wrong, it has been corrected.
   B: Failed. The latest history operations are on the wrong path.  It may result in a wrong page, or produce no changes, or being meaninglessly repeating.
 
   ### Error Description ###
-  If the actions failed, provide a detailed description of the error and the potential reason causing the failure. If the action succeeded, put \"None\" here.
+  If the actions failed, provide a detailed description of the error and the potential reason causing the failure. If the action succeeded, put "None" here.

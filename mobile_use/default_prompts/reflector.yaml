@@ -16,8 +16,8 @@ subgoal_prompt: |-
 
 observation_prompt: |-
   ---
-  Screenshot before latest action: {IMAGE_PLACEHOLDER}
-  Screenshot after latest action: {IMAGE_PLACEHOLDER}
+  Screenshot before latest action: {screenshot1}
+  Screenshot after latest action: {screenshot2}
   The two images are two phone screenshots before and after your latest action.
   The width and height are {resized_width} and {resized_height} pixels, respectively.
   
@@ -29,8 +29,8 @@ diff_image_prompt: |-
 expection_prompt: |-
   ---
   ### Latest Action ###
-  Action: {current_step.action_s}
-  Expectation: {current_step.action_desc}
+  Action: {action_s}
+  Expectation: {action_desc}
 
 
 response_prompt: |-
