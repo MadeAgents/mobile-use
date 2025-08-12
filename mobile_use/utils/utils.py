@@ -8,9 +8,9 @@ from PIL import Image
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 
-logger = logging.getLogger(__name__)
+from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 
-IMAGE_PLACEHOLDER = '<|vision_start|><|image_pad|><|vision_end|>'
+logger = logging.getLogger(__name__)
 
 def encode_image_url(image: Image.Image, resize: Union[Tuple, List]=None) -> str:
     """Encode an image to base64 string.
@@ -23,6 +23,40 @@ def encode_image_url(image: Image.Image, resize: Union[Tuple, List]=None) -> str
     base64_url = base64.b64encode(buffered.getvalue()).decode('utf-8')
     return f"data:image/png;base64,{base64_url}"
 
+def generate_message(
+    role: str,
+    prompt: str,
+    images: List[Image.Image] = None,
+) -> List[dict]:
+    """
+    Generate a message with role, prompt and images.
+    """
+    if images is None:
+        return {"role": role, "content": [{"type": "text", "text": prompt}]}
+    else:
+        content = []
+        prompts = prompt.split(IMAGE_PLACEHOLDER)
+        assert len(prompts) - 1 == len(images), "The number of images must be equal to the number of placeholders."
+
+        for i, p in enumerate(prompts):
+            if p:
+                content.append({"type": "text", "text": p})
+            if i < len(prompts) - 1:
+                content.append({"type": "image_url","image_url": {"url": encode_image_url(images[i])}})
+        
+        return {"role": role, "content": content}
+
+def show_message(messages: List[dict], name: str = None):
+    name = f"{name} " if name is not None else ""
+    logger.info(f"==============={name}MESSAGE==============")
+    for message in messages:
+        logger.info(f"ROLE: {message['role']}")
+        for content in message['content']:
+            if content['type'] == 'text':
+                logger.info(f"TEXT: {content['text']}")
+            else:
+                logger.info(f"{content['type']}: SKIP.")
+    logger.info(f"==============={name}MESSAGE END==============")
 
 def contains_chinese(text):
     for char in text:

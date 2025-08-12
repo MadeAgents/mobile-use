@@ -52,7 +52,8 @@ class Environment:
             raise ValueError(f"Get screenshot error, {traceback.format_exc()}") from e
 
         package = self._d.app_current().package
-        state = EnvState(pixels=pixels, package=package)
+        device_time = self._d.shell('date')
+        state = EnvState(pixels=pixels, package=package, device_time=device_time)
         return state
 
 

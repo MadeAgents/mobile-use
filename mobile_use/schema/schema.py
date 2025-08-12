@@ -12,11 +12,13 @@ class EnvState:
 
     Attributes:
         pixels: Screenshot of the current state.
-        auxiliaries: Additional information about the state.
+        package: Current foreground app package name.
+        device_time: Current device time in string format, e.g., "Tue Aug 12 03:04:58 GMT 2025".
     """
 
     pixels: Image.Image
     package: str
+    device_time: Optional[str] = None
 
 
 @dataclass()
