@@ -73,44 +73,53 @@ class VLMCallingData:
 
 
 @dataclass
-class StepData:
+class BaseStepData:
     step_idx: int
     curr_env_state: EnvState
-    content: Optional[str] = None       # VLM response content
-    thought: Optional[str] = None
     action: Optional[Action] = None
-    answer: Optional[str] = None        # The final answer for the task goal
     exec_env_state: Optional[EnvState] = None
-    vlm_call_history: Optional[List[VLMCallingData]] = None
+    vlm_call_history: Optional[List[VLMCallingData]] = field(default_factory=list)
+
+
+@dataclass
+class MobileUseStepData(BaseStepData):
+    # Action related
+    thought: Optional[str] = None
+    action_s: Optional[str] = None
+    action_desc: Optional[str] = None
+    answer: Optional[str] = None
+    summary: Optional[str] = None
+    action_type_tokens: Optional[List[str]] = None
+    action_type_logprobs: Optional[List[float]] = None
+    # Plan related
     plan: Optional[str] = None
     sub_goal: Optional[str] = None
-    action_desc: Optional[str] = None
-    action_s: Optional[str] = None
-    summary: Optional[str] = None
+    # State related
     progress: Optional[str] = None
     memory: Optional[str] = None
+    # Reflection related
     reflection_outcome: Optional[str] = None
     reflection_error: Optional[str] = None
     long_reflection_outcome: Optional[str] = None
     long_reflection_error: Optional[str] = None
     evaluation_result: Optional[str] = None
     evaluation_reason: Optional[str] = None
-    action_type_tokens: Optional[List[str]] = None
-    action_type_logprobs: Optional[List[float]] = None
+    # Time related
     step_duration: Optional[float] = None
     exec_duration: Optional[float] = None
 
 
 @dataclass
-class EpisodeData:
+class BaseEpisodeData:
     goal: str
     num_steps: int
     status: Optional[str] = None
     message: Optional[str] = None
-    trajectory: Optional[List[StepData]] = None
-    create_time: Optional[str] = field(default_factory=lambda: datetime.now().isoformat())
-    input_tips: Optional[str] = None
-    retrieved_tips: Optional[str] = None
-    output_tips: Optional[str] = None
-    finish_count: Optional[int] = 0
+    trajectory: Optional[List[BaseStepData]] = None
+
+
+@dataclass
+class MobileUseEpisodeData(BaseEpisodeData):
+    trajectory: List[MobileUseStepData] = field(default_factory=list)
+    finish_count: int = 0
     memory: Optional[str] = ""

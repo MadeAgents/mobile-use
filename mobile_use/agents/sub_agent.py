@@ -2,44 +2,42 @@ from abc import ABC, abstractmethod
 import re
 import json
 import logging
+from typing import Union, Literal
 
 from mobile_use.default_prompts.prompt_type import *
 from mobile_use.utils.vlm import VLMWrapper
 from mobile_use.schema.schema import *
 from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 from mobile_use.utils.utils import *
+from mobile_use.schema.config import *
 
-__all__ = ['Planner', 'Operator', 'Reflector', 'LongReflector', 'NoteTaker', 'Processor', 'Evaluator', 'TaskSummarizer', 'ExperienceExtractor', 'Evolutor', 'UITARSOperator']
+# __all__ = ['Planner', 'Operator', 'Reflector', 'LongReflector', 'NoteTaker', 'Processor', 'Evaluator', 'TaskSummarizer', 'ExperienceExtractor', 'Evolutor', 'UITARSOperator']
 
-# logger = logging.getLogger(__name__)
-import logging
+logger = logging.getLogger(__name__)
+# import logging
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s')
-logger = logging.getLogger()
-
-# Fix Picture sequence inconsistency problem in vllm0.7.2 
-# If you are using QwenAPI from 'dashscope.aliyuncs.com', replace IMAGE_PLACEHOLDER with ''
-IMAGE_PLACEHOLDER = '<|vision_start|><|image_pad|><|vision_end|>'
+# logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s')
+# logger = logging.getLogger()
 
 ACTION_SPACE = ["key", "click", "left_click", "long_press", "swipe", "scroll", "type", "clear_text", "answer", "system_button", "open", "wait", "terminate", "take_note"]
 
 
-def get_history(trajectory: List[StepData], num_histories=None):
+def get_history(trajectory: List[MobileUseStepData], num_histories=None):
     start_idx = 0 if num_histories is None else max(0, len(trajectory) - num_histories)
     history = []
     for i in range(start_idx, len(trajectory)):
         step_list = []
         step_list.append(f"Action: {trajectory[i].action_desc}")
         step_list.append(f"<tool_call> {trajectory[i].action_s} </tool_call>")
-        if hasattr(trajectory[i], "summary") and trajectory[i].summary is not None:
+        if trajectory[i].summary is not None:
             step_list.append(f"Summary: {trajectory[i].summary}")
-        if hasattr(trajectory[i], "reflection_outcome") and trajectory[i].reflection_outcome is not None:
+        if trajectory[i].reflection_outcome is not None:
             if trajectory[i].reflection_outcome == "A":
                 step_list.append("Successful")
             elif trajectory[i].reflection_outcome in ["B", "C"]:
                 step_list.append("Failed")
                 step_list.append(f"Feedback: {trajectory[i].reflection_error}")
-        elif hasattr(trajectory[i], "long_reflaction_outcome") and trajectory[i].long_reflection_outcome is not None:
+        elif trajectory[i].long_reflection_outcome is not None:
             if trajectory[i].long_reflection_outcome == "A":
                 step_list.append("Successful")
             elif trajectory[i].long_reflection_outcome in ["B"]:
@@ -50,21 +48,13 @@ def get_history(trajectory: List[StepData], num_histories=None):
 
 
 class SubAgent(ABC):
-    def __init__(self, vlm: VLMWrapper):
+    def __init__(self, config: SubAgentConfig):
         super().__init__()
-        self.vlm = vlm
+        self.vlm = VLMWrapper(**config.vlm.model_dump())
 
     @abstractmethod
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         pass
-
-    def predict(self, messages: list, **kwargs):
-        response = self.vlm.predict(messages, **kwargs)
-        return response
-    
-    def get_content(self, response):
-        content = response.choices[0].message.content
-        return content
 
     @abstractmethod
     def parse_response(self, response: str):
@@ -79,7 +69,7 @@ class Planner(SubAgent):
         super().__init__(vlm)
         self.prompt: PlannerPrompt = load_prompt("planner", prompt_config)
 
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
         trajectory = episodedata.trajectory
         current_step = trajectory[-1]
@@ -140,7 +130,7 @@ class Operator(SubAgent):
         self.include_device_time = include_device_time
         self.include_tips = include_tips
 
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
         trajectory = episodedata.trajectory
         current_step = trajectory[-1]
@@ -174,13 +164,13 @@ class Operator(SubAgent):
             )
             prompt_list.append(device_time_prompt)
 
-        if hasattr(current_step, "plan") and current_step.plan is not None:
+        if current_step.plan is not None:
             plan_prompt = self.prompt.plan_prompt(
                 plan = current_step.plan,
             )
             prompt_list.append(plan_prompt)
 
-        if hasattr(current_step, "sub_goal") and current_step.sub_goal is not None:
+        if current_step.sub_goal is not None:
             subgoal_prompt = self.prompt.subgoal_prompt(
                 subgoal = current_step.sub_goal,
             )
@@ -198,19 +188,19 @@ class Operator(SubAgent):
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
-            if hasattr(previous_step, "progress") and previous_step.progress is not None:
+            if previous_step.progress is not None:
                 progress_prompt = self.prompt.progress_prompt.format(
                     progress = previous_step.progress,
                 )
                 prompt_list.append(progress_prompt)
 
-            if hasattr(previous_step, "memory") and previous_step.memory is not None:
+            if previous_step.memory is not None:
                 memory_prompt = self.prompt.memory_prompt.format(
                     memory = previous_step.memory,
                 )
                 prompt_list.append(memory_prompt)
 
-            if hasattr(previous_step, "reflection_outcome") and previous_step.reflection_outcome is not None and previous_step.reflection_outcome in ['B', 'C']:
+            if previous_step.reflection_outcome is not None and previous_step.reflection_outcome in ['B', 'C']:
                 reflection_prompt = self.prompt.reflection_prompt.format(
                     action_desc = previous_step.action_desc,
                     action_s = previous_step.action_s,
@@ -218,13 +208,13 @@ class Operator(SubAgent):
                 )
                 prompt_list.append(reflection_prompt)
 
-            if hasattr(previous_step, "long_reflection_outcome") and previous_step.long_reflection_outcome is not None and previous_step.long_reflection_outcome in ['B']:
+            if previous_step.long_reflection_outcome is not None and previous_step.long_reflection_outcome in ['B']:
                 trajectory_reflection_prompt = self.prompt.trajectory_reflection_prompt.format(
                     trajectory_reflection_error = previous_step.long_reflection_error,
                 )
                 prompt_list.append(trajectory_reflection_prompt)
 
-            if hasattr(previous_step, "evaluation_result") and previous_step.evaluation_result is not None and "Failed" in previous_step.evaluation_result:
+            if previous_step.evaluation_result is not None and "Failed" in previous_step.evaluation_result:
                 global_reflection_prompt = self.prompt.global_reflection_prompt.format(
                     global_reflection_error = previous_step.evaluation_reason,
                 )
@@ -306,7 +296,7 @@ class AnswerAgent(SubAgent):
         self.num_histories = num_histories
         self.include_device_time = include_device_time
 
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
         trajectory = episodedata.trajectory
         current_step = trajectory[-1]
@@ -338,13 +328,13 @@ class AnswerAgent(SubAgent):
             )
             prompt_list.append(device_time_prompt)
 
-        if hasattr(current_step, "plan") and current_step.plan is not None:
+        if current_step.plan is not None:
             plan_prompt = self.prompt.plan_prompt(
                 plan = current_step.plan,
             )
             prompt_list.append(plan_prompt)
 
-        if hasattr(current_step, "sub_goal") and current_step.sub_goal is not None:
+        if current_step.sub_goal is not None:
             subgoal_prompt = self.prompt.subgoal_prompt(
                 subgoal = current_step.sub_goal,
             )
@@ -362,13 +352,13 @@ class AnswerAgent(SubAgent):
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
-            if hasattr(previous_step, "progress") and previous_step.progress is not None:
+            if previous_step.progress is not None:
                 progress_prompt = self.prompt.progress_prompt.format(
                     progress = previous_step.progress,
                 )
                 prompt_list.append(progress_prompt)
 
-            if hasattr(previous_step, "memory") and previous_step.memory is not None:
+            if previous_step.memory is not None:
                 memory_prompt = self.prompt.memory_prompt.format(
                     memory = previous_step.memory,
                 )
@@ -398,7 +388,7 @@ class Reflector(SubAgent):
         self.prompt: ReflectorPrompt = load_prompt("reflector", prompt_config)
         self.valid_options = ['A', 'B', 'C', 'D']
 
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
         trajectory = episodedata.trajectory
         current_step = trajectory[-1]
@@ -470,7 +460,7 @@ class TrajectoryReflector(SubAgent):
         evoke_every_steps: int = 5,  # how often to evoke the reflector
         cold_steps: int = 3,  # how many steps to wait before the last evoke
         detect_error: bool = True,  # whether to detect error patterns in the trajectory
-        num_histories = 'auto',  # how many histories to include in the prompt, 'auto' means use evoke_every_steps
+        num_histories: Union[Literal['auto'], int] = 'auto',  # how many histories to include in the prompt, 'auto' means use evoke_every_steps
         num_latest_screenshots: int = 0,  # how many latest screenshots to include in the prompt
         max_repeat_action: int = 3,  # error detection parameters, how many times an action is repeated will cause an error
         max_repeat_action_series: int = 2,  # error detection parameters, how many times a series of actions is repeated will cause an error
@@ -497,7 +487,7 @@ class TrajectoryReflector(SubAgent):
     
     def detect(
         self, 
-        episodedata: EpisodeData,
+        episodedata: MobileUseEpisodeData,
     ) -> list:
         error = []
         trajectory = episodedata.trajectory
@@ -537,7 +527,7 @@ class TrajectoryReflector(SubAgent):
                 break
 
         # detect fail reflection
-        if hasattr(current_step, "reflection_outcome") and current_step.reflection_outcome is not None:
+        if current_step.reflection_outcome is not None:
             fail_count = 0
             for step in trajectory[::-1]:
                 if step.reflection_outcome in ['B', 'C']:
@@ -551,7 +541,7 @@ class TrajectoryReflector(SubAgent):
         return error
         
 
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         error = []
         if self.detect_error:
             error = self.detect(episodedata)
@@ -588,7 +578,7 @@ class TrajectoryReflector(SubAgent):
         )
         prompt_list.append(task_prompt)
 
-        if hasattr(current_step, "plan") and current_step.plan is not None:
+        if current_step.plan is not None:
             plan_prompt = self.prompt.plan_prompt(
                 plan = current_step.plan,
             )
@@ -596,14 +586,14 @@ class TrajectoryReflector(SubAgent):
         
         history = get_history(trajectory, self.num_histories)
         history = "\n".join(history)
-        if hasattr(current_step, "answer") and current_step.answer is not None:
+        if current_step.answer is not None:
             history += f"\nFinal answer: {current_step.answer}"
         history_prompt = self.prompt.history_prompt(
             history = history,
         )
         prompt_list.append(history_prompt)
             
-        if hasattr(current_step, "progress") and current_step.progress is not None:
+        if current_step.progress is not None:
             progress_prompt = self.prompt.progress_prompt(
                 progress = current_step.progress,
             )
@@ -647,7 +637,7 @@ class GlobalReflector(SubAgent):
         self.prompt: GlobalReflectorPrompt = load_prompt("global_reflector", prompt_config)
         self.num_latest_screenshots = num_latest_screenshots
 
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
         trajectory = episodedata.trajectory
         last_step = trajectory[-1]
@@ -671,7 +661,7 @@ class GlobalReflector(SubAgent):
         )
         prompt_list.append(task_prompt)
 
-        if hasattr(last_step, "plan") and last_step.plan is not None:
+        if last_step.plan is not None:
             plan_prompt = self.prompt.plan_prompt.format(
                 plan = last_step.plan,
             )
@@ -679,7 +669,7 @@ class GlobalReflector(SubAgent):
 
         history = get_history(trajectory)
         history = "\n".join(history)
-        if hasattr(last_step, "answer") and last_step.answer is not None:
+        if last_step.answer is not None:
             history += f"\nFinal answer: {last_step.answer}"
         history_prompt = self.prompt.history_prompt.format(
             history = history,
@@ -719,7 +709,7 @@ class GlobalReflector(SubAgent):
 Gemerate memory
 """
 class NoteTaker(SubAgent):
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
         trajectory = episodedata.trajectory
         current_step = trajectory[-1]
@@ -742,11 +732,11 @@ class NoteTaker(SubAgent):
         prompt = "### User Instruction ###\n"
         prompt += f"{episodedata.goal}\n\n"
 
-        if hasattr(current_step, "plan") and current_step.plan is not None:
+        if current_step.plan is not None:
             prompt += "### Overall Plan ###\n"
             prompt += f"{current_step.plan}\n\n"
 
-        if hasattr(current_step, "sub_goal") and current_step.sub_goal is not None:
+        if current_step.sub_goal is not None:
             prompt += "### Current Subgoal ###\n"
             prompt += f"{current_step.sub_goal}\n\n"
 
@@ -793,7 +783,7 @@ class Progressor(SubAgent):
         super().__init__(vlm)
         self.prompt: ProgressorPrompt = load_prompt("progressor", prompt_config)
 
-    def get_message(self, episodedata: EpisodeData) -> list:
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
         trajectory = episodedata.trajectory
         current_step = trajectory[-1]
@@ -822,7 +812,7 @@ class Progressor(SubAgent):
             )
             prompt_list.append(continue_progress_start)
 
-            if hasattr(current_step, "reflection_outcome") and current_step.reflection_outcome is not None:
+            if current_step.reflection_outcome is not None:
                 if current_step.reflection_outcome in ['B', 'C']:
                     continue_progress_reflection = self.prompt.continue_progress_reflection.format(
                         reflection_error = current_step.reflection_error,
@@ -860,8 +850,8 @@ if __name__ == "__main__":
         base_url='http://hammer-llm.oppo.test/v1'
     )
     pixels = Image.open(r"/home/notebook/data/personal/S9057346/tmp/mobile-use/benchmark/android_world/ref_image.png")
-    step_data = StepData(step_idx=0, curr_env_state=EnvState(pixels=pixels, package=""))
-    episodedata = EpisodeData(goal="Open Wifi", num_steps=0, trajectory=[step_data])
+    step_data = MobileUseStepData(step_idx=0, curr_env_state=EnvState(pixels=pixels, package=""))
+    episodedata = MobileUseEpisodeData(goal="Open Wifi", num_steps=0, trajectory=[step_data])
     sub_agent = Planner(vlm)
     messages = sub_agent.get_message(episodedata)
     show_message(messages)
