@@ -25,9 +25,9 @@ class Environment:
         self.serial_no = serial_no
         self.wait_after_action_seconds = wait_after_action_seconds
 
-        self._action_space =  ['open', 'open_app', 'click', 'long_press', 'type', 'key',
-                'scroll', 'swipe', 'press_home', 'press_back', 'wait',
-                'time', 'answer', 'system_button', 'clear_text', 'take_note']
+        self._action_space =  ['open', 'click', 'long_press', 'type', 'key',
+                'swipe', 'press_home', 'press_back', 'wait',
+                'answer', 'system_button', 'clear_text', 'take_note']
         self._register_function = {}
 
         self._d = self._setup_device(serial_no, host, port)
@@ -74,102 +74,88 @@ class Environment:
 
 
     def execute_action(self, action: Action) -> Optional[str]:
-        answer = None
+        result = None
 
-        if action.name not in self.action_space:
-            raise ValueError(f"Action {action.name} is not in the action space.")
+        if action.name in self._register_function:
+            result = self._register_function[action.name](**action.parameters)
+        else:
+            match action.name:
+                case 'open':
+                    package_name = action.parameters['package_name']
+                    self._d.app_start(package_name)
 
-        match action.name:
-            case 'open_app':
-                package_name = action.parameters['package_name']
-                self._d.app_start(package_name)
+                case 'click':
+                    x, y = action.parameters['coordinate']
+                    self._d.click(x, y)
 
-            case 'click':
-                x, y = action.parameters['coordinate']
-                self._d.click(x, y)
+                case 'long_press':
+                    x, y = action.parameters['coordinate']
+                    duration = action.parameters.get('time', 2.0)
+                    self._d.swipe(x, y, x, y, duration=duration)
 
-            case 'long_press':
-                x, y = action.parameters['coordinate']
-                duration = action.parameters.get('time', 2.0)
-                self._d.swipe(x, y, x, y, duration=duration)
+                case 'type':
+                    text = action.parameters['text']
 
-            case 'type':
-                text = action.parameters['text']
+                    if contains_non_ascii(text):
+                        logger.info("Using ADB keyboard to input non-ASCII text.")
+                        charsb64 = str(base64.b64encode(text.encode('utf-8')))[1:]
+                        self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
+                        self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
+                        os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_INPUT_B64 --es msg %s" %charsb64)
+                        self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
+                    else:
+                        self._d.shell(["input", "text", text])
 
-                if contains_non_ascii(text):
-                    logger.info("Using ADB keyboard to input non-ASCII text.")
-                    charsb64 = str(base64.b64encode(text.encode('utf-8')))[1:]
-                    re = self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
-                    self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
-                    os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_INPUT_B64 --es msg %s" %charsb64)
-                    self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
-                else:
-                    self._d.shell(["input", "text", text])
+                case 'key':
+                    text = action.parameters['text']
+                    self._d.keyevent(text)
 
-            case 'key':
-                text = action.parameters['text']
-                self._d.keyevent(text)
+                case 'swipe':
+                    x1, y1 = action.parameters['coordinate']
+                    x2, y2 = action.parameters['coordinate2']
+                    self._d.swipe(x1, y1, x2, y2, duration=0.5)
 
-            case 'scroll':
-                if 'start_box' in action.parameters:
-                    x1, y1 = action.parameters['start_box']
-                    x2, y2 = action.parameters['end_box']
-                else:
-                    x1, y1 = action.parameters['start_point']
-                    x2, y2 = action.parameters['end_point']
-                self._d.swipe(x1, y1, x2, y2, duration=0.5)
-
-            case 'swipe':
-                x1, y1 = action.parameters['coordinate']
-                x2, y2 = action.parameters['coordinate2']
-                self._d.swipe(x1, y1, x2, y2, duration=0.5)
-
-            case 'press_home':
-                self._d.keyevent("HOME")
-
-            case 'press_back':
-                self._d.keyevent("BACK")
-
-            case 'wait':
-                duration = action.parameters.get('time', 5.0)
-                time.sleep(duration)
-
-            case 'time':
-                answer = self._d.shell('date')
-
-            case 'answer':
-                answer = action.parameters['text']
-                os.system(f'adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{answer}"')
-
-            case 'system_button':
-                button = action.parameters['button']
-                if button == 'Back':
-                    self._d.keyevent("BACK")
-                elif button == 'Home':
+                case 'press_home':
                     self._d.keyevent("HOME")
-                elif button == 'Menu':
-                    self._d.keyevent("MENU")
-                elif button == 'Enter':
-                    self._d.keyevent("ENTER")
 
-            case 'clear_text':
-                re = self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
-                logger.info(re)
-                re = self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
-                logger.info(re)
-                time.sleep(1)
-                os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_CLEAR_TEXT")
-                re = self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
-                logger.info(re)
-                re = self._d.shell(["input", "text", " "])
-                logger.info(re)
-            case 'take_note':
-                note = action.parameters['text']
-                return note
-            case _ if action.name in self.register_function:
-                answer = self._register_function[action.name](**action.parameters)
-            case _:
-                raise ValueError(f"Unknown action: {action.name}")
+                case 'press_back':
+                    self._d.keyevent("BACK")
+
+                case 'wait':
+                    duration = action.parameters.get('time', 5.0)
+                    time.sleep(duration)
+
+                case 'answer':
+                    answer = action.parameters['text']
+                    os.system(f'adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{answer}"')
+                    return answer
+
+                case 'system_button':
+                    button = action.parameters['button']
+                    if button == 'Back':
+                        self._d.keyevent("BACK")
+                    elif button == 'Home':
+                        self._d.keyevent("HOME")
+                    elif button == 'Menu':
+                        self._d.keyevent("MENU")
+                    elif button == 'Enter':
+                        self._d.keyevent("ENTER")
+
+                case 'clear_text':
+                    self._d.shell(["input", "text", " "])
+                    self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
+                    self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
+                    time.sleep(0.5)
+                    os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_CLEAR_TEXT")
+                    time.sleep(0.5)
+                    self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
+
+                case 'take_note':
+                    note = action.parameters['text']
+                    return note
+
+                case _:
+                    raise ValueError(f"Unknown action: {action.name}")
 
         time.sleep(self.wait_after_action_seconds)
-        return str(answer)
+        return str(result)

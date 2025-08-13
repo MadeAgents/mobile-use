@@ -11,15 +11,18 @@ from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 from mobile_use.utils.utils import *
 from mobile_use.schema.config import *
 
-# __all__ = ['Planner', 'Operator', 'Reflector', 'LongReflector', 'NoteTaker', 'Processor', 'Evaluator', 'TaskSummarizer', 'ExperienceExtractor', 'Evolutor', 'UITARSOperator']
+__all__ = [
+    "SubAgent",
+    "Planner",
+    "Operator",
+    "AnswerAgent",
+    "Reflector",
+    "TrajectoryReflector",
+    "GlobalReflector",
+    "Progressor",
+]
 
 logger = logging.getLogger(__name__)
-# import logging
-
-# logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s')
-# logger = logging.getLogger()
-
-ACTION_SPACE = ["key", "click", "left_click", "long_press", "swipe", "scroll", "type", "clear_text", "answer", "system_button", "open", "wait", "terminate", "take_note"]
 
 
 def get_history(trajectory: List[MobileUseStepData], num_histories=None):
@@ -254,8 +257,6 @@ class Operator(SubAgent):
         action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
         action = json.loads(action_s)
         name = action['arguments']['action']
-        if name not in ACTION_SPACE:
-            raise Exception(f"Action {name} is not in the action space.")
         action['arguments'].pop('action')
         params = action['arguments']
 
@@ -390,8 +391,6 @@ class AnswerAgent(SubAgent):
         action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
         action = json.loads(action_s)
         name = action['arguments']['action']
-        if name not in ACTION_SPACE:
-            raise Exception(f"Action {name} is not in the action space.")
         action['arguments'].pop('action')
         params = action['arguments']
 

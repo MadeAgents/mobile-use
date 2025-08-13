@@ -13,7 +13,7 @@ from mobile_use.utils.vlm import VLMWrapper
 from mobile_use.utils.utils import encode_image_url, smart_resize, show_message
 from mobile_use.agents import Agent
 from mobile_use.agents.sub_agent import *
-from mobile_use.schema.config import MultiAgentConfig
+from mobile_use.schema.config import SubAgentConfig, MultiAgentConfig
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ class MultiAgent(Agent):
             plan_messages = self.planner.get_message(self.episode_data)
             if self.curr_step_idx in show_step:
                 show_message(plan_messages, "Planner")
-            response = self.vlm.predict(plan_messages)
+            response = self.planner.vlm.predict(plan_messages)
             try:
                 raw_plan = response.choices[0].message.content
                 logger.info("Plan from VLM:\n%s" % raw_plan)
@@ -123,7 +123,7 @@ class MultiAgent(Agent):
         operator_messages = self.operator.get_message(self.episode_data)
         if self.curr_step_idx in show_step:
             show_message(operator_messages, "Operator")
-        response = self.vlm.predict(operator_messages, logprobs=self.reflect_on_demand)
+        response = self.operator.vlm.predict(operator_messages, logprobs=self.reflect_on_demand)
 
         try:
             raw_action = response.choices[0].message.content
@@ -201,7 +201,7 @@ class MultiAgent(Agent):
                 reflection_messages = self.reflector.get_message(self.episode_data)
                 if self.curr_step_idx in show_step:
                     show_message(reflection_messages, "Reflector")
-                response = self.vlm.predict(reflection_messages)
+                response = self.reflector.vlm.predict(reflection_messages)
                 try:
                     content = response.choices[0].message.content
                     logger.info("Reflection from VLM:\n%s" % content)
@@ -219,7 +219,7 @@ class MultiAgent(Agent):
                 progressor_messages = self.progressor.get_message(self.episode_data)
                 if self.curr_step_idx in show_step:
                     show_message(progressor_messages, "progressor")
-                response = self.vlm.predict(progressor_messages)
+                response = self.progressor.vlm.predict(progressor_messages)
                 try:
                     content = response.choices[0].message.content
                     logger.info("Progress from VLM:\n%s" % content)
@@ -235,7 +235,7 @@ class MultiAgent(Agent):
                 if long_reflection_messages is not None:
                     if self.curr_step_idx in [4,9]:
                         show_message(long_reflection_messages, "LongReflector")
-                    response = self.vlm.predict(long_reflection_messages)
+                    response = self.trajectory_reflector.vlm.predict(long_reflection_messages)
                     try:
                         content = response.choices[0].message.content
                         logger.info("Long Reflection from VLM:\n%s" % content)
@@ -251,7 +251,7 @@ class MultiAgent(Agent):
         if self.status == AgentStatus.FINISHED:
             answer_messages = self.answer_agent.get_message(self.episode_data)
             show_message(answer_messages, "Answer")
-            response = self.vlm.predict(answer_messages)
+            response = self.answer_agent.vlm.predict(answer_messages)
             try:
                 content = response.choices[0].message.content
                 logger.info("Answer from VLM:\n%s" % content)
@@ -267,7 +267,7 @@ class MultiAgent(Agent):
                 evaluator_messages = self.global_reflector.get_message(self.episode_data)
                 show_message(evaluator_messages, "Evaluator")
                 logger.info("Evaluating...")
-                response = self.vlm.predict(evaluator_messages)
+                response = self.global_reflector.vlm.predict(evaluator_messages)
                 result, reason, tips = None, None, None
                 try:
                     content = response.choices[0].message.content
