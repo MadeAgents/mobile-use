@@ -65,9 +65,9 @@ class SubAgent(ABC):
 Call in the beginning of each step.
 """
 class Planner(SubAgent):
-    def __init__(self, vlm: VLMWrapper, prompt_config = None):
-        super().__init__(vlm)
-        self.prompt: PlannerPrompt = load_prompt("planner", prompt_config)
+    def __init__(self, config: PlannerConfig):
+        super().__init__(config)
+        self.prompt: PlannerPrompt = load_prompt("planner", config.prompt_config)
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -116,19 +116,12 @@ class Planner(SubAgent):
 
 
 class Operator(SubAgent):
-    def __init__(
-        self, 
-        vlm: VLMWrapper, 
-        prompt_config = None, 
-        num_histories: int = None,
-        include_device_time: bool = True,
-        include_tips: bool = True,
-    ):
-        super().__init__(vlm)
-        self.prompt: OperatorPrompt = load_prompt("operator", prompt_config)
-        self.num_histories = num_histories
-        self.include_device_time = include_device_time
-        self.include_tips = include_tips
+    def __init__(self, config: OperatorConfig):
+        super().__init__(config)
+        self.prompt: OperatorPrompt = load_prompt("operator", config.prompt_config)
+        self.num_histories = config.num_histories
+        self.include_device_time = config.include_device_time
+        self.include_tips = config.include_tips
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -165,13 +158,13 @@ class Operator(SubAgent):
             prompt_list.append(device_time_prompt)
 
         if current_step.plan is not None:
-            plan_prompt = self.prompt.plan_prompt(
+            plan_prompt = self.prompt.plan_prompt.format(
                 plan = current_step.plan,
             )
             prompt_list.append(plan_prompt)
 
         if current_step.sub_goal is not None:
-            subgoal_prompt = self.prompt.subgoal_prompt(
+            subgoal_prompt = self.prompt.subgoal_prompt.format(
                 subgoal = current_step.sub_goal,
             )
             prompt_list.append(subgoal_prompt)
@@ -220,7 +213,7 @@ class Operator(SubAgent):
                 )
                 prompt_list.append(global_reflection_prompt)
 
-        observation_prompt = self.prompt.observation_prompt(
+        observation_prompt = self.prompt.observation_prompt.format(
             resized_width = resized_width,
             resized_height = resized_height,
             image_placeholder = IMAGE_PLACEHOLDER,
@@ -284,17 +277,11 @@ class AnswerAgent(SubAgent):
     This agent is used to answer the user query.
     It is a special case of the Operator, which only supports the `answer` action.
     """
-    def __init__(
-        self, 
-        vlm: VLMWrapper, 
-        prompt_config = None, 
-        num_histories: int = None,
-        include_device_time: bool = True,
-    ):
-        super().__init__(vlm)
-        self.prompt: AnswerAgentPrompt = load_prompt("answer_agent", prompt_config)
-        self.num_histories = num_histories
-        self.include_device_time = include_device_time
+    def __init__(self, config: AnswerAgentConfig):
+        super().__init__(config)
+        self.prompt: AnswerAgentPrompt = load_prompt("answer_agent", config.prompt_config)
+        self.num_histories = config.num_histories
+        self.include_device_time = config.include_device_time
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -303,6 +290,8 @@ class AnswerAgent(SubAgent):
         
         pixels = current_step.curr_env_state.pixels.copy()
         resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
+        self.raw_size = (pixels.width, pixels.height)
+        self.resized_size = (resized_width, resized_height)
 
         # Add system prompt
         system_prompt = self.prompt.system_prompt.format(
@@ -329,13 +318,13 @@ class AnswerAgent(SubAgent):
             prompt_list.append(device_time_prompt)
 
         if current_step.plan is not None:
-            plan_prompt = self.prompt.plan_prompt(
+            plan_prompt = self.prompt.plan_prompt.format(
                 plan = current_step.plan,
             )
             prompt_list.append(plan_prompt)
 
         if current_step.sub_goal is not None:
-            subgoal_prompt = self.prompt.subgoal_prompt(
+            subgoal_prompt = self.prompt.subgoal_prompt.format(
                 subgoal = current_step.sub_goal,
             )
             prompt_list.append(subgoal_prompt)
@@ -364,7 +353,7 @@ class AnswerAgent(SubAgent):
                 )
                 prompt_list.append(memory_prompt)
 
-        observation_prompt = self.prompt.observation_prompt(
+        observation_prompt = self.prompt.observation_prompt.format(
             resized_width = resized_width,
             resized_height = resized_height,
             image_placeholder = IMAGE_PLACEHOLDER,
@@ -380,12 +369,49 @@ class AnswerAgent(SubAgent):
 
         return messages
 
+    def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
+        if size is None:
+            size = self.resized_size
+        if raw_size is None:
+            raw_size = self.raw_size
+        thought = re.search(r"Thought:(.*?)(?=\n|Action:|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
+        if thought:
+            thought_s = thought.group(1).strip()
+        else:
+            thought_s = None
+        action_desc = re.search(r"Action:(.*?)(?=\n|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
+        if action_desc:
+            action_desc_s = action_desc.group(1).strip()
+        else:
+            action_desc_s = None
+        action = re.search(r'{"name": "mobile_use",(.*?)}}', content, flags=re.DOTALL)
+        if not action:
+            raise Exception("Cannot extract action in the content.")
+        action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
+        action = json.loads(action_s)
+        name = action['arguments']['action']
+        if name not in ACTION_SPACE:
+            raise Exception(f"Action {name} is not in the action space.")
+        action['arguments'].pop('action')
+        params = action['arguments']
+
+        for k, v in params.items():
+            if k in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point']:
+                try:
+                    x = round(v[0] / size[0] * raw_size[0])
+                    y = round(v[1] / size[1] * raw_size[1])
+                    params[k] = (x, y)
+                except:
+                    pass
+        action_a = Action(name=name, parameters=params)
+
+        return thought_s, action_a, action_s, action_desc_s
 
 
 class Reflector(SubAgent):
-    def __init__(self, vlm, prompt_config = None):
-        super().__init__(vlm)
-        self.prompt: ReflectorPrompt = load_prompt("reflector", prompt_config)
+    def __init__(self, config: ReflectorConfig):
+        super().__init__(config)
+        self.prompt: ReflectorPrompt = load_prompt("reflector", config.prompt_config)
         self.valid_options = ['A', 'B', 'C', 'D']
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
@@ -415,12 +441,12 @@ class Reflector(SubAgent):
         )
         prompt_list.append(task_prompt)
 
-        subgoal_prompt = self.prompt.subgoal_prompt(
+        subgoal_prompt = self.prompt.subgoal_prompt.format(
             subgoal = current_step.sub_goal,
         )
         prompt_list.append(subgoal_prompt)
 
-        observation_prompt = self.prompt.observation_prompt(
+        observation_prompt = self.prompt.observation_prompt.format(
             screenshot1 = IMAGE_PLACEHOLDER,
             screenshot2 = IMAGE_PLACEHOLDER,
             resized_width = resized_width,
@@ -431,7 +457,7 @@ class Reflector(SubAgent):
             observation_prompt += "\n" + self.prompt.diff_image_prompt
         prompt_list.append(observation_prompt)
 
-        expection_prompt = self.prompt.expection_prompt(
+        expection_prompt = self.prompt.expection_prompt.format(
             action_s = current_step.action_s,
             action_desc = current_step.action_desc,
         )
@@ -453,37 +479,24 @@ class Reflector(SubAgent):
 
 
 class TrajectoryReflector(SubAgent):
-    def __init__(
-        self,
-        vlm,
-        prompt_config = None,
-        evoke_every_steps: int = 5,  # how often to evoke the reflector
-        cold_steps: int = 3,  # how many steps to wait before the last evoke
-        detect_error: bool = True,  # whether to detect error patterns in the trajectory
-        num_histories: Union[Literal['auto'], int] = 'auto',  # how many histories to include in the prompt, 'auto' means use evoke_every_steps
-        num_latest_screenshots: int = 0,  # how many latest screenshots to include in the prompt
-        max_repeat_action: int = 3,  # error detection parameters, how many times an action is repeated will cause an error
-        max_repeat_action_series: int = 2,  # error detection parameters, how many times a series of actions is repeated will cause an error
-        max_repeat_screen: int = 3,  # error detection parameters, how many times a screenshot is repeated will cause an error
-        max_fail_count: int = 3  # error detection parameters, how many times the actions are failed will cause an error
-    ):
-        super().__init__(vlm)
-        self.prompt: TrajectoryReflectorPrompt = load_prompt("trajectory_reflector", prompt_config)
+    def __init__(self, config: TrajectoryReflectorConfig):
+        super().__init__(config)
+        self.prompt: TrajectoryReflectorPrompt = load_prompt("trajectory_reflector", config.prompt_config)
         self.valid_options = ['A', 'B']
-        self.evoke_every_steps = evoke_every_steps
-        self.cold_steps = cold_steps
         self.sleep_count = 0
-        self.detect_error = detect_error
-        if num_histories == 'auto':
-            self.num_histories = evoke_every_steps
+        self.evoke_every_steps = config.evoke_every_steps
+        self.cold_steps = config.cold_steps
+        self.detect_error = config.detect_error
+        if config.num_histories == 'auto':
+            self.num_histories = config.evoke_every_steps
         else:
-            self.num_histories = num_histories
-        self.num_latest_screenshots = num_latest_screenshots
+            self.num_histories = config.num_histories
+        self.num_latest_screenshots = config.num_latest_screenshots
 
-        self.max_repeat_action = max_repeat_action
-        self.max_repeat_action_series = max_repeat_action_series
-        self.max_repeat_screen = max_repeat_screen
-        self.max_fail_count = max_fail_count
+        self.max_repeat_action = config.max_repeat_action
+        self.max_repeat_action_series = config.max_repeat_action_series
+        self.max_repeat_screen = config.max_repeat_screen
+        self.max_fail_count = config.max_fail_count
     
     def detect(
         self, 
@@ -579,7 +592,7 @@ class TrajectoryReflector(SubAgent):
         prompt_list.append(task_prompt)
 
         if current_step.plan is not None:
-            plan_prompt = self.prompt.plan_prompt(
+            plan_prompt = self.prompt.plan_prompt.format(
                 plan = current_step.plan,
             )
             prompt_list.append(plan_prompt)
@@ -588,20 +601,20 @@ class TrajectoryReflector(SubAgent):
         history = "\n".join(history)
         if current_step.answer is not None:
             history += f"\nFinal answer: {current_step.answer}"
-        history_prompt = self.prompt.history_prompt(
+        history_prompt = self.prompt.history_prompt.format(
             history = history,
         )
         prompt_list.append(history_prompt)
             
         if current_step.progress is not None:
-            progress_prompt = self.prompt.progress_prompt(
+            progress_prompt = self.prompt.progress_prompt.format(
                 progress = current_step.progress,
             )
             prompt_list.append(progress_prompt)
 
         if num_latest_screenshots > 0:
             image_placeholders = IMAGE_PLACEHOLDER * num_latest_screenshots
-            observation_prompt = self.prompt.observation_prompt(
+            observation_prompt = self.prompt.observation_prompt.format(
                 resized_width = resized_width,
                 resized_height = resized_height,
                 image_placeholders = image_placeholders,
@@ -611,7 +624,7 @@ class TrajectoryReflector(SubAgent):
         if len(error) > 0:
             error = '\n'.join(error)
             logger.info(f"Trajectory Reflector detects error: {error}")
-            error_info_prompt = self.prompt.error_info_prompt(
+            error_info_prompt = self.prompt.error_info_prompt.format(
                 error = error,
             )
             prompt_list.append(error_info_prompt)
@@ -632,10 +645,10 @@ class TrajectoryReflector(SubAgent):
 
 
 class GlobalReflector(SubAgent):
-    def __init__(self, vlm: VLMWrapper, prompt_config = None, num_latest_screenshots: int = 3):
-        super().__init__(vlm)
-        self.prompt: GlobalReflectorPrompt = load_prompt("global_reflector", prompt_config)
-        self.num_latest_screenshots = num_latest_screenshots
+    def __init__(self, config: GlobalReflectorConfig):
+        super().__init__(config)
+        self.prompt: GlobalReflectorPrompt = load_prompt("global_reflector", config.prompt_config)
+        self.num_latest_screenshots = config.num_latest_screenshots
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -705,83 +718,10 @@ class GlobalReflector(SubAgent):
         return result, reason, None
 
 
-"""
-Gemerate memory
-"""
-class NoteTaker(SubAgent):
-    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
-        messages = []
-        trajectory = episodedata.trajectory
-        current_step = trajectory[-1]
-
-        pixels = current_step.exec_env_state.pixels.copy()
-        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
-
-        # Add system prompt
-        messages.append({
-            "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "You are a helpful AI assistant for operating mobile phones. Your goal is to take notes of important content relevant to the user's request."
-                }
-            ]
-        })
-
-        # Add user prompt
-        prompt = "### User Instruction ###\n"
-        prompt += f"{episodedata.goal}\n\n"
-
-        if current_step.plan is not None:
-            prompt += "### Overall Plan ###\n"
-            prompt += f"{current_step.plan}\n\n"
-
-        if current_step.sub_goal is not None:
-            prompt += "### Current Subgoal ###\n"
-            prompt += f"{current_step.sub_goal}\n\n"
-
-        prompt += "### Existing Important Notes ###\n"
-        if len(trajectory) > 1:
-            previous_step = trajectory[-2]
-            prompt += f"{previous_step.memory}\n\n"
-        else:
-            prompt += "No important notes recorded.\n\n"
-
-        prompt += "### Current Screenshot ###\n"
-        prompt += f"{IMAGE_PLACEHOLDER}\n"
-        prompt += (
-            f"The image is a screenshot showing the current state of the phone. "
-            f"Its width and height are {resized_width} and {resized_height} pixels, respectively.\n\n"
-        )
-
-        prompt += "---\n"
-        prompt += "Carefully examine the information above to identify any important content that needs to be recorded. IMPORTANT: Do not take notes on low-level actions; only keep track of significant textual or visual information relevant to the user's request.\n\n"
-
-        prompt += "Provide your output in the following format:\n"
-        prompt += "### Important Notes ###\n"
-        prompt += "The updated important notes, combining the old and new ones. If nothing new to record, copy the existing important notes. If you think some information in the existing important notes is no longer useful, you can remove it.\n"
-
-        messages.append({
-            "role": "user",
-            "content": [
-                {"type": "text","text": prompt},
-                {"type": "image_url","image_url": {"url": encode_image_url(pixels)}, "resized_height": resized_height, "resized_width": resized_width}
-            ]
-        })
-
-        return messages
-    
-    def parse_response(self, response: str) -> str:
-        return response.split("### Important Notes ###")[-1].replace("\n", " ").replace("  ", " ").strip()
-
-
-"""
-Call in the end of each step.
-"""
 class Progressor(SubAgent):
-    def __init__(self, vlm, prompt_config = None):
-        super().__init__(vlm)
-        self.prompt: ProgressorPrompt = load_prompt("progressor", prompt_config)
+    def __init__(self, config: ProgressorConfig):
+        super().__init__(config)
+        self.prompt: ProgressorPrompt = load_prompt("progressor", config.prompt_config)
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -838,27 +778,3 @@ class Progressor(SubAgent):
     
     def parse_response(self, response: str):
         return response.split("### Completed contents ###")[-1].replace("\n", " ").replace("  ", " ").strip()
-
-
-
-
-
-if __name__ == "__main__":
-    vlm = VLMWrapper(
-        model_name="qwen2.5-vl-72b-instruct",
-        api_key='EMPTY',
-        base_url='http://hammer-llm.oppo.test/v1'
-    )
-    pixels = Image.open(r"/home/notebook/data/personal/S9057346/tmp/mobile-use/benchmark/android_world/ref_image.png")
-    step_data = MobileUseStepData(step_idx=0, curr_env_state=EnvState(pixels=pixels, package=""))
-    episodedata = MobileUseEpisodeData(goal="Open Wifi", num_steps=0, trajectory=[step_data])
-    sub_agent = Planner(vlm)
-    messages = sub_agent.get_message(episodedata)
-    show_message(messages)
-    # response = sub_agent.predict(messages)
-    # content = sub_agent.get_content(response)
-    # print(f"Response Content: {content}")
-    # thought, plan, current_subgoal = sub_agent.parse_response(content)
-    # print(f"Thought: {thought}")
-    # print(f"Plan: {plan}")
-    # print(f"Current Subgoal: {current_subgoal}")

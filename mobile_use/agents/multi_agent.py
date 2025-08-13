@@ -8,7 +8,7 @@ import json
 import time
 
 from mobile_use.schema.schema import *
-from mobile_use.environ import Environment
+from mobile_use.environment.mobile_environ import Environment
 from mobile_use.utils.vlm import VLMWrapper
 from mobile_use.utils.utils import encode_image_url, smart_resize, show_message
 from mobile_use.agents import Agent
@@ -28,6 +28,7 @@ class MultiAgent(Agent):
         self._init_sub_agents()
 
         self.reflect_on_demand = self.config.reflect_on_demand
+        self.logprob_threshold = self.config.logprob_threshold
 
     def _init_data(self, goal: str='', max_steps: int=10):
         super()._init_data(goal, max_steps)

@@ -125,5 +125,5 @@ response_prompt: |-
   Thought: ... (Your thinking process)
   Action: ... (Your action description)
   <tool_call>
-  {{"name": <function-name>, "arguments": <args-json-object>}}
+  {"name": <function-name>, "arguments": <args-json-object>}
   </tool_call>
