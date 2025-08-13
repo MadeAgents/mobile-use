@@ -27,8 +27,10 @@ class MultiAgent(Agent):
 
         self._init_sub_agents()
 
+        self.max_action_retry = self.config.max_action_retry
         self.reflect_on_demand = self.config.reflect_on_demand
         self.logprob_threshold = self.config.logprob_threshold
+        self.enable_pre_reflection = self.config.enable_pre_reflection
 
     def _init_data(self, goal: str='', max_steps: int=10):
         super()._init_data(goal, max_steps)
@@ -64,8 +66,6 @@ class MultiAgent(Agent):
         for item in response.choices[0].logprobs.content:
             tokens.append(item.token)
             logprobs.append(item.logprob)
-        logger.info("Tokens: %s" % tokens)
-        logger.info("Logprobs: %s" % logprobs)
 
         start_index = next((i for i in range(len(tokens) - 1, -1, -1) if 'action' in tokens[i]), None)
         if start_index is not None:
@@ -125,60 +125,73 @@ class MultiAgent(Agent):
             show_message(operator_messages, "Operator")
         response = self.operator.vlm.predict(operator_messages, logprobs=self.reflect_on_demand)
 
-        try:
-            raw_action = response.choices[0].message.content
-            logger.info("Action from VLM:\n%s" % raw_action)
-            step_data.content = raw_action
-            resized_size = (resized_width, resized_height)
-            action_thought, action, action_s, action_desc = self.operator.parse_response(raw_action, resized_size, pixels.size)
-            logger.info("ACTION THOUGHT: %s" % action_thought)
-            logger.info("ACTION: %s" % str(action))
-            logger.info("ACTION DESCRIPTION: %s" % action_desc)
-        except Exception as e:
-            logger.warning(f"Failed to parse the action. Error is {e.args}")
+        for counter in range(self.max_action_retry):
+            try:
+                raw_action = response.choices[0].message.content
+                logger.info("Action from VLM:\n%s" % raw_action)
+                step_data.content = raw_action
+                resized_size = (resized_width, resized_height)
+                action_thought, action, action_s, action_desc = self.operator.parse_response(raw_action, resized_size, pixels.size)
+                logger.info("ACTION THOUGHT: %s" % action_thought)
+                logger.info("ACTION: %s" % str(action))
+                logger.info("ACTION DESCRIPTION: %s" % action_desc)
+                break
+            except Exception as e:
+                logger.warning(f"Failed to parse the action. Error is {e.args}")
+                error_prompt = f"Failed to parse the action. Error is {e.args}\nPlease follow the output format to provide a valid action:"
+                msg = {"role": "user", "content": [{"type": "text", "text": error_prompt}]}
+                operator_messages.append(msg)
+                response = self.operator.vlm.predict(operator_messages)
+        if counter > 0:
+            operator_messages = operator_messages[:-counter]
 
         if action is None:
             logger.warning("Action parse error after max retry.")
         else:
-            if action.name == 'terminate':
-                if action.parameters['status'] == 'success':
-                    logger.info(f"Finished: {action}")
-                    self.status = AgentStatus.FINISHED
-                    self.episode_data.finish_count += 1
-                elif action.parameters['status'] == 'failure':
-                    logger.info(f"Failed: {action}")
-                    self.status = AgentStatus.FAILED
-            elif action.name == 'take_note':
-                logger.info(f"Take note: {action}")
-                self.episode_data.memory += action.parameters['text'].strip()
-                self.episode_data.memory += "\n"
-                logger.info(f"Current Memory: {self.episode_data.memory}")
-                skip_reflector = True
-            else:
-                logger.info(f"Execute the action: {action}")
-                if action.name == 'type':
-                    if len(self.trajectory) > 1 and self.trajectory[-2].action.name == 'type' and 'coordinate' not in action.parameters:
+            try:
+                if action.name == 'terminate':
+                    if action.parameters['status'] == 'success':
+                        logger.info(f"Finished: {action}")
+                        self.status = AgentStatus.FINISHED
+                        self.episode_data.finish_count += 1
+                    elif action.parameters['status'] == 'failure':
+                        logger.info(f"Failed: {action}")
+                        self.status = AgentStatus.FAILED
+                elif action.name == 'take_note':
+                    logger.info(f"Take note: {action}")
+                    self.episode_data.memory += action.parameters['text'].strip()
+                    self.episode_data.memory += "\n"
+                    logger.info(f"Current Memory: {self.episode_data.memory}")
+                    skip_reflector = True
+                elif action.name == 'answer':
+                    logger.info(f"Answer: {action}")
+                    answer = action.parameters['text'].strip()
+                    step_data.answer = answer
+                elif all([
+                        self.enable_pre_reflection, action.name == 'type',
+                        len(self.trajectory) > 1, self.trajectory[-2].action.name == 'type',
+                        'coordinate' not in action.parameters
+                    ]):
                         skip_reflector = True
-                if skip_reflector:
-                    step_data.reflection_outcome = 'C'
-                    step_data.reflection_error = "Action executed failed. You should first click the corresponding text field before typing in text."
-                    logger.info(f"Skip the reflector since there is continuous type action.")
+                        step_data.reflection_outcome = 'C'
+                        step_data.reflection_error = "Action executed failed. You should first click the corresponding text field before typing in text."
+                        logger.info(f"Skip the reflector since there is continuous type action.")
                 else:
-                    try:
-                        start_exec_time = time.time()
-                        self.env.execute_action(action)
-                        step_data.exec_duration = time.time() - start_exec_time
-                    except Exception as e:
-                        logger.warning(f"Failed to execute the action: {action}. Error: {e}")
-                        action = None
-        
+                    logger.info(f"Execute the action: {action}")
+                    start_exec_time = time.time()
+                    self.env.execute_action(action)
+                    step_data.exec_duration = time.time() - start_exec_time
+            except Exception as e:
+                logger.warning(f"Failed to execute the action: {action}. Error: {e}")
+                action = None
+
         if action is not None:
             step_data.thought = action_thought
             step_data.action_desc = action_desc
             step_data.action_s = action_s
             step_data.action = action
 
-            if self.reflect_on_demand:
+            if self.reflector and self.reflect_on_demand:
                 action_type_tokens, action_type_logprobs = None, None
                 try:
                     action_type_tokens, action_type_logprobs = self.get_action_type_logprobs(response)
@@ -207,8 +220,8 @@ class MultiAgent(Agent):
                     logger.info("Reflection from VLM:\n%s" % content)
                     outcome, error_description = self.reflector.parse_response(content)
                     if outcome in self.reflector.valid_options:
-                        logger.info("Outcome: %s" % outcome)
-                        logger.info("Error Description: %s" % error_description)
+                        logger.info("Reflection Outcome: %s" % outcome)
+                        logger.info("Reflection Error: %s" % error_description)
                         step_data.reflection_outcome = outcome
                         step_data.reflection_error = error_description
                 except Exception as e:
@@ -218,7 +231,7 @@ class MultiAgent(Agent):
             if self.progressor:
                 progressor_messages = self.progressor.get_message(self.episode_data)
                 if self.curr_step_idx in show_step:
-                    show_message(progressor_messages, "progressor")
+                    show_message(progressor_messages, "Progressor")
                 response = self.progressor.vlm.predict(progressor_messages)
                 try:
                     content = response.choices[0].message.content
@@ -229,25 +242,26 @@ class MultiAgent(Agent):
                 except Exception as e:
                     logger.warning(f"Failed to parse the progress. Error: {e}")
 
-            # Call LongReflector
+            # Call TrajectoryReflector
             if self.trajectory_reflector:
-                long_reflection_messages = self.trajectory_reflector.get_message(self.episode_data)
-                if long_reflection_messages is not None:
+                trajectory_reflection_messages = self.trajectory_reflector.get_message(self.episode_data)
+                if trajectory_reflection_messages is not None:
                     if self.curr_step_idx in [4,9]:
-                        show_message(long_reflection_messages, "LongReflector")
-                    response = self.trajectory_reflector.vlm.predict(long_reflection_messages)
+                        show_message(trajectory_reflection_messages, "TrajectoryReflector")
+                    response = self.trajectory_reflector.vlm.predict(trajectory_reflection_messages)
                     try:
                         content = response.choices[0].message.content
-                        logger.info("Long Reflection from VLM:\n%s" % content)
+                        logger.info("Trajectory Reflection from VLM:\n%s" % content)
                         outcome, error_description = self.trajectory_reflector.parse_response(content)
                         if outcome in self.trajectory_reflector.valid_options:
-                            logger.info("Long Outcome: %s" % outcome)
-                            logger.info("Long Error Description: %s" % error_description)
-                            step_data.long_reflection_outcome = outcome
-                            step_data.long_reflection_error = error_description
+                            logger.info("Trajectory Reflection Outcome: %s" % outcome)
+                            logger.info("Trajectory Reflection Error: %s" % error_description)
+                            step_data.trajectory_reflection_outcome = outcome
+                            step_data.trajectory_reflection_error = error_description
                     except Exception as e:
-                        logger.warning(f"Failed to parse the long reflection. Error: {e}")
+                        logger.warning(f"Failed to parse the trajectory reflection. Error: {e}")
 
+        # Call AnswerAgent
         if self.status == AgentStatus.FINISHED:
             answer_messages = self.answer_agent.get_message(self.episode_data)
             show_message(answer_messages, "Answer")
@@ -262,20 +276,19 @@ class MultiAgent(Agent):
             except Exception as e:
                 logger.warning(f"Failed to get the answer. Error: {e}")
             
-            # Evaluator
+            # Call GlobalReflector
             if self.global_reflector and self.episode_data.finish_count == 1:
                 evaluator_messages = self.global_reflector.get_message(self.episode_data)
                 show_message(evaluator_messages, "Evaluator")
                 logger.info("Evaluating...")
                 response = self.global_reflector.vlm.predict(evaluator_messages)
-                result, reason, tips = None, None, None
+                result, reason = None, None
                 try:
                     content = response.choices[0].message.content
                     logger.info("Evaluation from VLM:\n%s" % content)
-                    result, reason, tips = self.global_reflector.parse_response(content)
+                    result, reason = self.global_reflector.parse_response(content)
                     logger.info("Evaluation Result: %s" % result)
                     logger.info("Evaluation Reason: %s" % reason)
-                    logger.info("Evaluation Tips: %s" % tips)
                 except Exception as e:
                     logger.warning(f"Failed to parse the evaluation. Error: {e}")
                 if result is not None and 'Failed' in result:
@@ -284,6 +297,7 @@ class MultiAgent(Agent):
                     step_data.evaluation_result = result
                     step_data.evaluation_reason = reason
 
+        step_data.memory = self.episode_data.memory
         step_data.step_duration = time.time() - start_time
         return step_data
 

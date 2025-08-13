@@ -100,8 +100,8 @@ class MobileUseStepData(BaseStepData):
     # Reflection related
     reflection_outcome: Optional[str] = None
     reflection_error: Optional[str] = None
-    long_reflection_outcome: Optional[str] = None
-    long_reflection_error: Optional[str] = None
+    trajectory_reflection_outcome: Optional[str] = None
+    trajectory_reflection_error: Optional[str] = None
     evaluation_result: Optional[str] = None
     evaluation_reason: Optional[str] = None
     # Time related

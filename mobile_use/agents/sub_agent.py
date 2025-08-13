@@ -40,12 +40,12 @@ def get_history(trajectory: List[MobileUseStepData], num_histories=None):
             elif trajectory[i].reflection_outcome in ["B", "C"]:
                 step_list.append("Failed")
                 step_list.append(f"Feedback: {trajectory[i].reflection_error}")
-        elif trajectory[i].long_reflection_outcome is not None:
-            if trajectory[i].long_reflection_outcome == "A":
+        elif trajectory[i].trajectory_reflection_outcome is not None:
+            if trajectory[i].trajectory_reflection_outcome == "A":
                 step_list.append("Successful")
-            elif trajectory[i].long_reflection_outcome in ["B"]:
+            elif trajectory[i].trajectory_reflection_outcome in ["B"]:
                 step_list.append("Failed")
-                step_list.append(f"Feedback: {trajectory[i].long_reflection_error}")
+                step_list.append(f"Feedback: {trajectory[i].trajectory_reflection_error}")
         history.append(f"Step-{i+1}: {'; '.join(step_list)}")
     return history
 
@@ -190,9 +190,9 @@ class Operator(SubAgent):
                 )
                 prompt_list.append(progress_prompt)
 
-            if previous_step.memory is not None:
+            if episodedata.memory is not None and episodedata.memory != "":
                 memory_prompt = self.prompt.memory_prompt.format(
-                    memory = previous_step.memory,
+                    memory = episodedata.memory,
                 )
                 prompt_list.append(memory_prompt)
 
@@ -204,9 +204,9 @@ class Operator(SubAgent):
                 )
                 prompt_list.append(reflection_prompt)
 
-            if previous_step.long_reflection_outcome is not None and previous_step.long_reflection_outcome in ['B']:
+            if previous_step.trajectory_reflection_outcome is not None and previous_step.trajectory_reflection_outcome in ['B']:
                 trajectory_reflection_prompt = self.prompt.trajectory_reflection_prompt.format(
-                    trajectory_reflection_error = previous_step.long_reflection_error,
+                    trajectory_reflection_error = previous_step.trajectory_reflection_error,
                 )
                 prompt_list.append(trajectory_reflection_prompt)
 
@@ -237,37 +237,62 @@ class Operator(SubAgent):
         return messages
     
     def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
+        def map_names(name: str) -> str:
+            maps = {
+                "left_click": "click",
+                "point": "coordinate",
+                "start_point": "coordinate",
+                "start_box": "coordinate",
+                "end_point": "coordinate2",
+                "end_box": "coordinate2",
+                "scroll": "swipe",
+                "content": "text",
+            }
+            return maps.get(name, name)
+
         if size is None:
             size = self.resized_size
         if raw_size is None:
             raw_size = self.raw_size
+        
         thought = re.search(r"Thought:(.*?)(?=\n|Action:|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
         if thought:
             thought_s = thought.group(1).strip()
         else:
             thought_s = None
+            
         action_desc = re.search(r"Action:(.*?)(?=\n|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
         if action_desc:
             action_desc_s = action_desc.group(1).strip()
         else:
             action_desc_s = None
+        
         action = re.search(r'{"name": "mobile_use",(.*?)}}', content, flags=re.DOTALL)
         if not action:
             raise Exception("Cannot extract action in the content.")
+        
         action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
         action = json.loads(action_s)
-        name = action['arguments']['action']
+        
+        # Apply the map_names function to the 'name'
+        name = map_names(action['arguments']['action'])
+        
+        # Remove the 'action' key and map the other keys in the arguments
         action['arguments'].pop('action')
-        params = action['arguments']
-
-        for k, v in params.items():
-            if k in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point']:
+        params = {}
+        
+        for k, v in action['arguments'].items():
+            mapped_key = map_names(k)  # Map the key name
+            if mapped_key in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point', 'start_box', 'end_box']:
                 try:
                     x = round(v[0] / size[0] * raw_size[0])
                     y = round(v[1] / size[1] * raw_size[1])
-                    params[k] = (x, y)
+                    params[mapped_key] = (x, y)
                 except:
                     pass
+            else:
+                params[mapped_key] = v
+
         action_a = Action(name=name, parameters=params)
 
         return thought_s, action_a, action_s, action_desc_s
@@ -348,9 +373,9 @@ class AnswerAgent(SubAgent):
                 )
                 prompt_list.append(progress_prompt)
 
-            if previous_step.memory is not None:
+            if episodedata.memory is not None and episodedata.memory != "":
                 memory_prompt = self.prompt.memory_prompt.format(
-                    memory = previous_step.memory,
+                    memory = episodedata.memory,
                 )
                 prompt_list.append(memory_prompt)
 
@@ -371,41 +396,65 @@ class AnswerAgent(SubAgent):
         return messages
 
     def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
+        def map_names(name: str) -> str:
+            maps = {
+                "left_click": "click",
+                "point": "coordinate",
+                "start_point": "coordinate",
+                "start_box": "coordinate",
+                "end_point": "coordinate2",
+                "end_box": "coordinate2",
+                "scroll": "swipe",
+                "content": "text",
+            }
+            return maps.get(name, name)
+
         if size is None:
             size = self.resized_size
         if raw_size is None:
             raw_size = self.raw_size
+        
         thought = re.search(r"Thought:(.*?)(?=\n|Action:|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
         if thought:
             thought_s = thought.group(1).strip()
         else:
             thought_s = None
+            
         action_desc = re.search(r"Action:(.*?)(?=\n|<tool_call>|\{\"name\": \"mobile_use\",)", content, flags=re.DOTALL)
         if action_desc:
             action_desc_s = action_desc.group(1).strip()
         else:
             action_desc_s = None
+        
         action = re.search(r'{"name": "mobile_use",(.*?)}}', content, flags=re.DOTALL)
         if not action:
             raise Exception("Cannot extract action in the content.")
+        
         action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
         action = json.loads(action_s)
-        name = action['arguments']['action']
+        
+        # Apply the map_names function to the 'name'
+        name = map_names(action['arguments']['action'])
+        
+        # Remove the 'action' key and map the other keys in the arguments
         action['arguments'].pop('action')
-        params = action['arguments']
-
-        for k, v in params.items():
-            if k in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point']:
+        params = {}
+        
+        for k, v in action['arguments'].items():
+            mapped_key = map_names(k)  # Map the key name
+            if mapped_key in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point', 'start_box', 'end_box']:
                 try:
                     x = round(v[0] / size[0] * raw_size[0])
                     y = round(v[1] / size[1] * raw_size[1])
-                    params[k] = (x, y)
+                    params[mapped_key] = (x, y)
                 except:
                     pass
+            else:
+                params[mapped_key] = v
+
         action_a = Action(name=name, parameters=params)
 
         return thought_s, action_a, action_s, action_desc_s
-
 
 class Reflector(SubAgent):
     def __init__(self, config: ReflectorConfig):
@@ -714,7 +763,7 @@ class GlobalReflector(SubAgent):
     def parse_response(self, response: str):
         result = response.split("### Result ###")[-1].split("### Reason ###")[0].replace("\n", " ").replace("  ", " ").strip()
         reason = response.split("### Reason ###")[-1].strip()
-        return result, reason, None
+        return result, reason
 
 
 class Progressor(SubAgent):

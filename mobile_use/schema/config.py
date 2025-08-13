@@ -82,8 +82,10 @@ class MultiAgentConfig(AgentConfig):
     trajectory_reflector: Optional[TrajectoryReflectorConfig] = None
     global_reflector: Optional[GlobalReflectorConfig] = None
     progressor: Optional[ProgressorConfig] = None
+    max_action_retry: int = 3
     reflect_on_demand: bool = False
     logprob_threshold: float = -0.01
+    enable_pre_reflection: bool = True
 
 
 if __name__ == "__main__":
