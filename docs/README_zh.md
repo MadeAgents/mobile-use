@@ -239,12 +239,12 @@ while going:
 ## 📚 引用
 如果您在您的研究或工作中使用了本项目，请引用：
 ```
-@software{
-  title = {Mobile Use​: Your AI assistant for mobile - Any app, any task},
-  author = {Jiamu Zhou, Xiaoyun Mo, Ning Li, Qiuying Peng},
-  year = {2025},
-  publisher = {GitHub},
-  url = {https://github.com/MadeAgents/mobile-use}
+@article{li2025mobileuse,
+  title={MobileUse: A GUI Agent with Hierarchical Reflection for Autonomous Mobile Operation},
+  author={Li, Ning and Qu, Xiangmou and Zhou, Jiamu and Wang, Jun and Wen, Muning and Du, Kounianhua and Lou, Xingyu and Peng, Qiuying and Wang, Jun and Zhang, Weinan},
+  journal={arXiv preprint arXiv:2507.16853},
+  year={2025},
+  url={https://arxiv.org/abs/2507.16853}
 }
 ```
 
