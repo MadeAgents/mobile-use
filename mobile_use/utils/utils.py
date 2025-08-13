@@ -58,9 +58,9 @@ def show_message(messages: List[dict], name: str = None):
                 logger.info(f"{content['type']}: SKIP.")
     logger.info(f"==============={name}MESSAGE END==============")
 
-def contains_chinese(text):
+def contains_non_ascii(text):
     for char in text:
-        if '\u4e00' <= char <= '\u9fff':
+        if ord(char) > 127:
             return True
     return False
 

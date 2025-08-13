@@ -7,7 +7,7 @@ from typing import Optional
 
 import adbutils
 from mobile_use.schema.schema import Action, EnvState
-from mobile_use.utils.utils import contains_chinese
+from mobile_use.utils.utils import contains_non_ascii
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +42,9 @@ class Environment:
             raise e
         return device
 
-    def close(self):
-        self._d.close()
+    def reset(self, go_home: bool = True):
+        if go_home:
+            self._d.keyevent("HOME")
 
     def get_state(self, display_id: int=-1) -> EnvState:
         try:
@@ -95,16 +96,13 @@ class Environment:
             case 'type':
                 text = action.parameters['text']
 
-                if contains_chinese(text):
-                    logger.info("TYPE: Chinese detected.")
+                if contains_non_ascii(text):
+                    logger.info("Using ADB keyboard to input non-ASCII text.")
                     charsb64 = str(base64.b64encode(text.encode('utf-8')))[1:]
                     re = self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
-                    logger.info(re)
-
                     self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
                     os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_INPUT_B64 --es msg %s" %charsb64)
                     self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
-
                 else:
                     self._d.shell(["input", "text", text])
 
