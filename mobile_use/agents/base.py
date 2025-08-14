@@ -9,9 +9,9 @@ from mobile_use.schema.config import AgentConfig
 
 
 class Agent(ABC, Registrable):
-    def __init__(self, config: AgentConfig):
+    def __init__(self, config_path: str):
         super().__init__()
-        self.config = config
+        config = AgentConfig.from_yaml(config_path)
         self.env = Environment(**config.env.model_dump())
         self.vlm = VLMWrapper(**config.vlm.model_dump())
         self._init_data()
@@ -25,12 +25,6 @@ class Agent(ABC, Registrable):
         self.curr_step_idx = 0
         self.trajectory: List[BaseStepData] = []
         self.episode_data: BaseEpisodeData = BaseEpisodeData(goal=goal, num_steps=0, trajectory=self.trajectory)
-
-    def _get_curr_step_data(self):
-        if len(self.trajectory) > self.curr_step_idx:
-            return self.trajectory[self.curr_step_idx]
-        else:
-            return None
 
     @abstractmethod
     def reset(self, *args, **kwargs) -> None:

@@ -65,7 +65,7 @@ class Environment:
 
     def register_action(self, action_name: str, action_func):
         if action_name in self.action_space:
-            raise ValueError(f"Action {action_name} is already registered.")
+            logger.warning(f"Action {action_name} is already registered. Overwriting it.")
         if not callable(action_func):
             raise ValueError(f"Action function for {action_name} must be callable.")
 
@@ -77,7 +77,7 @@ class Environment:
         result = None
 
         if action.name in self._register_function:
-            result = self._register_function[action.name](**action.parameters)
+            result = self._register_function[action.name](self, **action.parameters)
         else:
             match action.name:
                 case 'open':

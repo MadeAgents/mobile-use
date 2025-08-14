@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 @Agent.register('MultiAgent')
 class MultiAgent(Agent):
     def __init__(self, config_path: str):
+        super().__init__(config_path)
         config = MultiAgentConfig.from_yaml(config_path)
-        super().__init__(config)
         self.config = config
 
         self._init_sub_agents()
@@ -59,6 +59,12 @@ class MultiAgent(Agent):
         """
         self._init_data(goal=goal, max_steps=max_steps)
         self._init_sub_agents()
+
+    def _get_curr_step_data(self):
+        if len(self.trajectory) > self.curr_step_idx:
+            return self.trajectory[self.curr_step_idx]
+        else:
+            return None
 
     def get_action_type_logprobs(self, response):
         action_type_tokens, action_type_logprobs = None, None
