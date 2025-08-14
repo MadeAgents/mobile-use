@@ -6,6 +6,7 @@ import gzip
 import io
 import json
 import time
+import traceback
 
 from mobile_use.schema.schema import *
 from mobile_use.environment.mobile_environ import Environment
@@ -173,11 +174,9 @@ class MultiAgent(Agent):
                     logger.info(f"Answer: {action}")
                     answer = action.parameters['text'].strip()
                     step_data.answer = answer
-                elif all([
-                        self.enable_pre_reflection, action.name == 'type',
-                        len(self.trajectory) > 1, self.trajectory[-2].action.name == 'type',
-                        'coordinate' not in action.parameters
-                    ]):
+                elif self.enable_pre_reflection and action.name == 'type' and \
+                        len(self.trajectory) > 1 and self.trajectory[-2].action.name == 'type' and \
+                        'coordinate' not in action.parameters:
                         skip_reflector = True
                         step_data.reflection_outcome = 'C'
                         step_data.reflection_error = "Action executed failed. You should first click the corresponding text field before typing in text."
@@ -188,7 +187,7 @@ class MultiAgent(Agent):
                     self.env.execute_action(action)
                     step_data.exec_duration = time.time() - start_exec_time
             except Exception as e:
-                logger.warning(f"Failed to execute the action: {action}. Error: {e}")
+                logger.warning(f"Failed to execute the action: {action}. Error: {traceback.format_exc()}")
                 action = None
 
         if action is not None:

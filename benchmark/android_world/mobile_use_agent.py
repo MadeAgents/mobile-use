@@ -13,7 +13,7 @@ class MobileUse(base_agent.EnvironmentInteractingAgent):
   def __init__(
           self, 
           env: interface.AsyncEnv,
-          agent: mobile_use.agents.Agent,
+          agent: mobile_use.Agent,
           name: str = "MobileUse",
       ):
     super().__init__(env, name)
