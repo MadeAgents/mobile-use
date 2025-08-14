@@ -136,6 +136,10 @@ _OUTPUT_PATH = flags.DEFINE_string(
 # Agent specific.
 _AGENT_NAME = flags.DEFINE_string('agent_name', 'mobile_use', help='Agent name.')
 
+_MOBILEUSE_AGENT_NAME = flags.DEFINE_string('mobileuse_agent_name', 'MultiAgent', help='Mobileuse agent name.')
+
+_MOBILEUSE_CONFIG_PATH = flags.DEFINE_string('mobileuse_config_path', None, help='Path to MobileUse agent config file.')
+
 _FIXED_TASK_SEED = flags.DEFINE_boolean(
     'fixed_task_seed',
     False,
@@ -155,23 +159,15 @@ def _get_agent(env: interface.AsyncEnv, family: str | None = None) -> base_agent
  
   if _AGENT_NAME.value == 'mobile_use':
     # Modify the parameters if needed.
-    android_adb_server_port = int(os.environ.get('ANDROID_ADB_SERVER_PORT', '5037'))
-    mobile_use_env = mobile_use.Environment(serial_no=f'emulator-{_DEVICE_CONSOLE_PORT.value}', port=android_adb_server_port)
-    mobile_use_vlm = mobile_use.VLMWrapper(
-        model_name="qwen2.5-vl-72b-instruct",
-        api_key=os.getenv('VLM_API_KEY', 'EMPTY'),
-        base_url=os.getenv('VLM_BASE_URL', 'http://hammer-llm.oppo.test/v1'),
-        max_tokens=1024
-    )
     agent = mobile_use.Agent.from_params(dict(
-      type='MultiAgent',
-      env=mobile_use_env,
-      vlm=mobile_use_vlm,
-      use_planner=False,
-      use_reflector=True,
-      use_note_taker=False,
-      use_processor=True,
+      type=_MOBILEUSE_AGENT_NAME.value,
+      config_path=_MOBILEUSE_CONFIG_PATH.value,
     ))
+    import adb_utils
+    def open_androidworld_app(self, **kwargs):
+      adb_utils.launch_app(kwargs['text'], self._d)
+      
+    agent.env.register_action("open", open_androidworld_app)
     agent = mobile_use_agent.MobileUse(env, agent)
 
   if not agent:

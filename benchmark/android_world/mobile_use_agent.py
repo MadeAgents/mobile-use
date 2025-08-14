@@ -13,7 +13,7 @@ class MobileUse(base_agent.EnvironmentInteractingAgent):
   def __init__(
           self, 
           env: interface.AsyncEnv,
-          agent: mobile_use.Agent,
+          agent: mobile_use.agents.Agent,
           name: str = "MobileUse",
       ):
     super().__init__(env, name)
@@ -31,7 +31,8 @@ class MobileUse(base_agent.EnvironmentInteractingAgent):
 
     answer = None
     try:
-      answer = self.agent.step()
+      step_data = self.agent.step()
+      answer = step_data.answer
     except Exception as e:
       logger.info("Some error happened during the MobileUse agent run.")
       traceback.print_exc()

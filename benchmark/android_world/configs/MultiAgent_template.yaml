@@ -1,0 +1,38 @@
+vlm:
+  model_name: qwen2.5-vl-72b-instruct
+  api_key: xxxxx
+  base_url: xxxxx
+  max_tokens: 1024
+  temperature: 0
+
+env:
+  serial_no: emulator-5554
+
+enable_log: false
+
+planner:
+  enabled: false
+
+operator:
+  enabled: true
+  include_device_time: true
+  include_tips: true
+
+answer_agent:
+  enabled: true
+  include_device_time: true
+
+reflector:
+  enabled: true
+
+trajectory_reflector:
+  enabled: true
+
+global_reflector:
+  enabled: true
+
+progressor:
+  enabled: true
+
+reflect_on_demand: true
+logprob_threshold: -0.001
