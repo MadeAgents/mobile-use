@@ -110,5 +110,5 @@ response_prompt: |-
   Thought: ... (Your thinking process)
   Action: ... (Your action description)
   <tool_call>
-  {"name": "mobile_use", "arguments": {"action": "answer", "text": <your-answer>}}
+  {{"name": "mobile_use", "arguments": {{"action": "answer", "text": <your-answer>}}}}
   </tool_call>
