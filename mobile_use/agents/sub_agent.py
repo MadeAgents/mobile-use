@@ -386,7 +386,9 @@ class AnswerAgent(SubAgent):
         )
         prompt_list.append(observation_prompt)
 
-        response_prompt = self.prompt.response_prompt
+        response_prompt = self.prompt.response_prompt.format(
+            goal = episodedata.goal,
+        )
         prompt_list.append(response_prompt)
 
         prompt = "\n\n".join(prompt_list)

@@ -102,9 +102,9 @@ observation_prompt: |-
 
 response_prompt: |-
   Response Requirements ###
-  First, think about the requirements that have been completed in previous operations and the requirements that need to be completed in the next one operation. Put your thinking process in one sentence in `Thought` part.
-  Secend, provide a brief description of the chosen action in `Action` part. Only describe the current ONE action. Don't describe the future ones or the whole plan.
-  Last, execute an action in the form of function. For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+  The (overall) user query is: {goal}
+  Now you have finished the task. I want you to provide an answer to the user query.
+  Answer with the following format:
 
   ### Format ###
   Thought: ... (Your thinking process)
