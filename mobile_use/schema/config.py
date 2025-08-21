@@ -80,6 +80,8 @@ class QwenAgentConfig(AgentConfig):
     max_action_retry: int = 3
     enable_think: bool = True
     prompt_config: str = None
+    min_pixels: int = 3136
+    max_pixels: int = 10035200
 
 
 class MultiAgentConfig(AgentConfig):

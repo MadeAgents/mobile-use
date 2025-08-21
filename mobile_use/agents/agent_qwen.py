@@ -76,6 +76,8 @@ class QwenAgent(Agent):
 
         self.max_action_retry = config.max_action_retry
         self.enable_think = config.enable_think
+        self.min_pixels = config.min_pixels
+        self.max_pixels = config.max_pixels
         self.prompt: QwenAgentPrompt = load_prompt("qwen_agent", config.prompt_config)
 
     def _init_data(self, goal: str='', max_steps: int=10):
@@ -105,7 +107,14 @@ class QwenAgent(Agent):
         # Get the current environment screen
         env_state = self.env.get_state()
         pixels = env_state.pixels
-        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
+        raw_size = pixels.size
+        resized_height, resized_width = smart_resize(
+            height=pixels.height,
+            width=pixels.width,
+            factor=28,
+            min_pixels=self.min_pixels,
+            max_pixels=self.max_pixels,)
+        pixels = pixels.resize((resized_width, resized_height))
 
         # Add new step data
         self.trajectory.append(MobileUseStepData(
