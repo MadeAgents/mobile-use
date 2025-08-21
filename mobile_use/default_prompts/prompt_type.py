@@ -4,8 +4,10 @@ from pathlib import Path
 
 import yaml
 
-def load_prompt(prompt_type = Literal["planner", "operator", "answer_agent", "reflector", "trajectory_reflector", "global_reflector", "progressor"], prompt_config: str=None) -> Optional["Prompt"]:
+def load_prompt(prompt_type = Literal["qwen_agent", "planner", "operator", "answer_agent", "reflector", "trajectory_reflector", "global_reflector", "progressor"], prompt_config: str=None) -> Optional["Prompt"]:
     match prompt_type:
+        case "qwen_agent":
+            return QwenAgentPrompt(config=prompt_config) if prompt_config else QwenAgentPrompt()
         case "planner":
             return PlannerPrompt(config=prompt_config) if prompt_config else PlannerPrompt()
         case "operator":
@@ -35,6 +37,14 @@ class Prompt:
 
         for attr, value in data.items():
             setattr(self, attr, value)
+
+
+@dataclass
+class QwenAgentPrompt(Prompt):
+    config: str = "qwen_agent.yaml"
+    system_prompt: str = ""
+    user_promypt_with_think: str = ""
+    user_promypt_wo_think: str = ""
 
 
 @dataclass

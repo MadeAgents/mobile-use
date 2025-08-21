@@ -23,6 +23,7 @@ class VLMConfig(pydantic.BaseModel):
     class Config:
         extra = 'allow'
 
+
 class SubAgentConfig(pydantic.BaseModel):
     enabled: bool = False
     vlm: VLMConfig = None
@@ -60,6 +61,7 @@ class GlobalReflectorConfig(SubAgentConfig):
 class ProgressorConfig(SubAgentConfig):
     pass
 
+
 class AgentConfig(pydantic.BaseModel):
     vlm: VLMConfig
     env: MobileEnvConfig = MobileEnvConfig()
@@ -74,6 +76,12 @@ class AgentConfig(pydantic.BaseModel):
         return cls(**config_data)
 
 
+class QwenAgentConfig(AgentConfig):
+    max_action_retry: int = 3
+    enable_think: bool = True
+    prompt_config: str = None
+
+
 class MultiAgentConfig(AgentConfig):
     planner: Optional[PlannerConfig] = None
     operator: Optional[OperatorConfig] = None
@@ -86,12 +94,3 @@ class MultiAgentConfig(AgentConfig):
     reflect_on_demand: bool = False
     logprob_threshold: float = -0.01
     enable_pre_reflection: bool = True
-
-
-if __name__ == "__main__":
-    config = MultiAgentConfig.from_yaml("test.yaml")
-
-    # 输出 VLMConfig 实例
-    print(config)
-    print(config.env)
-    print(config.vlm.model_dump())

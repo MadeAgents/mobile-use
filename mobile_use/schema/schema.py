@@ -82,13 +82,17 @@ class BaseStepData:
 
 
 @dataclass
-class MobileUseStepData(BaseStepData):
-    # Action related
+class SingleAgentStepData(BaseStepData):
     thought: Optional[str] = None
     action_s: Optional[str] = None
     action_desc: Optional[str] = None
     answer: Optional[str] = None
     summary: Optional[str] = None
+
+
+@dataclass
+class MobileUseStepData(SingleAgentStepData):
+    # Action related
     action_type_tokens: Optional[List[str]] = None
     action_type_logprobs: Optional[List[float]] = None
     # Plan related

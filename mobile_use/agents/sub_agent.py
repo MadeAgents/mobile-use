@@ -283,7 +283,7 @@ class Operator(SubAgent):
         
         for k, v in action['arguments'].items():
             mapped_key = map_names(k)  # Map the key name
-            if mapped_key in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point', 'start_box', 'end_box']:
+            if mapped_key in ['coordinate', 'coordinate2']:
                 try:
                     x = round(v[0] / size[0] * raw_size[0])
                     y = round(v[1] / size[1] * raw_size[1])
@@ -444,7 +444,7 @@ class AnswerAgent(SubAgent):
         
         for k, v in action['arguments'].items():
             mapped_key = map_names(k)  # Map the key name
-            if mapped_key in ['coordinate', 'coordinate2', 'point', 'start_point', 'end_point', 'start_box', 'end_box']:
+            if mapped_key in ['coordinate', 'coordinate2']:
                 try:
                     x = round(v[0] / size[0] * raw_size[0])
                     y = round(v[1] / size[1] * raw_size[1])
