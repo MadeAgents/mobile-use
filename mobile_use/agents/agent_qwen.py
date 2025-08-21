@@ -163,7 +163,7 @@ class QwenAgent(Agent):
                 raw_action = response.choices[0].message.content
                 logger.info("Action from VLM:\n%s" % raw_action)
                 step_data.vlm_call_history.append(VLMCallingData(self.messages, response))
-                thought_s, action, action_s, summary_s = _parse_response(raw_action, (resized_width, resized_height), env_state.pixels.size)
+                thought_s, action, action_s, summary_s = _parse_response(raw_action, (resized_width, resized_height), raw_size)
                 logger.info(f"Thought: {thought_s}")
                 logger.info(f"Action: {action}")
                 logger.info(f"Action string: {action_s}")
