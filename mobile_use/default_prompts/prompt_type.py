@@ -43,8 +43,9 @@ class Prompt:
 class QwenAgentPrompt(Prompt):
     config: str = "qwen_agent.yaml"
     system_prompt: str = ""
-    user_promypt_with_think: str = ""
-    user_promypt_wo_think: str = ""
+    task_prompt: str = ""
+    history_prompt: str = ""
+    thinking_prompt: str = ""
 
 
 @dataclass
@@ -159,3 +160,10 @@ if __name__ == "__main__":
     # print(prompt)
     # prompt = load_prompt("progressor")
     # print(prompt)
+
+    prompt = load_prompt("qwen_agent")
+    # print(prompt)
+    print(prompt.system_prompt)
+    print(prompt.task_prompt)
+    print(prompt.history_prompt)
+    print(prompt.thinking_prompt)

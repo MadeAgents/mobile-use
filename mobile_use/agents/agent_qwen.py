@@ -2,13 +2,13 @@ import logging
 import re
 from typing import Iterator
 import json
+import copy
 
 from mobile_use.schema.schema import *
 from mobile_use.environment.mobile_environ import Environment
 from mobile_use.utils.vlm import VLMWrapper
 from mobile_use.utils.utils import encode_image_url, smart_resize, show_message, generate_message
 from mobile_use.agents import Agent
-from mobile_use.agents.sub_agent import *
 from mobile_use.schema.config import QwenAgentConfig
 from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 from mobile_use.default_prompts.prompt_type import load_prompt, QwenAgentPrompt
@@ -67,6 +67,32 @@ def _parse_response(content: str, size: tuple[float, float], raw_size: tuple[flo
     action_a = Action(name=name, parameters=params)
     return thought_s, action_a, action_s, summary_s
 
+def slim_messages(messages, num_image_limit = 5):
+    keep_image_index = []
+    image_ptr = 0
+    messages = copy.deepcopy(messages)
+    for msg in messages:
+        for content in msg['content']:
+            if 'image' in content['type'] or 'image_url' in content['type']:
+                keep_image_index.append(image_ptr)
+                image_ptr += 1
+    keep_image_index = keep_image_index[-num_image_limit:]
+
+    image_ptr = 0
+    for msg in messages:
+        new_content = []
+        for content in msg['content']:
+            if 'image' in content['type'] or 'image_url' in content['type']:
+                if image_ptr not in keep_image_index:
+                    pass
+                else:
+                    new_content.append(content)
+                image_ptr += 1
+            else:
+                new_content.append(content)
+        msg['content'] = new_content
+    return messages
+
 
 @Agent.register('Qwen')
 class QwenAgent(Agent):
@@ -79,12 +105,15 @@ class QwenAgent(Agent):
         self.enable_think = config.enable_think
         self.min_pixels = config.min_pixels
         self.max_pixels = config.max_pixels
+        self.message_type = config.message_type
+        self.num_image_limit = config.num_image_limit
         self.prompt: QwenAgentPrompt = load_prompt("qwen_agent", config.prompt_config)
 
     def _init_data(self, goal: str='', max_steps: int=10):
         super()._init_data(goal, max_steps)
         self.trajectory: List[SingleAgentStepData] = []
         self.episode_data: BaseEpisodeData = BaseEpisodeData(goal=goal, num_steps=0, trajectory=self.trajectory)
+        self.messages: List[Dict[str,Any]] = []
 
     def reset(self, goal: str='', max_steps: int = 10) -> None:
         """Reset the state of the agent.
@@ -124,37 +153,52 @@ class QwenAgent(Agent):
         ))
         step_data = self.trajectory[-1]
 
-        # Build the messages for VLM
-        messages = []
-        # Add system prompt
-        system_prompt = self.prompt.system_prompt.format(
-            width = resized_width,
-            height = resized_height,
-        )
-        system_message = generate_message("system", system_prompt)
-        messages.append(system_message)
-        # Add user prompt
-        history = [step.summary for step in self.trajectory[:-1]]
-        history = ''.join([f'Step {si+1}: {_}; 'for si, _ in enumerate(history)])
-        if self.enable_think:
-            user_prompt = self.prompt.user_promypt_with_think.format(
-                goal=self.episode_data.goal,
-                history=history,
-                image_placeholder=IMAGE_PLACEHOLDER,
+        if self.curr_step_idx == 0:
+            # Add system prompt
+            system_prompt = self.prompt.system_prompt.format(
+                width = resized_width,
+                height = resized_height,
             )
-        else:
-            user_prompt = self.prompt.user_promypt_wo_think.format(
-                goal=self.episode_data.goal,
-                history=history,
-                image_placeholder=IMAGE_PLACEHOLDER,
-            )
-        user_message = generate_message("user", user_prompt, images=[pixels])
-        messages.append(user_message)
+            system_message = generate_message("system", system_prompt)
+            self.messages.append(system_message)
+
+            # Add user prompt
+            user_prompt = self.prompt.task_prompt.format(goal=self.episode_data.goal)
+            if self.enable_think:
+                user_prompt += self.prompt.thinking_prompt
+            user_prompt += f"\n{IMAGE_PLACEHOLDER}"
+            user_message = generate_message("user", user_prompt, images=[pixels])
+            self.messages.append(user_message)
+
+        if self.message_type == 'single':
+            user_prompt = self.prompt.task_prompt.format(goal=self.episode_data.goal)
+            history = [str(step.summary) for step in self.trajectory[:-1]]
+            history = ''.join([f'Step {si+1}: {_}; 'for si, _ in enumerate(history)])
+            user_prompt += self.prompt.history_prompt.format(history=history)
+            if self.enable_think:
+                user_prompt += self.prompt.thinking_prompt
+            user_prompt += f"\n{IMAGE_PLACEHOLDER}"
+            user_message = generate_message("user", user_prompt, images=[pixels])
+            self.messages[1] = user_message
+
+        if self.message_type == 'chat' and self.curr_step_idx > 0:
+            last_step = self.trajectory[self.curr_step_idx - 1]
+            assistant_message = generate_message("assistant", last_step.content)
+            self.messages.append(assistant_message)
+
+            user_prompt = ""
+            if self.enable_think:
+                user_prompt += self.prompt.thinking_prompt
+            user_prompt += f"\n{IMAGE_PLACEHOLDER}"
+            user_message = generate_message("user", user_prompt, images=[pixels])
+            self.messages.append(user_message)
+            
+            self.messages = slim_messages(self.messages, num_image_limit=self.num_image_limit)
 
         # Call VLM
         if self.curr_step_idx in show_step:
-            show_message(messages, "Qwen")
-        response = self.vlm.predict(messages)
+            show_message(self.messages, "Qwen")
+        response = self.vlm.predict(self.messages)
 
         # parse the response
         thought_s, action, action_s, summary_s = None, None, None, None
@@ -163,7 +207,7 @@ class QwenAgent(Agent):
             try:
                 raw_action = response.choices[0].message.content
                 logger.info("Action from VLM:\n%s" % raw_action)
-                step_data.vlm_call_history.append(VLMCallingData(self.messages, response))
+                step_data.content = raw_action
                 thought_s, action, action_s, summary_s = _parse_response(raw_action, (resized_width, resized_height), raw_size)
                 logger.info(f"Thought: {thought_s}")
                 logger.info(f"Action: {action}")
@@ -174,9 +218,11 @@ class QwenAgent(Agent):
                 logger.warning(f"Failed to parse the action. Error is {e.args}")
                 error_prompt = f"Failed to parse the action. Error is {e.args}\nPlease follow the output format to provide a valid action:"
                 msg = {"role": "user", "content": [{"type": "text", "text": error_prompt}]}
-                messages.append(msg)
-                response = self.vlm.predict(messages)
+                self.messages.append(msg)
+                response = self.vlm.predict(self.messages)
                 counter -= 1
+        if counter != self.max_action_retry:
+            self.messages = self.messages[:-(self.max_action_retry - counter)]
 
         if action is None:
             logger.warning("Action parse error after max retry.")

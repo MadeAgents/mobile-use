@@ -82,6 +82,8 @@ class QwenAgentConfig(AgentConfig):
     prompt_config: str = None
     min_pixels: int = 3136
     max_pixels: int = 10035200
+    message_type: Literal['single', 'chat'] = 'single'
+    num_image_limit: int = 2
 
 
 class MultiAgentConfig(AgentConfig):

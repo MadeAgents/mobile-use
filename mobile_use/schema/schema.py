@@ -76,6 +76,7 @@ class VLMCallingData:
 class BaseStepData:
     step_idx: int
     curr_env_state: EnvState
+    content: Optional[str] = None       # VLM response content
     action: Optional[Action] = None
     exec_env_state: Optional[EnvState] = None
     vlm_call_history: Optional[List[VLMCallingData]] = field(default_factory=list)
