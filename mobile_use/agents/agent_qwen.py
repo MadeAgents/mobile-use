@@ -173,8 +173,8 @@ class QwenAgent(Agent):
         if self.message_type == 'single':
             user_prompt = self.prompt.task_prompt.format(goal=self.episode_data.goal)
             history = [str(step.summary) for step in self.trajectory[:-1]]
-            history = '\n' + ''.join([f'Step {si+1}: {_}; 'for si, _ in enumerate(history)]) + '\n'
-            user_prompt += self.prompt.history_prompt.format(history=history)
+            history = ''.join([f'Step {si+1}: {_}; 'for si, _ in enumerate(history)])
+            user_prompt += '\n' + self.prompt.history_prompt.format(history=history) + '\n'
             if self.enable_think:
                 user_prompt += '\n' + self.prompt.thinking_prompt
             user_prompt += f"\n{IMAGE_PLACEHOLDER}"
