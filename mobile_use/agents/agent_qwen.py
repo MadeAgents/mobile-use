@@ -165,7 +165,7 @@ class QwenAgent(Agent):
             # Add user prompt
             user_prompt = self.prompt.task_prompt.format(goal=self.episode_data.goal)
             if self.enable_think:
-                user_prompt += self.prompt.thinking_prompt
+                user_prompt += '\n' + self.prompt.thinking_prompt
             user_prompt += f"\n{IMAGE_PLACEHOLDER}"
             user_message = generate_message("user", user_prompt, images=[pixels])
             self.messages.append(user_message)
@@ -173,10 +173,10 @@ class QwenAgent(Agent):
         if self.message_type == 'single':
             user_prompt = self.prompt.task_prompt.format(goal=self.episode_data.goal)
             history = [str(step.summary) for step in self.trajectory[:-1]]
-            history = ''.join([f'Step {si+1}: {_}; 'for si, _ in enumerate(history)])
+            history = '\n' + ''.join([f'Step {si+1}: {_}; 'for si, _ in enumerate(history)]) + '\n'
             user_prompt += self.prompt.history_prompt.format(history=history)
             if self.enable_think:
-                user_prompt += self.prompt.thinking_prompt
+                user_prompt += '\n' + self.prompt.thinking_prompt
             user_prompt += f"\n{IMAGE_PLACEHOLDER}"
             user_message = generate_message("user", user_prompt, images=[pixels])
             self.messages[1] = user_message
@@ -188,7 +188,7 @@ class QwenAgent(Agent):
 
             user_prompt = ""
             if self.enable_think:
-                user_prompt += self.prompt.thinking_prompt
+                user_prompt += '\n' + self.prompt.thinking_prompt
             user_prompt += f"\n{IMAGE_PLACEHOLDER}"
             user_message = generate_message("user", user_prompt, images=[pixels])
             self.messages.append(user_message)

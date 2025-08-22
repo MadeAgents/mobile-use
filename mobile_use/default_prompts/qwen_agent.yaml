@@ -38,8 +38,8 @@ task_prompt: |-
   The user query: {goal}
 
 history_prompt: |-
-  \nTask progress (You have done the following operation on the current device): {history}.\n
+  Task progress (You have done the following operation on the current device): {history}.
 
 thinking_prompt: |-
-  \nBefore answering, explain your reasoning step-by-step in <thinking></thinking> tags, and insert them before the <tool_call></tool_call> XML tags.
+  Before answering, explain your reasoning step-by-step in <thinking></thinking> tags, and insert them before the <tool_call></tool_call> XML tags.
   After answering, summarize your action in <conclusion></conclusion> tags, and insert them after the <tool_call></tool_call> XML tags.
