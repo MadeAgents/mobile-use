@@ -28,6 +28,7 @@ def _parse_response(content: str, size: tuple[float, float], raw_size: tuple[flo
             "end_box": "coordinate2",
             "scroll": "swipe",
             "content": "text",
+            "open_app": "open",
         }
         return maps.get(name, name)
     thought = re.search(r'<thinking>(.*?)</thinking>', content, flags=re.DOTALL)
@@ -127,8 +128,8 @@ class QwenAgent(Agent):
         messages = []
         # Add system prompt
         system_prompt = self.prompt.system_prompt.format(
-            resized_width = resized_width,
-            resized_height = resized_height,
+            width = resized_width,
+            height = resized_height,
         )
         system_message = generate_message("system", system_prompt)
         messages.append(system_message)
@@ -191,6 +192,8 @@ class QwenAgent(Agent):
                 logger.info(f"Answer: {action}")
                 answer = action.parameters['text'].strip()
                 step_data.answer = answer
+                logger.info("Terminate the task after answering question.")
+                self.status = AgentStatus.FINISHED
             else:
                 logger.info(f"Execute the action: {action}")
                 try:
@@ -209,7 +212,7 @@ class QwenAgent(Agent):
         return step_data
 
 
-    def iter_run(self, input_content: str) -> Iterator[SingleAgentStepData]:
+    def iter_run(self, input_content: str, stream: bool=False) -> Iterator[SingleAgentStepData]:
         """Execute the agent with user input content.
 
         Returns: Iterator[StepData]

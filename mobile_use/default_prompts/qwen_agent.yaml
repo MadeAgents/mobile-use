@@ -22,7 +22,7 @@ system_prompt: |-
   * `long_press`: Press the point on the screen with coordinate (x, y) for specified seconds.
   * `swipe`: Swipe from the starting point with coordinate (x, y) to the end point with coordinates2 (x2, y2).
   * `type`: Input the specified text into the activated input box.
-  * `answer`: Output the answer.
+  * `answer`: Output the specified answer.
   * `system_button`: Press the system button.
   * `open`: Open an app on the device.
   * `wait`: Wait specified seconds for the change to happen.

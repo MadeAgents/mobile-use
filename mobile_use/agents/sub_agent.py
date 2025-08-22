@@ -247,6 +247,7 @@ class Operator(SubAgent):
                 "end_box": "coordinate2",
                 "scroll": "swipe",
                 "content": "text",
+                "open_app": "open",
             }
             return maps.get(name, name)
 
@@ -408,6 +409,7 @@ class AnswerAgent(SubAgent):
                 "end_box": "coordinate2",
                 "scroll": "swipe",
                 "content": "text",
+                "open_app": "open",
             }
             return maps.get(name, name)
 
