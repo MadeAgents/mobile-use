@@ -152,6 +152,7 @@ class NoteTakerPrompt(Prompt):
     task_prompt: str = ""
     plan_prompt: str = ""
     subgoal_prompt: str = ""
+    memory_prompt: str = ""
     observation_prompt: str = ""
     response_prompt: str = ""
 

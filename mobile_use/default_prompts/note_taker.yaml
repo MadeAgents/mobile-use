@@ -20,6 +20,11 @@ subgoal_prompt: |-
   {subgoal}
 
 
+memory_prompt: |-
+  ### Existing Important Notes ###
+  {memory}
+
+
 observation_prompt: |-
   ### Current Screenshot ###
   {image_placeholder}
@@ -28,13 +33,13 @@ observation_prompt: |-
 
 
 response_prompt: |-
-  ---
-  Carefully examine the information above to identify any important content on the screenshot that needs to be recorded.
-  Only record content that needs to be stored in the memory for future use. This usually involves information that needs to be collected across apps or multiple pages.
-  The information that only useful for predicting the next action should not be recorded. Actually in most cases, there is no need to record anything.
+  ### Requirements ###
+  Extract and save important texts, numbers, or images on the current screen for future use. 
+  Only record content that needs to be stored in the memory for long-term future use. This usually involves information that needs to be collected across apps or multiple pages.
+  The information that only useful for the next or immedinate action should not be recorded!!! In most cases, there is no need to record anything!
   The information can be some numbers, names, texts extract from images or notes, or other information that needs to be collected.
 
   Provide your output in the following format:
   ### Important Notes ###
-  The information you want to record. If there is no important content, put "None" here.
+  The updated important notes, combining the old and new ones. Keep your output concise. Only update when necessary. If nothing new to record, copy the existing important notes. If you think some information in the existing important notes is no longer useful, you can remove it.
 

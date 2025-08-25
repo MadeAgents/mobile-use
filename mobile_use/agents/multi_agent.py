@@ -237,8 +237,7 @@ class MultiAgent(Agent):
                     note = self.note_taker.parse_response(content)
                     if note is not None:
                         logger.info("Note: %s" % note)
-                        self.episode_data.memory += note.strip()
-                        self.episode_data.memory += "\n"
+                        self.episode_data.memory = note.strip()
                         logger.info(f"Current Memory: {self.episode_data.memory}")
                 except Exception as e:
                     logger.warning(f"Failed to parse the note. Error: {e}")

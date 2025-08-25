@@ -885,6 +885,11 @@ class NoteTaker(SubAgent):
         )
         prompt_list.append(task_prompt)
 
+        memory_prompt = self.prompt.memory_prompt.format(
+            memory = episodedata.memory if episodedata.memory is not None or episodedata.memory == "" else "No important notes yet.",
+        )
+        prompt_list.append(memory_prompt)
+
         observation_prompt = self.prompt.observation_prompt.format(
             image_placeholder = IMAGE_PLACEHOLDER,
             resized_width = resized_width,
