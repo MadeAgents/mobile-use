@@ -26,6 +26,13 @@ class MultiAgent(Agent):
         config = MultiAgentConfig.from_yaml(config_path)
         self.config = config
 
+        self.subagent_map = {
+            'Operator': Operator,
+            'OperatorQwen': OperatorQwen,
+            'AnswerAgent': AnswerAgent,
+            'AnswerAgentQwen': AnswerAgentQwen,
+        }
+
         self._init_sub_agents()
 
         self.max_action_retry = self.config.max_action_retry
@@ -47,9 +54,11 @@ class MultiAgent(Agent):
         return None
 
     def _init_sub_agents(self):
+        operator_class = self.subagent_map[self.config.operator.name] if self.config.operator else None
+        answer_agent_class = self.subagent_map[self.config.answer_agent.name] if self.config.answer_agent else None
         self.planner = self._init_sub_agent(Planner, self.config.planner)
-        self.operator = self._init_sub_agent(Operator, self.config.operator)
-        self.answer_agent = self._init_sub_agent(AnswerAgent, self.config.answer_agent)
+        self.operator = self._init_sub_agent(operator_class, self.config.operator)
+        self.answer_agent = self._init_sub_agent(answer_agent_class, self.config.answer_agent)
         self.reflector = self._init_sub_agent(Reflector, self.config.reflector)
         self.trajectory_reflector = self._init_sub_agent(TrajectoryReflector, self.config.trajectory_reflector)
         self.global_reflector = self._init_sub_agent(GlobalReflector, self.config.global_reflector)

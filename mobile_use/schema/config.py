@@ -33,11 +33,13 @@ class PlannerConfig(SubAgentConfig):
     pass
 
 class OperatorConfig(SubAgentConfig):
+    name: str = "Operator"
     num_histories: int = None
     include_device_time: bool = True
     include_tips: bool = True
 
 class AnswerAgentConfig(SubAgentConfig):
+    name: str = "AnswerAgent"
     num_histories: int = None
     include_device_time: bool = True
 

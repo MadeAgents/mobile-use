@@ -10,12 +10,15 @@ from mobile_use.schema.schema import *
 from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 from mobile_use.utils.utils import *
 from mobile_use.schema.config import *
+import mobile_use.agents.agent_qwen as agent_qwen
 
 __all__ = [
     "SubAgent",
     "Planner",
     "Operator",
+    "OperatorQwen",
     "AnswerAgent",
+    "AnswerAgentQwen",
     "Reflector",
     "TrajectoryReflector",
     "GlobalReflector",
@@ -299,6 +302,17 @@ class Operator(SubAgent):
         return thought_s, action_a, action_s, action_desc_s
 
 
+class OperatorQwen(Operator):
+    def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
+        if size is None:
+            size = self.resized_size
+        if raw_size is None:
+            raw_size = self.raw_size
+        thought_s, action_a, action_s, action_desc_s = agent_qwen._parse_response(content, size, raw_size)
+
+        return thought_s, action_a, action_s, action_desc_s
+
+
 class AnswerAgent(SubAgent):
     """
     This agent is used to answer the user query.
@@ -459,6 +473,19 @@ class AnswerAgent(SubAgent):
         action_a = Action(name=name, parameters=params)
 
         return thought_s, action_a, action_s, action_desc_s
+
+
+class AnswerAgentQwen(AnswerAgent):
+    def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
+        if size is None:
+            size = self.resized_size
+        if raw_size is None:
+            raw_size = self.raw_size
+        thought_s, action_a, action_s, action_desc_s = agent_qwen._parse_response(content, size, raw_size)
+
+        return thought_s, action_a, action_s, action_desc_s
+
+
 
 class Reflector(SubAgent):
     def __init__(self, config: ReflectorConfig):
