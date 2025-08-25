@@ -886,7 +886,7 @@ class NoteTaker(SubAgent):
         prompt_list.append(task_prompt)
 
         observation_prompt = self.prompt.observation_prompt.format(
-            screenshot = IMAGE_PLACEHOLDER,
+            image_placeholder = IMAGE_PLACEHOLDER,
             resized_width = resized_width,
             resized_height = resized_height,
         )
