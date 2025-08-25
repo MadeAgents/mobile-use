@@ -63,6 +63,7 @@ class MultiAgent(Agent):
         self.trajectory_reflector = self._init_sub_agent(TrajectoryReflector, self.config.trajectory_reflector)
         self.global_reflector = self._init_sub_agent(GlobalReflector, self.config.global_reflector)
         self.progressor = self._init_sub_agent(Progressor, self.config.progressor)
+        self.note_taker = self._init_sub_agent(NoteTaker, self.config.note_taker)
 
     def reset(self, goal: str='', max_steps: int = 10) -> None:
         """Reset the state of the agent.
@@ -224,6 +225,24 @@ class MultiAgent(Agent):
         step_data.exec_env_state = self.env.get_state()
 
         if self.status not in [AgentStatus.FINISHED, AgentStatus.FAILED] and action is not None:
+            # Call NoteTaker
+            if self.note_taker:
+                note_messages = self.note_taker.get_message(self.episode_data)
+                if self.curr_step_idx in show_step:
+                    show_message(note_messages, "NoteTaker")
+                response = self.note_taker.vlm.predict(note_messages)
+                try:
+                    content = response.choices[0].message.content
+                    logger.info("Note from VLM:\n%s" % content)
+                    note = self.note_taker.parse_response(content)
+                    if note is not None:
+                        logger.info("Note: %s" % note)
+                        self.episode_data.memory += note.strip()
+                        self.episode_data.memory += "\n"
+                        logger.info(f"Current Memory: {self.episode_data.memory}")
+                except Exception as e:
+                    logger.warning(f"Failed to parse the note. Error: {e}")
+
             # Call Reflector
             if self.reflector and not skip_reflector:
                 reflection_messages = self.reflector.get_message(self.episode_data)

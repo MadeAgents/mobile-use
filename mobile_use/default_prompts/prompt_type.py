@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-def load_prompt(prompt_type = Literal["qwen_agent", "planner", "operator", "answer_agent", "reflector", "trajectory_reflector", "global_reflector", "progressor"], prompt_config: str=None) -> Optional["Prompt"]:
+def load_prompt(prompt_type = Literal["qwen_agent", "planner", "operator", "answer_agent", "reflector", "trajectory_reflector", "global_reflector", "progressor", "note_taker"], prompt_config: str=None) -> Optional["Prompt"]:
     match prompt_type:
         case "qwen_agent":
             return QwenAgentPrompt(config=prompt_config) if prompt_config else QwenAgentPrompt()
@@ -143,27 +143,20 @@ class ProgressorPrompt(Prompt):
     continue_progress_response: str = ""
 
 
-if __name__ == "__main__":
-    prompt = load_prompt("planner")
-    # print(prompt)
-    print(prompt.system_prompt)
-    print(prompt.task_prompt)
-    # print(prompt.init_plan)
-    # print(prompt.continue_plan)
-    # prompt = load_prompt("operator")
-    # print(prompt)
-    # prompt = load_prompt("reflector")
-    # print(prompt)
-    # prompt = load_prompt("trajectory_reflector")
-    # print(prompt)
-    # prompt = load_prompt("global_reflector")
-    # print(prompt)
-    # prompt = load_prompt("progressor")
-    # print(prompt)
+@dataclass
+class NoteTakerPrompt(Prompt):
+    config: str = "note_taker.yaml"
+    system_prompt: str = ""
+    task_prompt: str = ""
+    plan_prompt: str = ""
+    subgoal_prompt: str = ""
+    observation_prompt: str = ""
+    response_prompt: str = ""
 
+
+if __name__ == "__main__":
     prompt = load_prompt("qwen_agent")
-    # print(prompt)
-    print(prompt.system_prompt)
-    print(prompt.task_prompt)
-    print(prompt.history_prompt)
-    print(prompt.thinking_prompt)
+    print(repr(prompt.system_prompt))
+    print(repr(prompt.task_prompt))
+    print(repr(prompt.history_prompt))
+    print(repr(prompt.thinking_prompt))

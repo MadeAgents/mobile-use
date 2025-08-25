@@ -23,6 +23,7 @@ __all__ = [
     "TrajectoryReflector",
     "GlobalReflector",
     "Progressor",
+    "NoteTaker",
 ]
 
 logger = logging.getLogger(__name__)
@@ -857,3 +858,51 @@ class Progressor(SubAgent):
     
     def parse_response(self, response: str):
         return response.split("### Completed contents ###")[-1].replace("\n", " ").replace("  ", " ").strip()
+
+
+class NoteTaker(SubAgent):
+    def __init__(self, config: NoteTakerConfig):
+        super().__init__(config)
+        self.prompt: NoteTakerPrompt = load_prompt("note_taker", config.prompt_config)
+
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
+        messages = []
+        trajectory = episodedata.trajectory
+        current_step = trajectory[-1]
+        
+        pixels = current_step.curr_env_state.pixels.copy()
+        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
+        
+        # Add system prompt
+        system_message = generate_message("system", self.prompt.system_prompt)
+        messages.append(system_message)
+
+        # Add user prompt
+        prompt_list = []
+
+        task_prompt = self.prompt.task_prompt.format(
+            task_description = episodedata.goal,
+        )
+        prompt_list.append(task_prompt)
+
+        observation_prompt = self.prompt.observation_prompt.format(
+            screenshot = IMAGE_PLACEHOLDER,
+            resized_width = resized_width,
+            resized_height = resized_height,
+        )
+        prompt_list.append(observation_prompt)
+
+        response_prompt = self.prompt.response_prompt
+        prompt_list.append(response_prompt)
+
+        prompt = "\n\n".join(prompt_list)
+        user_message = generate_message("user", prompt, images=[pixels])
+        messages.append(user_message)
+
+        return messages
+
+    def parse_response(self, response: str):
+        note = response.split("### Important Notes ###")[-1].replace("\n", " ").replace("  ", " ").strip()
+        if note == "" or note.lower() in ["none", "no", "n/a", "na"]:
+            note = None
+        return note
