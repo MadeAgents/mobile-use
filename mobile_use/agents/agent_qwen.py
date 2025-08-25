@@ -46,7 +46,7 @@ def _parse_response(content: str, size: tuple[float, float], raw_size: tuple[flo
         raise Exception("Cannot extract action in the content.")
     action_s = action.group(1).strip()
     action = json.loads(action_s)
-    name = action['arguments']['action']
+    name = map_names(action['arguments']['action'])
 
     # Remove the 'action' key and map the other keys in the arguments
     action['arguments'].pop('action')

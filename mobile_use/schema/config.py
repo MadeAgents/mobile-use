@@ -3,14 +3,23 @@ import yaml
 from typing import Optional, Union, Literal
 
 
-class MobileEnvConfig(pydantic.BaseModel):
+class BaseConfig(pydantic.BaseModel):
+    @classmethod
+    def from_yaml(cls, yaml_file: str):
+        """Load configuration from a YAML file and create a instance"""
+        with open(yaml_file, 'r') as f:
+            config_data = yaml.safe_load(f)
+        return cls(**config_data)
+
+
+class MobileEnvConfig(BaseConfig):
     serial_no: str = None
     host: str="127.0.0.1"
     port: int=5037
     wait_after_action_seconds: float = 2.0
 
 
-class VLMConfig(pydantic.BaseModel):
+class VLMConfig(BaseConfig):
     model_name: str
     api_key: str
     base_url: str
@@ -24,7 +33,7 @@ class VLMConfig(pydantic.BaseModel):
         extra = 'allow'
 
 
-class SubAgentConfig(pydantic.BaseModel):
+class SubAgentConfig(BaseConfig):
     enabled: bool = False
     vlm: VLMConfig = None
     prompt_config: str = None
@@ -64,18 +73,11 @@ class ProgressorConfig(SubAgentConfig):
     pass
 
 
-class AgentConfig(pydantic.BaseModel):
+class AgentConfig(BaseConfig):
     vlm: VLMConfig
     env: MobileEnvConfig = MobileEnvConfig()
     enable_log: bool = False
     log_dir: Optional[str] = None
-
-    @classmethod
-    def from_yaml(cls, yaml_file: str):
-        """Load configuration from a YAML file and create a instance"""
-        with open(yaml_file, 'r') as f:
-            config_data = yaml.safe_load(f)
-        return cls(**config_data)
 
 
 class QwenAgentConfig(AgentConfig):
