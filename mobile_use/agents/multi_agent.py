@@ -136,7 +136,6 @@ class MultiAgent(Agent):
             try:
                 raw_action = response.choices[0].message.content
                 logger.info("Action from VLM:\n%s" % raw_action)
-                step_data.content = raw_action
                 resized_size = (resized_width, resized_height)
                 action_thought, action, action_s, action_desc = self.operator.parse_response(raw_action, resized_size, pixels.size)
                 logger.info("ACTION THOUGHT: %s" % action_thought)
@@ -174,6 +173,8 @@ class MultiAgent(Agent):
                     logger.info(f"Answer: {action}")
                     answer = action.parameters['text'].strip()
                     step_data.answer = answer
+                    self.status == AgentStatus.FINISHED
+                    logger.info("Terminate the task after answering question.")
                 elif self.enable_pre_reflection and action.name == 'type' and \
                         len(self.trajectory) > 1 and self.trajectory[-2].action.name == 'type' and \
                         'coordinate' not in action.parameters:

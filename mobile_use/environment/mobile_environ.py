@@ -101,7 +101,9 @@ class Environment:
                         charsb64 = str(base64.b64encode(text.encode('utf-8')))[1:]
                         self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
                         self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
+                        time.sleep(1)
                         os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_INPUT_B64 --es msg %s" %charsb64)
+                        time.sleep(1)
                         self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
                     else:
                         self._d.shell(["input", "text", text])
@@ -145,9 +147,9 @@ class Environment:
                     self._d.shell(["input", "text", " "])
                     self._d.shell(["ime", "enable", 'com.android.adbkeyboard/.AdbIME'])
                     self._d.shell(["ime", "set", 'com.android.adbkeyboard/.AdbIME'])
-                    time.sleep(0.5)
+                    time.sleep(1)
                     os.system(f"adb -P {self.port} -s {self._d.get_serialno()} shell am broadcast -a ADB_CLEAR_TEXT")
-                    time.sleep(0.5)
+                    time.sleep(1)
                     self._d.shell(["ime", "disable", 'com.android.adbkeyboard/.AdbIME'])
 
                 case 'take_note':
