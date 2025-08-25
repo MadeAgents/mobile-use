@@ -22,6 +22,8 @@ def load_prompt(prompt_type = Literal["qwen_agent", "planner", "operator", "answ
             return GlobalReflectorPrompt(config=prompt_config) if prompt_config else GlobalReflectorPrompt()
         case "progressor":
             return ProgressorPrompt(config=prompt_config) if prompt_config else ProgressorPrompt()
+        case "note_taker":
+            return NoteTakerPrompt(config=prompt_config) if prompt_config else NoteTakerPrompt()
         case _:
             raise KeyError(f"Unknown prompt type: {prompt_type}")
 
