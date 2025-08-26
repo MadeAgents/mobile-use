@@ -20,7 +20,7 @@ system_prompt: |-
 
   For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
   <tool_call>
-  {{"name": <function-name>, "arguments": <args-json-object>}}
+  {{"name": "mobile_use", "arguments": {{"action": "answer", "text": <your-answer>}}}}
   </tool_call>
 
 
@@ -105,5 +105,13 @@ observation_prompt: |-
 
 
 response_prompt: |-
+  ### Response Requirements ###
+  The (overall) user query is: {goal}
+  Now you have finished the task. I want you to provide an answer to the user query.
+  Answer with the following format:
   Before answering, explain your reasoning step-by-step in <thinking></thinking> tags, and insert them before the <tool_call></tool_call> XML tags.
+  Then, output a json object with function name and arguments within <tool_call></tool_call> XML tags:
+  <tool_call>
+  {{"name": "mobile_use", "arguments": {{"action": "answer", "text": <your-answer>}}}}
+  </tool_call>
   After answering, summarize your action in <conclusion></conclusion> tags, and insert them after the <tool_call></tool_call> XML tags.

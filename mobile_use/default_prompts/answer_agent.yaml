@@ -101,7 +101,7 @@ observation_prompt: |-
 
 
 response_prompt: |-
-  Response Requirements ###
+  ### Response Requirements ###
   The (overall) user query is: {goal}
   Now you have finished the task. I want you to provide an answer to the user query.
   Answer with the following format:

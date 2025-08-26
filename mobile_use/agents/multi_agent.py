@@ -183,7 +183,7 @@ class MultiAgent(Agent):
                     logger.info(f"Answer: {action}")
                     answer = action.parameters['text'].strip()
                     step_data.answer = answer
-                    self.status == AgentStatus.FINISHED
+                    self.status = AgentStatus.FINISHED
                     logger.info("Terminate the task after answering question.")
                 elif self.enable_pre_reflection and action.name == 'type' and \
                         len(self.trajectory) > 1 and self.trajectory[-2].action.name == 'type' and \
