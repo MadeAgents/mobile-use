@@ -870,7 +870,7 @@ class NoteTaker(SubAgent):
         trajectory = episodedata.trajectory
         current_step = trajectory[-1]
         
-        pixels = current_step.curr_env_state.pixels.copy()
+        pixels = current_step.exec_env_state.pixels.copy()
         resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
         
         # Add system prompt
@@ -907,7 +907,7 @@ class NoteTaker(SubAgent):
         return messages
 
     def parse_response(self, response: str):
-        note = response.split("### Important Notes ###")[-1].replace("\n", " ").replace("  ", " ").strip()
+        note = response.split("### Important Notes ###")[-1].strip()
         if note == "" or note.lower() in ["none", "no", "n/a", "na"]:
             note = None
         return note
