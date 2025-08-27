@@ -979,6 +979,8 @@ class TaskExtractor(SubAgent):
             task_description = taskdata.task,
             sub_tasks = '\n'.join([f"{i+1}. {sub_task}" for i, sub_task in enumerate(taskdata.sub_tasks)]),
             completed_sub_tasks = '\n'.join([f"{i+1}. {sub_task}" for i, sub_task in enumerate(taskdata.sub_tasks[:taskdata.current_sub_task_idx+1])]),
+            resized_width = resized_width,
+            resized_height = resized_height,
         )
         if num_latest_screenshots > 0:
             user_prompt += IMAGE_PLACEHOLDER * num_latest_screenshots
