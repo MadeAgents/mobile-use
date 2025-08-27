@@ -655,10 +655,10 @@ class TrajectoryReflector(SubAgent):
 
         if step_idx % self.evoke_every_steps != 0 and len(error) == 0:
             self.sleep_count += 1
-            return None
+            return None, None
         if self.sleep_count < self.cold_steps:
             self.sleep_count += 1
-            return None
+            return None, None
 
         self.sleep_count = 0
         messages = []
