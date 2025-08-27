@@ -62,6 +62,7 @@ subgoal_prompt: |-
 history_prompt: |-
   ### Latest History Operations ###
   You have done the following operation on the current device):
+  {history}
 
 
 progress_prompt: |-
