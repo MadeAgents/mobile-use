@@ -608,16 +608,16 @@ class TrajectoryReflector(SubAgent):
                 else:
                     break
                 if repeat_action >= self.max_repeat_action:
-                    error.append(f"The action `{current_step.action_s}` has repeated more than {self.max_repeat_action} times.")
+                    error.append(f"The action `{current_step.action_s}` has repeated more than {self.max_repeat_action} times. If you stuck in a page, change your action!")
                     break
 
         # detect repeated action series
         if len(trajectory) >= 4:
-            if trajectory[-1].action == trajectory[-3].action and trajectory[-2].action == trajectory[-4].action:
-                error.append(f"The latest two actions have repeated more than {self.max_repeat_action_series} times.")
+            if trajectory[-1].action != trajectory[-2].action and trajectory[-1].action == trajectory[-3].action and trajectory[-2].action == trajectory[-4].action:
+                error.append(f"The latest two actions have repeated more than {self.max_repeat_action_series} times. DO NOT repeat your previous actions! Change your action to explore other possibilities!")
         if len(trajectory) >= 6:
-            if trajectory[-1].action == trajectory[-4].action and trajectory[-2].action == trajectory[-5].action and trajectory[-3].action == trajectory[-6].action:
-                error.append(f"The latest three actions have repeated more than {self.max_repeat_action_series} times.")
+            if trajectory[-1].action != trajectory[-2].action and trajectory[-1].action == trajectory[-4].action and trajectory[-2].action == trajectory[-5].action and trajectory[-3].action == trajectory[-6].action:
+                error.append(f"The latest three actions have repeated more than {self.max_repeat_action_series} times. DO NOT repeat your previous actions! Change your action to explore other possibilities!")
 
         # detect repeated screenshots
         repeat_screen = 1
@@ -627,7 +627,9 @@ class TrajectoryReflector(SubAgent):
             else:
                 break
             if repeat_screen >= self.max_repeat_screen:
-                error.append(f"The screen has kept unchanged for more than {self.max_repeat_screen} times.")
+                error.append(f"The screen has kept unchanged for more than {self.max_repeat_screen} times. You may be stuck in a page. Change your action to explore other possibilities!")
+                if trajectory[-1].action == "swipe":
+                    error.append(f"You have performed several `swipe` actions but the screen is still unchanged. It indicates that you have swiped to the end of a page. If you are trying to find a specific item, you can try to swipe towards the opposite direction.")
                 break
 
         # detect fail reflection
@@ -719,6 +721,8 @@ class TrajectoryReflector(SubAgent):
                 error = error,
             )
             prompt_list.append(error_info_prompt)
+        else:
+            error = None
 
         response_prompt = self.prompt.response_prompt
         prompt_list.append(response_prompt)
@@ -727,7 +731,7 @@ class TrajectoryReflector(SubAgent):
         user_message = generate_message("user", prompt, images=screenshots)
         messages.append(user_message)
 
-        return messages
+        return error, messages
 
     def parse_response(self, response: str) -> dict:
         outcome = response.split("### Outcome ###")[-1].split("### Error Description ###")[0].replace("\n", " ").replace("  ", " ").strip()

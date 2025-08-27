@@ -277,13 +277,15 @@ class MultiAgent(Agent):
 
             # Call TrajectoryReflector
             if self.trajectory_reflector:
-                trajectory_reflection_messages = self.trajectory_reflector.get_message(self.episode_data)
+                detected_error, trajectory_reflection_messages = self.trajectory_reflector.get_message(self.episode_data)
                 if trajectory_reflection_messages is not None:
                     if self.curr_step_idx in [4,9]:
                         show_message(trajectory_reflection_messages, "TrajectoryReflector")
                     response = self.trajectory_reflector.vlm.predict(trajectory_reflection_messages)
                     try:
                         content = response.choices[0].message.content
+                        if detected_error is not None:
+                            content = detected_error + "\n" + content
                         logger.info("Trajectory Reflection from VLM:\n%s" % content)
                         outcome, error_description = self.trajectory_reflector.parse_response(content)
                         if outcome in self.trajectory_reflector.valid_options:
