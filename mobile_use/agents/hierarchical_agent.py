@@ -403,9 +403,9 @@ class HierarchicalAgent(Agent):
                         logger.warning(f"Failed to parse the rewritten sub task. Error: {e}")
 
                 self.task_data.current_sub_task_idx += 1
-                self.goal = self.task_data.sub_tasks[self.task_data.current_sub_task_idx]
+                new_goal = self.task_data.sub_tasks[self.task_data.current_sub_task_idx]
                 new_trajectory: List[MobileUseStepData] = []
-                new_episodedata = MobileUseEpisodeData(goal=self.goal, num_steps=0, trajectory=new_trajectory)
+                new_episodedata = MobileUseEpisodeData(goal=new_goal, num_steps=0, trajectory=new_trajectory)
                 self.trajectory = new_trajectory
                 self.episode_data = new_episodedata
                 self.task_data.episode_data = new_episodedata
