@@ -377,7 +377,7 @@ class HierarchicalAgent(Agent):
             if self.task_data.current_sub_task_idx + 1 < len(self.task_data.sub_tasks):
                 if self.task_data.task_type == 'A':
                     # extract sub task info
-                    sub_task_info_messages = self.task_extractor.get_message(self.episode_data)
+                    sub_task_info_messages = self.task_extractor.get_message(self.task_data)
                     show_message(sub_task_info_messages, "TaskExtractor")
                     response = self.task_extractor.vlm.predict(sub_task_info_messages)
                     try:
