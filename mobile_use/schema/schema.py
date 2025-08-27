@@ -117,7 +117,7 @@ class MobileUseStepData(SingleAgentStepData):
 @dataclass
 class BaseEpisodeData:
     goal: str
-    num_steps: int
+    num_steps: Optional[int] = None
     status: Optional[str] = None
     message: Optional[str] = None
     trajectory: Optional[List[BaseStepData]] = None
@@ -128,3 +128,13 @@ class MobileUseEpisodeData(BaseEpisodeData):
     trajectory: List[MobileUseStepData] = field(default_factory=list)
     finish_count: int = 0
     memory: Optional[str] = ""
+
+
+@dataclass
+class HierarchicalAgentEpisodeData:
+    episode_data: MobileUseEpisodeData
+    task_type: Optional[str] = None
+    sub_tasks: Optional[List[str]] = None
+    sub_tasks_return: Optional[List[str]] = None
+    sub_tasks_episode_data: Optional[List[MobileUseEpisodeData]] = None
+    current_sub_task_idx: Optional[int] = None

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-def load_prompt(prompt_type = Literal["qwen_agent", "planner", "operator", "answer_agent", "reflector", "trajectory_reflector", "global_reflector", "progressor", "note_taker"], prompt_config: str=None) -> Optional["Prompt"]:
+def load_prompt(prompt_type: str, prompt_config: str=None) -> Optional["Prompt"]:
     match prompt_type:
         case "qwen_agent":
             return QwenAgentPrompt(config=prompt_config) if prompt_config else QwenAgentPrompt()
@@ -24,6 +24,14 @@ def load_prompt(prompt_type = Literal["qwen_agent", "planner", "operator", "answ
             return ProgressorPrompt(config=prompt_config) if prompt_config else ProgressorPrompt()
         case "note_taker":
             return NoteTakerPrompt(config=prompt_config) if prompt_config else NoteTakerPrompt()
+        case "task_classifier":
+            return TaskClassifierPrompt(config=prompt_config) if prompt_config else TaskClassifierPrompt()
+        case "task_orchestrator":
+            return TaskOrchestratorPrompt(config=prompt_config) if prompt_config else TaskOrchestratorPrompt()
+        case "task_extractor":
+            return TaskExtractorPrompt(config=prompt_config) if prompt_config else TaskExtractorPrompt()
+        case "task_rewriter":
+            return TaskRewriterPrompt(config=prompt_config) if prompt_config else TaskRewriterPrompt()
         case _:
             raise KeyError(f"Unknown prompt type: {prompt_type}")
 
@@ -155,6 +163,26 @@ class NoteTakerPrompt(Prompt):
     memory_prompt: str = ""
     observation_prompt: str = ""
     response_prompt: str = ""
+
+
+@dataclass
+class TaskClassifierPrompt(Prompt):
+    config: str = "task_classifier.yaml"
+
+
+@dataclass
+class TaskOrchestratorPrompt(Prompt):
+    config: str = "task_orchestrator.yaml"
+
+
+@dataclass
+class TaskExtractorPrompt(Prompt):
+    config: str = "task_extractor.yaml"
+
+
+@dataclass
+class TaskRewriterPrompt(Prompt):
+    config: str = "task_rewriter.yaml"
 
 
 if __name__ == "__main__":

@@ -106,3 +106,12 @@ class MultiAgentConfig(AgentConfig):
     reflect_on_demand: bool = False
     logprob_threshold: float = -0.01
     enable_pre_reflection: bool = True
+
+
+class HierarchicalAgentConfig(MultiAgentConfig):
+    task_classifier: Optional[SubAgentConfig] = None
+    task_orchestrator: Optional[SubAgentConfig] = None
+    task_extractor: Optional[SubAgentConfig] = None
+    task_rewriter: Optional[SubAgentConfig] = None
+    enable_hierarchical_planning: bool = True
+

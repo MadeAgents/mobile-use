@@ -24,6 +24,10 @@ __all__ = [
     "GlobalReflector",
     "Progressor",
     "NoteTaker",
+    "TaskClassifier",
+    "TaskOrchestrator",
+    "TaskExtractor",
+    "TaskRewriter",
 ]
 
 logger = logging.getLogger(__name__)
@@ -51,6 +55,13 @@ def get_history(trajectory: List[MobileUseStepData], num_histories=None):
                 step_list.append("Failed")
                 step_list.append(f"Feedback: {trajectory[i].trajectory_reflection_error}")
         history.append(f"Step-{i+1}: {'; '.join(step_list)}")
+    return history
+
+def get_history_action_desc(trajectory: List[MobileUseStepData], num_histories=None):
+    start_idx = 0 if num_histories is None else max(0, len(trajectory) - num_histories)
+    history = []
+    for i in range(start_idx, len(trajectory)):
+        history.append(f"Step-{i+1}: {trajectory[i].action_desc}")
     return history
 
 
@@ -911,3 +922,66 @@ class NoteTaker(SubAgent):
         if note == "" or note.lower() in ["none", "no", "n/a", "na"]:
             note = None
         return note
+
+
+class TaskClassifier(SubAgent):
+    def __init__(self, config: SubAgentConfig):
+        super().__init__(config)
+        self.prompt: TaskClassifierPrompt = load_prompt("task_classifier", config.prompt_config)
+
+    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+        messages = []
+        goal = episodedata.goal
+
+        return messages
+
+    def parse_response(self, response: str):
+        pass
+
+
+class TaskOrchestrator(SubAgent):
+    def __init__(self, config: SubAgentConfig):
+        super().__init__(config)
+        self.prompt: TaskOrchestratorPrompt = load_prompt("task_orchestrator", config.prompt_config)
+
+    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+        messages = []
+        goal = episodedata.goal
+        task_type = episodedata.task_type
+
+        return messages
+
+    def parse_response(self, response: str):
+        pass
+
+
+class TaskExtractor(SubAgent):
+    def __init__(self, config: SubAgentConfig):
+        super().__init__(config)
+        self.prompt: TaskExtractorPrompt = load_prompt("task_extractor", config.prompt_config)
+
+    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+        messages = []
+        goal = episodedata.goal
+        task_type = episodedata.task_type
+
+        return messages
+
+    def parse_response(self, response: str):
+        pass
+
+
+class TaskRewriter(SubAgent):
+    def __init__(self, config: SubAgentConfig):
+        super().__init__(config)
+        self.prompt: TaskRewriterPrompt = load_prompt("task_rewriter", config.prompt_config)
+
+    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+        messages = []
+        goal = episodedata.goal
+        task_type = episodedata.task_type
+
+        return messages
+
+    def parse_response(self, response: str):
+        pass
