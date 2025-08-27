@@ -1,0 +1,23 @@
+name: task_extractor
+
+
+system_prompt: |-
+  You are an expert for solving GUI navigation tasks. Your task is to extract necessary information from history screenshots to help complete the user's instruction.
+
+
+user_prompt: |-
+  The user's instruction is:
+  {task_description}
+
+  You have breaked down the user's instruction into the following sub tasks:
+  {sub_tasks}
+  You have completed the following sub tasks:
+  {completed_sub_tasks}
+
+  To complete the remaining sub tasks, you need to extract necessary information from the latest screenshots.
+  Then you need to rewrite the remaining sub tasks by combining the extracted information.
+  Your output should be:
+  Extracted Information: <extracted_information>
+  Rewritten Remaining Sub Tasks: <rewritten_remaining_sub_tasks>
+
+  Here is the latest screenshots of the phone. The screen's resolution is {resized_width}x{resized_height}.

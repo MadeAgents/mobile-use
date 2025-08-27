@@ -97,7 +97,12 @@
     {
         "task": "ExpenseDeleteMultiple",
         "goal": "Delete the following expenses from pro expense: Ride-Sharing, Flight Tickets, Taxi Fare.",
-        "type": "C"
+        "type": "C",
+        "sub_tasks": [
+            "Delete the following expenses from pro expense: Ride-Sharing.",
+            "Delete the following expenses from pro expense: Flight Tickets.",
+            "Delete the following expenses from pro expense: Taxi Fare."
+        ]
     },
     {
         "task": "ExpenseDeleteMultiple2",
@@ -187,7 +192,11 @@
     {
         "task": "MarkorTranscribeReceipt",
         "goal": "Create a file in Markor, called receipt.md with the transactions from the receipt.png. Use Simple Gallery to view the receipt. Please enter transactions in csv format including the header \"Date, Item, Amount\".",
-        "type": "A"
+        "type": "A",
+        "sub_tasks": [
+            "View the transactions from the receipt.png using Simple Gallery.",
+            "Create a file in Markor, called receipt.md with the transactions from the receipt.png. Use csv format including the header \"Date, Item, Amount\"."
+        ]
     },
     {
         "task": "MarkorTranscribeVideo",
@@ -282,17 +291,27 @@
     {
         "task": "RecipeDeleteMultipleRecipes",
         "goal": "Delete the following recipes from Broccoli app: Zucchini Noodles with Pesto, Garlic Butter Shrimp, Lentil Soup.",
-        "type": "C"
+        "type": "C",
+        "sub_tasks": [
+            "Delete the following recipes from Broccoli app: Zucchini Noodles with Pesto.",
+            "Delete the following recipes from Broccoli app: Garlic Butter Shrimp.",
+            "Delete the following recipes from Broccoli app: Lentil Soup."
+        ]
     },
     {
         "task": "RecipeDeleteMultipleRecipesWithConstraint",
         "goal": "Delete the recipes from Broccoli app that use black garlic in the directions.",
-        "type": "C"
+        "type": "D"
     },
     {
         "task": "RecipeDeleteMultipleRecipesWithNoise",
         "goal": "Delete the following recipes from Broccoli app: Chicken Alfredo Pasta, Tomato Basil Bruschetta, Grilled Cheese with Tomato and Basil.",
-        "type": "C"
+        "type": "C",
+        "sub_tasks": [
+            "Delete the following recipes from Broccoli app: Chicken Alfredo Pasta.",
+            "Delete the following recipes from Broccoli app: Tomato Basil Bruschetta.",
+            "Delete the following recipes from Broccoli app: Grilled Cheese with Tomato and Basil."
+        ]
     },
     {
         "task": "RecipeDeleteSingleRecipe",
@@ -307,7 +326,12 @@
     {
         "task": "RetroCreatePlaylist",
         "goal": "Create a playlist in Retro Music titled \"Hip Hop Bangers 270\" with the following songs, in order: Golden Days, Dreamer's Awake, Hidden Paths",
-        "type": "C"
+        "type": "C",
+        "sub_tasks": [
+            "Create a playlist in Retro Music titled \"Hip Hop Bangers 270\" with the following songs: Golden Days.",
+            "Add the following songs in Retro Music to the playlist \"Hip Hop Bangers 270\": Dreamer's Awake.",
+            "Add the following songs in Retro Music to the playlist \"Hip Hop Bangers 270\": Hidden Paths."
+        ]
     },
     {
         "task": "RetroPlayingQueue",
@@ -329,7 +353,13 @@
     {
         "task": "RetroSavePlaylist",
         "goal": "Create a playlist in Retro Music titled \"Blues Break 567\" with the following songs, in order: Chasing Shadows, Lost in the Echo, Twilight Calling. Then export the playlist to the Downloads directory on the device.",
-        "type": "C"
+        "type": "C",
+        "sub_tasks": [
+            "Create a playlist in Retro Music titled \"Blues Break 567\" with the following songs: Chasing Shadows.",
+            "Add the following songs in Retro Music to the playlist \"Blues Break 567\": Lost in the Echo.",
+            "Add the following songs in Retro Music to the playlist \"Blues Break 567\": Twilight Calling.",
+            "Export the playlist \"Blues Break 567\" to the Downloads directory on the device."
+        ]
     },
     {
         "task": "SaveCopyOfReceiptTaskEval",

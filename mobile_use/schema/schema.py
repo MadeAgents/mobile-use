@@ -131,7 +131,8 @@ class MobileUseEpisodeData(BaseEpisodeData):
 
 
 @dataclass
-class HierarchicalAgentEpisodeData:
+class HierarchicalAgentTaskData:
+    task: str
     episode_data: MobileUseEpisodeData
     task_type: Optional[str] = None
     sub_tasks: Optional[List[str]] = None

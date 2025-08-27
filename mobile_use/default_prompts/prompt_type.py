@@ -178,6 +178,8 @@ class TaskOrchestratorPrompt(Prompt):
 @dataclass
 class TaskExtractorPrompt(Prompt):
     config: str = "task_extractor.yaml"
+    system_prompt: str = ""
+    user_prompt: str = ""
 
 
 @dataclass

@@ -45,7 +45,7 @@ class HierarchicalAgent(Agent):
         super()._init_data(goal, max_steps)
         self.trajectory: List[MobileUseStepData] = []
         self.episode_data: MobileUseEpisodeData = MobileUseEpisodeData(goal=goal, num_steps=0, trajectory=self.trajectory)
-        self.task_data = HierarchicalAgentEpisodeData(episode_data=self.episode_data)
+        self.task_data = HierarchicalAgentTaskData(task=goal, episode_data=self.episode_data)
 
 
     def _init_sub_agent(self, sub_agent_class: SubAgent, sub_agent_config: Optional[SubAgentConfig]) -> Optional[SubAgent]:
@@ -381,21 +381,21 @@ class HierarchicalAgent(Agent):
                     try:
                         content = response.choices[0].message.content
                         logger.info("Sub Task Info from VLM:\n%s" % content)
-                        sub_task_info = self.task_extractor.parse_response(content)
+                        sub_task_info, rewritten_sub_task = self.task_extractor.parse_response(content)
                         if sub_task_info is not None:
                             logger.info("Sub Task Info: %s" % str(sub_task_info))
                             self.task_data.sub_tasks_return[self.task_data.current_sub_task_idx] = sub_task_info
-                    except Exception as e:
-                        logger.warning(f"Failed to parse the sub task info. Error: {e}")
+                    # except Exception as e:
+                    #     logger.warning(f"Failed to parse the sub task info. Error: {e}")
 
-                    # rewrite the next sub task
-                    sub_task_rewrite_messages = self.task_rewriter.get_message(self.episode_data)
-                    show_message(sub_task_rewrite_messages, "TaskRewriter")
-                    response = self.task_rewriter.vlm.predict(sub_task_rewrite_messages)
-                    try:
-                        content = response.choices[0].message.content
-                        logger.info("Rewritten Sub Task from VLM:\n%s" % content)
-                        rewritten_sub_task = self.task_rewriter.parse_response(content)
+                    # # rewrite the next sub task
+                    # sub_task_rewrite_messages = self.task_rewriter.get_message(self.episode_data)
+                    # show_message(sub_task_rewrite_messages, "TaskRewriter")
+                    # response = self.task_rewriter.vlm.predict(sub_task_rewrite_messages)
+                    # try:
+                    #     content = response.choices[0].message.content
+                    #     logger.info("Rewritten Sub Task from VLM:\n%s" % content)
+                        # rewritten_sub_task = self.task_rewriter.parse_response(content)
                         if rewritten_sub_task is not None:
                             logger.info("Rewritten Sub Task: %s" % rewritten_sub_task)
                             self.task_data.sub_tasks[self.task_data.current_sub_task_idx + 1] = rewritten_sub_task
@@ -408,6 +408,7 @@ class HierarchicalAgent(Agent):
                 new_episodedata = MobileUseEpisodeData(goal=self.goal, num_steps=0, trajectory=new_trajectory)
                 self.trajectory = new_trajectory
                 self.episode_data = new_episodedata
+                self.task_data.episode_data = new_episodedata
                 logger.info(f"Update the goal to the next sub task: {self.goal}")
                 self.status = None
 
@@ -461,7 +462,7 @@ class HierarchicalAgent(Agent):
             yield self._get_curr_step_data()
         logger.warning(f"Agent reached max number of steps: {self.max_steps}.")
 
-    def run(self, input_content: str) -> HierarchicalAgentEpisodeData:
+    def run(self, input_content: str) -> HierarchicalAgentTaskData:
         """Execute the agent with user input content.
 
         Returns: EpisodeData

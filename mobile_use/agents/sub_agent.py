@@ -929,7 +929,7 @@ class TaskClassifier(SubAgent):
         super().__init__(config)
         self.prompt: TaskClassifierPrompt = load_prompt("task_classifier", config.prompt_config)
 
-    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+    def get_message(self, episodedata: HierarchicalAgentTaskData) -> list:
         messages = []
         goal = episodedata.goal
 
@@ -944,7 +944,7 @@ class TaskOrchestrator(SubAgent):
         super().__init__(config)
         self.prompt: TaskOrchestratorPrompt = load_prompt("task_orchestrator", config.prompt_config)
 
-    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+    def get_message(self, episodedata: HierarchicalAgentTaskData) -> list:
         messages = []
         goal = episodedata.goal
         task_type = episodedata.task_type
@@ -959,16 +959,38 @@ class TaskExtractor(SubAgent):
     def __init__(self, config: SubAgentConfig):
         super().__init__(config)
         self.prompt: TaskExtractorPrompt = load_prompt("task_extractor", config.prompt_config)
+        self.num_latest_screenshots = 2
 
-    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+    def get_message(self, taskdata: HierarchicalAgentTaskData) -> list:
         messages = []
-        goal = episodedata.goal
-        task_type = episodedata.task_type
+        trajectory = taskdata.episode_data.trajectory
+        
+        system_message = generate_message("system", self.prompt.system_prompt)
+        messages.append(system_message)
+
+        num_latest_screenshots = min(self.num_latest_screenshots, len(trajectory))
+        if num_latest_screenshots > 0:
+            screenshots = [step.exec_env_state.pixels.copy() for step in trajectory[-num_latest_screenshots:]]
+            resized_height, resized_width = smart_resize(height=screenshots[0].height, width=screenshots[0].width)
+        else:
+            screenshots = None
+
+        user_prompt = self.prompt.user_prompt.format(
+            task_description = taskdata.task,
+            sub_tasks = '\n'.join([f"{i+1}. {sub_task}" for i, sub_task in enumerate(taskdata.sub_tasks)]),
+            completed_sub_tasks = '\n'.join([f"{i+1}. {sub_task}" for i, sub_task in enumerate(taskdata.sub_tasks[:taskdata.current_sub_task_idx+1])]),
+        )
+        if num_latest_screenshots > 0:
+            user_prompt += IMAGE_PLACEHOLDER * num_latest_screenshots
+        user_message = generate_message("user", user_prompt, images=screenshots)
+        messages.append(user_message)
 
         return messages
 
     def parse_response(self, response: str):
-        pass
+        sub_task_info = response.split("Rewritten Remaining Sub Tasks:")[0].split("Extracted Information:")[-1].strip()
+        rewritten_sub_task = response.split("Rewritten Remaining Sub Tasks:")[-1].strip()
+        return sub_task_info, rewritten_sub_task
 
 
 class TaskRewriter(SubAgent):
@@ -976,7 +998,7 @@ class TaskRewriter(SubAgent):
         super().__init__(config)
         self.prompt: TaskRewriterPrompt = load_prompt("task_rewriter", config.prompt_config)
 
-    def get_message(self, episodedata: HierarchicalAgentEpisodeData) -> list:
+    def get_message(self, episodedata: HierarchicalAgentTaskData) -> list:
         messages = []
         goal = episodedata.goal
         task_type = episodedata.task_type
