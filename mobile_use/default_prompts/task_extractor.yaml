@@ -16,6 +16,7 @@ user_prompt: |-
 
   To complete the remaining sub tasks, you need to extract necessary information from the latest screenshots.
   Then you need to rewrite the remaining sub tasks by combining the extracted information.
+  Note that the screenshots are not visible for the sub tasks, so you need to extract complete information from the screenshots into texts and rewrite the sub tasks accordingly.
   Your output should be:
   Extracted Information: <extracted_information>
   Rewritten Remaining Sub Tasks: <rewritten_remaining_sub_tasks>
