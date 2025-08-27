@@ -194,7 +194,7 @@
         "goal": "Create a file in Markor, called receipt.md with the transactions from the receipt.png. Use Simple Gallery to view the receipt. Please enter transactions in csv format including the header \"Date, Item, Amount\".",
         "type": "A",
         "sub_tasks": [
-            "View the transactions from the receipt.png using Simple Gallery.",
+            "View the transactions from the receipt.png. Use Simple Gallery to view the receipt.",
             "Create a file in Markor, called receipt.md with the transactions from the receipt.png. Use csv format including the header \"Date, Item, Amount\"."
         ]
     },
@@ -256,17 +256,29 @@
     {
         "task": "RecipeAddMultipleRecipesFromImage",
         "goal": "Add the recipes from recipes.jpg in Simple Gallery Pro to the Broccoli recipe app.",
-        "type": "A"
+        "type": "A",
+        "sub_tasks": [
+            "View the recipes from recipes.jpg in Simple Gallery Pro.",
+            "Add the recipes from recipes.jpg in Simple Gallery Pro to the Broccoli recipe app."
+        ]
     },
     {
         "task": "RecipeAddMultipleRecipesFromMarkor",
         "goal": "Add the recipes from recipes.txt in Markor to the Broccoli recipe app.",
-        "type": "A"
+        "type": "A",
+        "sub_tasks": [
+            "View the recipes from recipes.txt in Markor.",
+            "Add the recipes from recipes.txt in Markor to the Broccoli recipe app."
+        ]
     },
     {
         "task": "RecipeAddMultipleRecipesFromMarkor2",
         "goal": "Add the recipes from recipes.txt in Markor that take 10 mins to prepare into the Broccoli recipe app.",
-        "type": "A"
+        "type": "A",
+        "sub_tasks": [
+            "View the recipes from recipes.txt in Markor that take 10 mins to prepare.",
+            "Add the recipes from recipes.txt in Markor that take 10 mins to prepare into the Broccoli recipe app."
+        ]
     },
     {
         "task": "RecipeAddSingleRecipe",
@@ -484,7 +496,11 @@
     {
         "task": "SimpleSmsSendReceivedAddress",
         "goal": "Text the address of the event to Gabriel Ibrahim that Oscar Mohamed just sent me in Simple SMS Messenger",
-        "type": "A"
+        "type": "A",
+        "sub_tasks": [
+            "Find the message from Oscar Mohamed in Simple SMS Messenger that contains the address of the event.",
+            "Text the address of the event to Gabriel Ibrahim in Simple SMS Messenger."
+        ]
     },
     {
         "task": "SportsTrackerActivitiesCountForWeek",
