@@ -11,7 +11,7 @@ import traceback
 from mobile_use.schema.schema import *
 from mobile_use.environment.mobile_environ import Environment
 from mobile_use.utils.vlm import VLMWrapper
-from mobile_use.utils.utils import encode_image_url, smart_resize, show_message
+from mobile_use.utils.utils import encode_image_url, smart_resize, show_message, generate_message
 from mobile_use.agents import Agent
 from mobile_use.agents.sub_agent import *
 from mobile_use.schema.config import SubAgentConfig, HierarchicalAgentConfig
@@ -112,36 +112,52 @@ class HierarchicalAgent(Agent):
 
         # Task classification and planning
         if self.enable_hierarchical_planning and self.curr_step_idx == 0:
-            task_classification_messages = self.task_classifier.get_message(self.episode_data)
-            show_message(task_classification_messages, "TaskClassifier")
-            response = self.task_classifier.vlm.predict(task_classification_messages)
-            try:
-                content = response.choices[0].message.content
-                logger.info("Task Classification from VLM:\n%s" % content)
-                task_type = self.task_classifier.parse_response(content)
-                logger.info("Task Type: %s" % task_type)
-                self.task_data.task_type = task_type
-            except Exception as e:
-                logger.warning(f"Failed to parse the task type. Error: {e}")
-            if self.task_data.task_type in ['A', 'C']:
-                task_orchestrator_messages = self.task_orchestrator.get_message(self.episode_data)
-                show_message(task_orchestrator_messages, "TaskOrchestrator")
-                response = self.task_orchestrator.vlm.predict(task_orchestrator_messages)
-                try:
-                    content = response.choices[0].message.content
-                    logger.info("Task Orchestration from VLM:\n%s" % content)
-                    sub_tasks = self.task_orchestrator.parse_response(content)
-                    if sub_tasks is not None and len(sub_tasks) > 0:
+            import json
+            task_type_json = json.load(open("benchmark/android_world/tasks_type.json", "r"))
+            for task_info in task_type_json:
+                if task_info['goal'] == self.goal:
+                    if task_info['type'] in ['A', 'C']:
+                        task_type = task_info['type']
+                        sub_tasks = task_info['sub_tasks']
+                        logger.info("Task Type: %s" % task_type)
                         logger.info("Sub Tasks: %s" % str(sub_tasks))
+                        self.task_data.task_type = task_type
                         self.task_data.sub_tasks = sub_tasks
                         self.task_data.sub_tasks_return = [None] * len(sub_tasks)
                         self.task_data.sub_tasks_episode_data = [None] * len(sub_tasks)
                         self.task_data.current_sub_task_idx = 0
-                        self.goal = self.task_data.sub_tasks[0]
-                        self.episode_data.goal = self.goal
-                        logger.info(f"Update the goal to the first sub task: {self.goal}")
-                except Exception as e:
-                    logger.warning(f"Failed to parse the sub tasks. Error: {e}")
+                        self.episode_data.goal = self.task_data.sub_tasks[0]
+        # if self.enable_hierarchical_planning and self.curr_step_idx == 0:
+        #     task_classification_messages = self.task_classifier.get_message(self.task_data)
+        #     show_message(task_classification_messages, "TaskClassifier")
+        #     response = self.task_classifier.vlm.predict(task_classification_messages)
+        #     try:
+        #         content = response.choices[0].message.content
+        #         logger.info("Task Classification from VLM:\n%s" % content)
+        #         task_type = self.task_classifier.parse_response(content)
+        #         logger.info("Task Type: %s" % task_type)
+        #         self.task_data.task_type = task_type
+        #     except Exception as e:
+        #         logger.warning(f"Failed to parse the task type. Error: {e}")
+        #     if self.task_data.task_type in ['A', 'C']:
+        #         task_orchestrator_messages = self.task_orchestrator.get_message(self.task_data)
+        #         show_message(task_orchestrator_messages, "TaskOrchestrator")
+        #         response = self.task_orchestrator.vlm.predict(task_orchestrator_messages)
+        #         try:
+        #             content = response.choices[0].message.content
+        #             logger.info("Task Orchestration from VLM:\n%s" % content)
+        #             sub_tasks = self.task_orchestrator.parse_response(content)
+        #             if sub_tasks is not None and len(sub_tasks) > 0:
+        #                 logger.info("Sub Tasks: %s" % str(sub_tasks))
+        #                 self.task_data.sub_tasks = sub_tasks
+        #                 self.task_data.sub_tasks_return = [None] * len(sub_tasks)
+        #                 self.task_data.sub_tasks_episode_data = [None] * len(sub_tasks)
+        #                 self.task_data.current_sub_task_idx = 0
+        #                 self.goal = self.task_data.sub_tasks[0]
+        #                 self.episode_data.goal = self.goal
+        #                 logger.info(f"Update the goal to the first sub task: {self.goal}")
+        #         except Exception as e:
+        #             logger.warning(f"Failed to parse the sub tasks. Error: {e}")
 
         # Get the current environment screen
         env_state = self.env.get_state()
@@ -323,10 +339,10 @@ class HierarchicalAgent(Agent):
                     response = self.trajectory_reflector.vlm.predict(trajectory_reflection_messages)
                     try:
                         content = response.choices[0].message.content
-                        if detected_error is not None:
-                            content = detected_error + "\n" + content
                         logger.info("Trajectory Reflection from VLM:\n%s" % content)
                         outcome, error_description = self.trajectory_reflector.parse_response(content)
+                        if detected_error is not None:
+                            error_description = detected_error + "\n" + error_description
                         if outcome in self.trajectory_reflector.valid_options:
                             logger.info("Trajectory Reflection Outcome: %s" % outcome)
                             logger.info("Trajectory Reflection Error: %s" % error_description)
@@ -383,26 +399,31 @@ class HierarchicalAgent(Agent):
                     try:
                         content = response.choices[0].message.content
                         logger.info("Sub Task Info from VLM:\n%s" % content)
-                        sub_task_info, rewritten_sub_task = self.task_extractor.parse_response(content)
+                        sub_task_info = self.task_extractor.parse_response(content)
                         if sub_task_info is not None:
                             logger.info("Sub Task Info: %s" % str(sub_task_info))
                             self.task_data.sub_tasks_return[self.task_data.current_sub_task_idx] = sub_task_info
-                    # except Exception as e:
-                    #     logger.warning(f"Failed to parse the sub task info. Error: {e}")
+                    except Exception as e:
+                        logger.warning(f"Failed to parse the sub task info. Error: {e}")
 
-                    # # rewrite the next sub task
-                    # sub_task_rewrite_messages = self.task_rewriter.get_message(self.episode_data)
-                    # show_message(sub_task_rewrite_messages, "TaskRewriter")
-                    # response = self.task_rewriter.vlm.predict(sub_task_rewrite_messages)
-                    # try:
-                    #     content = response.choices[0].message.content
-                    #     logger.info("Rewritten Sub Task from VLM:\n%s" % content)
-                        # rewritten_sub_task = self.task_rewriter.parse_response(content)
+                    # rewrite the next sub task
+                    sub_task_rewrite_messages = self.task_rewriter.get_message(self.task_data)
+                    show_message(sub_task_rewrite_messages, "TaskRewriter")
+                    response = self.task_rewriter.vlm.predict(sub_task_rewrite_messages)
+                    try:
+                        content = response.choices[0].message.content
+                        logger.info("Rewritten Sub Task from VLM:\n%s" % content)
+                        rewritten_sub_task = self.task_rewriter.parse_response(content)
                         if rewritten_sub_task is not None:
                             logger.info("Rewritten Sub Task: %s" % rewritten_sub_task)
                             self.task_data.sub_tasks[self.task_data.current_sub_task_idx + 1] = rewritten_sub_task
                     except Exception as e:
                         logger.warning(f"Failed to parse the rewritten sub task. Error: {e}")
+                    
+                    # Go back to home
+                    for i in range(3):
+                        self.env.execute_action(Action(name="press_back"))
+                    self.env.execute_action(Action(name="press_home"))
 
                 self.task_data.current_sub_task_idx += 1
                 new_goal = self.task_data.sub_tasks[self.task_data.current_sub_task_idx]
@@ -413,6 +434,7 @@ class HierarchicalAgent(Agent):
                 self.task_data.episode_data = new_episodedata
                 logger.info(f"Update the goal to the next sub task: {self.goal}")
                 self.status = None
+                # self.status = AgentStatus.FINISHED
 
         step_data.memory = self.episode_data.memory
         step_data.step_duration = time.time() - start_time

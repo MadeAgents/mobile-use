@@ -258,7 +258,7 @@
         "goal": "Add the recipes from recipes.jpg in Simple Gallery Pro to the Broccoli recipe app.",
         "type": "A",
         "sub_tasks": [
-            "View the recipes from recipes.jpg in Simple Gallery Pro.",
+            "View the recipes from recipes.jpg in Simple Gallery Pro. Stay in the page where the content can be clearly seen.",
             "Add the recipes from recipes.jpg in Simple Gallery Pro to the Broccoli recipe app."
         ]
     },

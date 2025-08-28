@@ -936,7 +936,7 @@ class TrajectoryReflector(SubAgent):
                 else:
                     break
                 if fail_count >= self.max_fail_count:
-                    error.append(f"You have encountered several failed attempts.")
+                    error.append(f"You have encountered several failed attempts. Change your action to explore other possibilities!")
                     break
 
         return error
@@ -1229,9 +1229,8 @@ class TaskClassifier(SubAgent):
         super().__init__(config)
         self.prompt: TaskClassifierPrompt = load_prompt("task_classifier", config.prompt_config)
 
-    def get_message(self, episodedata: HierarchicalAgentTaskData) -> list:
+    def get_message(self, taskdata: HierarchicalAgentTaskData) -> list:
         messages = []
-        goal = episodedata.goal
 
         return messages
 
@@ -1244,10 +1243,8 @@ class TaskOrchestrator(SubAgent):
         super().__init__(config)
         self.prompt: TaskOrchestratorPrompt = load_prompt("task_orchestrator", config.prompt_config)
 
-    def get_message(self, episodedata: HierarchicalAgentTaskData) -> list:
+    def get_message(self, taskdata: HierarchicalAgentTaskData) -> list:
         messages = []
-        goal = episodedata.goal
-        task_type = episodedata.task_type
 
         return messages
 
@@ -1259,7 +1256,7 @@ class TaskExtractor(SubAgent):
     def __init__(self, config: SubAgentConfig):
         super().__init__(config)
         self.prompt: TaskExtractorPrompt = load_prompt("task_extractor", config.prompt_config)
-        self.num_latest_screenshots = 2
+        self.num_latest_screenshots = 1
 
     def get_message(self, taskdata: HierarchicalAgentTaskData) -> list:
         messages = []
@@ -1281,18 +1278,15 @@ class TaskExtractor(SubAgent):
             completed_sub_tasks = '\n'.join([f"{i+1}. {sub_task}" for i, sub_task in enumerate(taskdata.sub_tasks[:taskdata.current_sub_task_idx+1])]),
             resized_width = resized_width,
             resized_height = resized_height,
+            image_placeholders = IMAGE_PLACEHOLDER * num_latest_screenshots if num_latest_screenshots > 0 else ""
         )
-        if num_latest_screenshots > 0:
-            user_prompt += IMAGE_PLACEHOLDER * num_latest_screenshots
         user_message = generate_message("user", user_prompt, images=screenshots)
         messages.append(user_message)
 
         return messages
 
     def parse_response(self, response: str):
-        sub_task_info = response.split("Rewritten Remaining Sub Tasks:")[0].split("Extracted Information:")[-1].strip()
-        rewritten_sub_task = response.split("Rewritten Remaining Sub Tasks:")[-1].strip()
-        return sub_task_info, rewritten_sub_task
+        return response
 
 
 class TaskRewriter(SubAgent):
@@ -1300,12 +1294,23 @@ class TaskRewriter(SubAgent):
         super().__init__(config)
         self.prompt: TaskRewriterPrompt = load_prompt("task_rewriter", config.prompt_config)
 
-    def get_message(self, episodedata: HierarchicalAgentTaskData) -> list:
+    def get_message(self, taskdata: HierarchicalAgentTaskData) -> list:
         messages = []
-        goal = episodedata.goal
-        task_type = episodedata.task_type
+        
+        system_message = generate_message("system", self.prompt.system_prompt)
+        messages.append(system_message)
+
+        user_prompt = self.prompt.user_prompt.format(
+            task_description = taskdata.task,
+            sub_tasks = '\n'.join([f"{i+1}. {sub_task}" for i, sub_task in enumerate(taskdata.sub_tasks)]),
+            completed_sub_tasks = '\n'.join([f"{i+1}. {sub_task}" for i, sub_task in enumerate(taskdata.sub_tasks[:taskdata.current_sub_task_idx+1])]),
+            sub_task_info = taskdata.sub_tasks_return[taskdata.current_sub_task_idx],
+            next_sub_task = taskdata.sub_tasks[taskdata.current_sub_task_idx + 1],
+        )
+        user_message = generate_message("user", user_prompt)
+        messages.append(user_message)
 
         return messages
 
     def parse_response(self, response: str):
-        pass
+        return response

@@ -185,6 +185,8 @@ class TaskExtractorPrompt(Prompt):
 @dataclass
 class TaskRewriterPrompt(Prompt):
     config: str = "task_rewriter.yaml"
+    system_prompt: str = ""
+    user_prompt: str = ""
 
 
 if __name__ == "__main__":

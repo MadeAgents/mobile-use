@@ -2,7 +2,7 @@ name: task_extractor
 
 
 system_prompt: |-
-  You are an expert for solving GUI navigation tasks. Your task is to extract necessary information from history screenshots to help complete the user's instruction.
+  You are an expert for solving GUI navigation tasks. Your task is to extract content from history screenshots to help complete the user's instruction.
 
 
 user_prompt: |-
@@ -14,11 +14,11 @@ user_prompt: |-
   You have completed the following sub tasks:
   {completed_sub_tasks}
 
-  To complete the remaining sub tasks, you need to extract necessary information from the latest screenshots.
-  Then you need to rewrite the remaining sub tasks by combining the extracted information.
-  Note that the screenshots are not visible for the sub tasks, so you need to extract complete information from the screenshots into texts and rewrite the sub tasks accordingly.
-  Your output should be:
-  Extracted Information: <extracted_information>
-  Rewritten Remaining Sub Tasks: <rewritten_remaining_sub_tasks>
+  To complete the remaining sub tasks, you need to extract content from the latest screenshots to provide enough information.
+  Note that the screenshots are not visible for the sub tasks, so you need to extract all necessary content on the screenshot into text.
+  Keep the original content and format as much as possible. Do not rewrite it.
 
   Here is the latest screenshots of the phone. The screen's resolution is {resized_width}x{resized_height}.
+  {image_placeholders}
+
+  Extract information:
