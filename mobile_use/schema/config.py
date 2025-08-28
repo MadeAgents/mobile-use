@@ -46,11 +46,14 @@ class OperatorConfig(SubAgentConfig):
     num_histories: int = None
     include_device_time: bool = True
     include_tips: bool = True
+    max_pixels: int = None
 
 class AnswerAgentConfig(SubAgentConfig):
     name: str = "AnswerAgent"
     num_histories: int = None
     include_device_time: bool = True
+    include_tips: bool = False
+    max_pixels: int = None
 
 class ReflectorConfig(SubAgentConfig):
     pass

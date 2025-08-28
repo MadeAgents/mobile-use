@@ -89,6 +89,26 @@ def smart_resize(
         w_bar = math.ceil(width * beta / factor) * factor
     return h_bar, w_bar
 
+def resize_image(image: Image.Image, max_pixels: int=1024*1024, min_pixels=3136):
+    if isinstance(image, dict):
+        image = Image.open(BytesIO(image["bytes"]))
+    if isinstance(image, str):
+        image = Image.open(image)
+    if (image.width * image.height) > max_pixels:
+        resize_factor = math.sqrt(max_pixels / (image.width * image.height))
+        width, height = int(image.width * resize_factor), int(image.height * resize_factor)
+        image = image.resize((width, height))
+
+    if (image.width * image.height) < min_pixels:
+        resize_factor = math.sqrt(min_pixels / (image.width * image.height))
+        width, height = int(image.width * resize_factor), int(image.height * resize_factor)
+        image = image.resize((width, height))
+
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+
+    return image
+
 def remove_img_placeholder(messages, num_latest_screenshot=None):
     # find all image content
     img_contents = []

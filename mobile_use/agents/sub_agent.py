@@ -16,8 +16,10 @@ __all__ = [
     "SubAgent",
     "Planner",
     "Operator",
+    "TrainedOperator",
     "OperatorQwen",
     "AnswerAgent",
+    "TrainedAnswerAgent",
     "AnswerAgentQwen",
     "Reflector",
     "TrajectoryReflector",
@@ -63,6 +65,20 @@ def get_history_action_desc(trajectory: List[MobileUseStepData], num_histories=N
     for i in range(start_idx, len(trajectory)):
         history.append(f"Step-{i+1}: {trajectory[i].action_desc}")
     return history
+
+def map_action_names(name: str) -> str:
+    maps = {
+        "left_click": "click",
+        "point": "coordinate",
+        "start_point": "coordinate",
+        "start_box": "coordinate",
+        "end_point": "coordinate2",
+        "end_box": "coordinate2",
+        "scroll": "swipe",
+        "content": "text",
+        "open_app": "open",
+    }
+    return maps.get(name, name)
 
 
 class SubAgent(ABC):
@@ -140,6 +156,7 @@ class Operator(SubAgent):
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
         self.include_tips = config.include_tips
+        self.max_pixels = config.max_pixels
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -147,8 +164,10 @@ class Operator(SubAgent):
         current_step = trajectory[-1]
         
         pixels = current_step.curr_env_state.pixels.copy()
-        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
         self.raw_size = (pixels.width, pixels.height)
+        if self.max_pixels is not None:
+            pixels = resize_image(pixels, self.max_pixels)
+        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
         self.resized_size = (resized_width, resized_height)
 
         # Add system prompt
@@ -252,20 +271,6 @@ class Operator(SubAgent):
         return messages
     
     def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
-        def map_names(name: str) -> str:
-            maps = {
-                "left_click": "click",
-                "point": "coordinate",
-                "start_point": "coordinate",
-                "start_box": "coordinate",
-                "end_point": "coordinate2",
-                "end_box": "coordinate2",
-                "scroll": "swipe",
-                "content": "text",
-                "open_app": "open",
-            }
-            return maps.get(name, name)
-
         if size is None:
             size = self.resized_size
         if raw_size is None:
@@ -290,15 +295,177 @@ class Operator(SubAgent):
         action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
         action = json.loads(action_s)
         
-        # Apply the map_names function to the 'name'
-        name = map_names(action['arguments']['action'])
+        name = map_action_names(action['arguments']['action'])
         
         # Remove the 'action' key and map the other keys in the arguments
         action['arguments'].pop('action')
         params = {}
         
         for k, v in action['arguments'].items():
-            mapped_key = map_names(k)  # Map the key name
+            mapped_key = map_action_names(k)  # Map the key name
+            if mapped_key in ['coordinate', 'coordinate2']:
+                try:
+                    x = round(v[0] / size[0] * raw_size[0])
+                    y = round(v[1] / size[1] * raw_size[1])
+                    params[mapped_key] = (x, y)
+                except:
+                    pass
+            else:
+                params[mapped_key] = v
+
+        action_a = Action(name=name, parameters=params)
+
+        return thought_s, action_a, action_s, action_desc_s
+
+
+class TrainedOperator(Operator):
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
+        messages = []
+        trajectory = episodedata.trajectory
+        current_step = trajectory[-1]
+        
+        pixels = current_step.curr_env_state.pixels.copy()
+        self.raw_size = (pixels.width, pixels.height)
+        if self.max_pixels is not None:
+            pixels = resize_image(pixels, self.max_pixels)
+        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
+        self.resized_size = (resized_width, resized_height)
+
+        # Add system prompt
+        system_prompt = self.prompt.system_prompt.format(
+            resized_width = resized_width,
+            resized_height = resized_height,
+        )
+        system_message = generate_message("system", system_prompt)
+        messages.append(system_message)
+
+        # Add user prompt
+        prompt_list = []
+        task_prompt = self.prompt.task_prompt.format(
+            task_description = episodedata.goal,
+        )
+        prompt_list.append(task_prompt)
+
+        history_list = []
+        if len(trajectory) == 1:
+            history_list.append("None")
+        else:
+            for i, step in enumerate(trajectory[:-1]):
+                if step.action is None:
+                    history_list.append(f"Step {i+1}: None")
+                else:
+                    if 'terminate' not in step.action_s:
+                        history_list.append(f"Step {i+1}: {step.action_desc}")
+        history = ";".join(history_list)
+        history_prompt = self.prompt.history_prompt.format(
+            history = history,
+        )
+        prompt_list.append(history_prompt)
+
+        if self.include_device_time:
+            device_time = current_step.curr_env_state.device_time
+            # # Remove the hour-minute-second and the timezone 
+            # device_time = ' '.join(device_time.split()[:3] + device_time.split()[-2:])
+            device_time_prompt = self.prompt.device_time_prompt.format(
+                device_time = device_time
+            )
+            prompt_list.append(device_time_prompt)
+
+        if current_step.plan is not None:
+            plan_prompt = self.prompt.plan_prompt.format(
+                plan = current_step.plan,
+            )
+            prompt_list.append(plan_prompt)
+
+        if current_step.sub_goal is not None:
+            subgoal_prompt = self.prompt.subgoal_prompt.format(
+                subgoal = current_step.sub_goal,
+            )
+            prompt_list.append(subgoal_prompt)
+
+        if len(trajectory) > 1:
+            previous_step = trajectory[-2]
+            if previous_step.progress is not None:
+                progress_prompt = self.prompt.progress_prompt.format(
+                    progress = previous_step.progress,
+                )
+                prompt_list.append(progress_prompt)
+
+            if episodedata.memory is not None and episodedata.memory != "":
+                memory_prompt = self.prompt.memory_prompt.format(
+                    memory = episodedata.memory,
+                )
+                prompt_list.append(memory_prompt)
+
+            if previous_step.reflection_outcome is not None and previous_step.reflection_outcome in ['B', 'C']:
+                reflection_prompt = self.prompt.reflection_prompt.format(
+                    action_desc = previous_step.action_desc,
+                    action_s = previous_step.action_s,
+                    reflection_error = previous_step.reflection_error,
+                )
+                prompt_list.append(reflection_prompt)
+
+            if previous_step.trajectory_reflection_outcome is not None and previous_step.trajectory_reflection_outcome in ['B']:
+                trajectory_reflection_prompt = self.prompt.trajectory_reflection_prompt.format(
+                    trajectory_reflection_error = previous_step.trajectory_reflection_error,
+                )
+                prompt_list.append(trajectory_reflection_prompt)
+
+            if previous_step.evaluation_result is not None and "Failed" in previous_step.evaluation_result:
+                global_reflection_prompt = self.prompt.global_reflection_prompt.format(
+                    global_reflection_error = previous_step.evaluation_reason,
+                )
+                prompt_list.append(global_reflection_prompt)
+
+        if self.include_tips:
+            init_tips = self.prompt.init_tips
+            prompt_list.append(init_tips)
+        
+        prompt_list.append(f"  {IMAGE_PLACEHOLDER}")
+
+        prompt = "\n\n".join(prompt_list)
+        user_message = generate_message("user", prompt, images=[pixels])
+        messages.append(user_message)
+
+        return messages
+    
+    def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
+        if size is None:
+            size = self.resized_size
+        if raw_size is None:
+            raw_size = self.raw_size
+        
+        thought = re.search(r'Thought: (.*?)Action:', content, flags=re.DOTALL)
+        if thought:
+            thought_s = thought.group(1).strip()
+        else:
+            thought_s = None
+            
+        action_desc = re.search(r'Action: (.*?)<answer>', content, flags=re.DOTALL)
+        if action_desc:
+            action_desc_s = action_desc.group(1).strip()
+        else:
+            action_desc_s = None
+        
+        action = re.search(r'<answer>(.*?)</answer>', content, flags=re.DOTALL)
+        if not action:
+            raise Exception("Cannot extract action in the content.")
+        
+        action_s = action.group(1).strip()
+        try:
+            action = json.loads(action_s)
+        except:
+            action = json.loads(action_s+']')
+        action = action[0]
+        
+        name = map_action_names(action['arguments']['action'])
+        
+        # Remove the 'action' key and map the other keys in the arguments
+        action['arguments'].pop('action')
+        params = {}
+        
+        for k, v in action['arguments'].items():
+            mapped_key = map_action_names(k)  # Map the key name
             if mapped_key in ['coordinate', 'coordinate2']:
                 try:
                     x = round(v[0] / size[0] * raw_size[0])
@@ -335,6 +502,7 @@ class AnswerAgent(SubAgent):
         self.prompt: AnswerAgentPrompt = load_prompt("answer_agent", config.prompt_config)
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
+        self.max_pixels = config.max_pixels
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -342,8 +510,10 @@ class AnswerAgent(SubAgent):
         current_step = trajectory[-1]
         
         pixels = current_step.curr_env_state.pixels.copy()
-        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
         self.raw_size = (pixels.width, pixels.height)
+        if self.max_pixels is not None:
+            pixels = resize_image(pixels, self.max_pixels)
+        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
         self.resized_size = (resized_width, resized_height)
 
         # Add system prompt
@@ -425,20 +595,6 @@ class AnswerAgent(SubAgent):
         return messages
 
     def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
-        def map_names(name: str) -> str:
-            maps = {
-                "left_click": "click",
-                "point": "coordinate",
-                "start_point": "coordinate",
-                "start_box": "coordinate",
-                "end_point": "coordinate2",
-                "end_box": "coordinate2",
-                "scroll": "swipe",
-                "content": "text",
-                "open_app": "open",
-            }
-            return maps.get(name, name)
-
         if size is None:
             size = self.resized_size
         if raw_size is None:
@@ -463,15 +619,153 @@ class AnswerAgent(SubAgent):
         action_s = '{"name": "mobile_use",' + action.group(1).strip() + '}}'
         action = json.loads(action_s)
         
-        # Apply the map_names function to the 'name'
-        name = map_names(action['arguments']['action'])
+        name = map_action_names(action['arguments']['action'])
         
         # Remove the 'action' key and map the other keys in the arguments
         action['arguments'].pop('action')
         params = {}
         
         for k, v in action['arguments'].items():
-            mapped_key = map_names(k)  # Map the key name
+            mapped_key = map_action_names(k)  # Map the key name
+            if mapped_key in ['coordinate', 'coordinate2']:
+                try:
+                    x = round(v[0] / size[0] * raw_size[0])
+                    y = round(v[1] / size[1] * raw_size[1])
+                    params[mapped_key] = (x, y)
+                except:
+                    pass
+            else:
+                params[mapped_key] = v
+
+        action_a = Action(name=name, parameters=params)
+
+        return thought_s, action_a, action_s, action_desc_s
+
+
+class TrainedAnswerAgent(AnswerAgent):
+    def get_message(self, episodedata: MobileUseEpisodeData) -> list:
+        messages = []
+        trajectory = episodedata.trajectory
+        current_step = trajectory[-1]
+        
+        pixels = current_step.curr_env_state.pixels.copy()
+        self.raw_size = (pixels.width, pixels.height)
+        if self.max_pixels is not None:
+            pixels = resize_image(pixels, self.max_pixels)
+        resized_height, resized_width = smart_resize(height=pixels.height, width=pixels.width)
+        self.resized_size = (resized_width, resized_height)
+
+        # Add system prompt
+        system_prompt = self.prompt.system_prompt.format(
+            resized_width = resized_width,
+            resized_height = resized_height,
+        )
+        system_message = generate_message("system", system_prompt)
+        messages.append(system_message)
+
+        # Add user prompt
+        prompt_list = []
+        task_prompt = self.prompt.task_prompt.format(
+            task_description = episodedata.goal,
+        )
+        prompt_list.append(task_prompt)
+
+        history_list = []
+        if len(trajectory) == 1:
+            history_list.append("None")
+        else:
+            for i, step in enumerate(trajectory[:-1]):
+                if step.action is None:
+                    history_list.append(f"Step {i+1}: None")
+                else:
+                    if 'terminate' not in step.action_s:
+                        history_list.append(f"Step {i+1}: {step.action_desc}")
+        history = ";".join(history_list)
+        history_prompt = self.prompt.history_prompt.format(
+            history = history,
+        )
+        prompt_list.append(history_prompt)
+
+        if self.include_device_time:
+            device_time = current_step.curr_env_state.device_time
+            # # Remove the hour-minute-second and the timezone 
+            # device_time = ' '.join(device_time.split()[:3] + device_time.split()[-2:])
+            device_time_prompt = self.prompt.device_time_prompt.format(
+                device_time = device_time
+            )
+            prompt_list.append(device_time_prompt)
+
+        if current_step.plan is not None:
+            plan_prompt = self.prompt.plan_prompt.format(
+                plan = current_step.plan,
+            )
+            prompt_list.append(plan_prompt)
+
+        if current_step.sub_goal is not None:
+            subgoal_prompt = self.prompt.subgoal_prompt.format(
+                subgoal = current_step.sub_goal,
+            )
+            prompt_list.append(subgoal_prompt)
+
+        if len(trajectory) > 1:
+            previous_step = trajectory[-2]
+            if previous_step.progress is not None:
+                progress_prompt = self.prompt.progress_prompt.format(
+                    progress = previous_step.progress,
+                )
+                prompt_list.append(progress_prompt)
+
+            if episodedata.memory is not None and episodedata.memory != "":
+                memory_prompt = self.prompt.memory_prompt.format(
+                    memory = episodedata.memory,
+                )
+                prompt_list.append(memory_prompt)
+
+        prompt_list.append(f"  {IMAGE_PLACEHOLDER}")
+
+        prompt = "\n\n".join(prompt_list)
+        user_message = generate_message("user", prompt, images=[pixels])
+        messages.append(user_message)
+
+        return messages
+    
+    def parse_response(self, content: str, size: tuple[float, float] = None, raw_size: tuple[float, float] = None):
+        if size is None:
+            size = self.resized_size
+        if raw_size is None:
+            raw_size = self.raw_size
+        
+        thought = re.search(r'Thought: (.*?)Action:', content, flags=re.DOTALL)
+        if thought:
+            thought_s = thought.group(1).strip()
+        else:
+            thought_s = None
+            
+        action_desc = re.search(r'Action: (.*?)<answer>', content, flags=re.DOTALL)
+        if action_desc:
+            action_desc_s = action_desc.group(1).strip()
+        else:
+            action_desc_s = None
+        
+        action = re.search(r'<answer>(.*?)</answer>', content, flags=re.DOTALL)
+        if not action:
+            raise Exception("Cannot extract action in the content.")
+        
+        action_s = action.group(1).strip()
+        try:
+            action = json.loads(action_s)
+        except:
+            action = json.loads(action_s+']')
+        action = action[0]
+        
+        name = map_action_names(action['arguments']['action'])
+        
+        # Remove the 'action' key and map the other keys in the arguments
+        action['arguments'].pop('action')
+        params = {}
+        
+        for k, v in action['arguments'].items():
+            mapped_key = map_action_names(k)  # Map the key name
             if mapped_key in ['coordinate', 'coordinate2']:
                 try:
                     x = round(v[0] / size[0] * raw_size[0])

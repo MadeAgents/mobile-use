@@ -28,8 +28,10 @@ class MultiAgent(Agent):
 
         self.subagent_map = {
             'Operator': Operator,
+            'TrainedOperator': TrainedOperator,
             'OperatorQwen': OperatorQwen,
             'AnswerAgent': AnswerAgent,
+            'TrainedAnswerAgent': TrainedAnswerAgent,
             'AnswerAgentQwen': AnswerAgentQwen,
         }
 
@@ -147,7 +149,7 @@ class MultiAgent(Agent):
                 raw_action = response.choices[0].message.content
                 logger.info("Action from VLM:\n%s" % raw_action)
                 resized_size = (resized_width, resized_height)
-                action_thought, action, action_s, action_desc = self.operator.parse_response(raw_action, resized_size, pixels.size)
+                action_thought, action, action_s, action_desc = self.operator.parse_response(raw_action)
                 logger.info("ACTION THOUGHT: %s" % action_thought)
                 logger.info("ACTION: %s" % str(action))
                 logger.info("ACTION DESCRIPTION: %s" % action_desc)
@@ -304,7 +306,7 @@ class MultiAgent(Agent):
             try:
                 content = response.choices[0].message.content
                 logger.info("Answer from VLM:\n%s" % content)
-                _, answer, _, _ = self.operator.parse_response(content, resized_size, pixels.size)
+                _, answer, _, _ = self.answer_agent.parse_response(content)
                 answer = answer.parameters['text']
                 step_data.answer = answer
                 logger.info("Answer: %s" % answer)

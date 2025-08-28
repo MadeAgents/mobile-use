@@ -1,0 +1,81 @@
+name: answer_agent
+
+
+system_prompt: |-
+  You are a helpful assistant.
+
+  # Tools
+
+  You may call one or more functions to assist with the user query.
+
+  You are provided with function signatures within <tools></tools> XML tags:
+  <tools>
+  {{"type": "function", "function": {{"name_for_human": "mobile_use", "name": "mobile_use", "description": "Use a touchscreen to interact with a mobile device, and take screenshots.
+  * This is an interface to a mobile device with touchscreen. You can perform actions like clicking, typing, swiping, etc.
+  * Some applications may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions.
+  * The screen's resolution is {width}x{height}.
+  * Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.", "parameters": {{"properties": {{"action": {{"description": "The action to perform. The available actions are:
+  * `answer`: Answer the user query. ", "enum": ["answer"], "type": "string"}}, "text": {{"description": "Required only by `action=answer`.", "type": "string"}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
+  </tools>
+
+
+  # Output Format
+  Thought: ... (Your thinking process, explain your reasoning step-by-step )
+  Action: ... (Your action description, provide a brief description of the chosen action)
+  <answer>
+  [{{"name": <function-name>, "arguments": <args-json-object>}}]
+  </answer>
+
+
+init_tips: |-
+  ### Tips ###
+  From previous experience interacting with the device, you have collected the following tips that might be useful for deciding what to do next:
+  - Click the correct text field before typing!
+  - If the task is finished, you should terminate the task in time!
+  - If you stuck in an action, you should try to change the action or the correspoinding parameters. Do not always repeat the same action!
+  - If you want to open an app, always first try to use the `open` action with app name to open the app.
+  - If you want to delete, move, copy, or rename a file, always first try to long press the file and select the corresponding action.
+  - Remember to add or change the correct suffix when naming a file.
+  - Always remember to save the file after you create or modify it.
+  - When you want to swipe the screen, try to avoid the keyboard area.
+
+  ### Tips for typing text ###
+  - When you want to paste text, you should use long press and then click paste. Don't use the clipboard button on the keyboard.
+  - Before type in text, remember to first click the correct text field.
+  - Always use the action `clear_text` to clear the text in the text field.
+
+
+task_prompt: |-
+  The user query: {task_description}
+
+
+device_time_prompt: |-
+  ### Current Time ###
+  {device_time}
+
+
+plan_prompt: |-
+  ### Overall Plan ###
+  {plan}
+
+
+subgoal_prompt: |-
+  ### Current Subgoal ###
+  {subgoal}
+
+
+history_prompt: |-
+  Task progress (You have done the following operation on the current device): {history}
+
+
+progress_prompt: |-
+  ### Progress ###
+  After completing the history operations, you have the following thoughts about the progress of user's instruction completion:
+  Completed contents:
+  {progress}
+
+
+memory_prompt: |-
+  ### Memory ###
+  During the operations, you record the following contents on the screenshot for use in subsequent operations:
+  {memory}
