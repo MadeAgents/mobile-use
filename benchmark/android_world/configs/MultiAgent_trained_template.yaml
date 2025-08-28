@@ -38,7 +38,7 @@ global_reflector:
   enabled: true
 
 progressor:
-  enabled: true
+  enabled: false
 
 reflect_on_demand: false
 logprob_threshold: -0.001
