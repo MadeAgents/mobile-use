@@ -17,7 +17,7 @@ operator:
   enabled: true
   name: TrainedOperator
   prompt_config: trained_operator.yaml
-  max_pixels: 1024*1024
+  max_pixels: 1048576
   include_device_time: true
   include_tips: true
 
@@ -25,7 +25,7 @@ answer_agent:
   enabled: true
   name: TrainedAnswerAgent
   prompt_config: trained_answer_agent.yaml
-  max_pixels: 1024*1024
+  max_pixels: 1048576
   include_device_time: true
 
 reflector:
