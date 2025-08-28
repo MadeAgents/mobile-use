@@ -826,10 +826,11 @@ class Reflector(SubAgent):
         )
         prompt_list.append(task_prompt)
 
-        subgoal_prompt = self.prompt.subgoal_prompt.format(
-            subgoal = current_step.sub_goal,
-        )
-        prompt_list.append(subgoal_prompt)
+        if current_step.sub_goal is not None:
+            subgoal_prompt = self.prompt.subgoal_prompt.format(
+                subgoal = current_step.sub_goal,
+            )
+            prompt_list.append(subgoal_prompt)
 
         observation_prompt = self.prompt.observation_prompt.format(
             screenshot1 = IMAGE_PLACEHOLDER,
@@ -1078,10 +1079,11 @@ class GlobalReflector(SubAgent):
         )
         prompt_list.append(history_prompt)
 
-        progress_prompt = self.prompt.progress_prompt.format(
-            progress = last_step.progress
-        )
-        prompt_list.append(progress_prompt)
+        if last_step.progress is not None:
+            progress_prompt = self.prompt.progress_prompt.format(
+                progress = last_step.progress
+            )
+            prompt_list.append(progress_prompt)
 
         if num_latest_screenshots > 0:
             image_placeholders = IMAGE_PLACEHOLDER * num_latest_screenshots
