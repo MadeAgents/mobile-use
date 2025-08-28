@@ -13,7 +13,7 @@ system_prompt: |-
   {{"type": "function", "function": {{"name_for_human": "mobile_use", "name": "mobile_use", "description": "Use a touchscreen to interact with a mobile device, and take screenshots.
   * This is an interface to a mobile device with touchscreen. You can perform actions like clicking, typing, swiping, etc.
   * Some applications may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions.
-  * The screen's resolution is {resized_width}x{resized_width}.
+  * The screen's resolution is {resized_width}x{resized_height}.
   * Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.", "parameters": {{"properties": {{"action": {{"description": "The action to perform. The available actions are:
   * `click`: Click the point on the screen with coordinate (x, y).
   * `long_press`: Press the point on the screen with coordinate (x, y) for specified seconds.
