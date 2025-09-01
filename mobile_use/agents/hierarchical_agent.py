@@ -361,8 +361,8 @@ class HierarchicalAgent(Agent):
             try:
                 content = response.choices[0].message.content
                 logger.info("Answer from VLM:\n%s" % content)
-                _, answer, _, _ = self.answer_agent.parse_response(content)
-                answer = answer.parameters['text']
+                _, answer_action, _, _ = self.answer_agent.parse_response(content)
+                answer = answer_action.parameters['text']
                 step_data.answer = answer
                 logger.info("Answer: %s" % answer)
             except Exception as e:
