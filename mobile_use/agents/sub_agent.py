@@ -428,6 +428,12 @@ class TrainedOperator(Operator):
             init_tips = self.prompt.init_tips
             prompt_list.append(init_tips)
         
+        if self.include_a11y_tree and current_step.curr_env_state.a11y_tree is not None:
+            a11y_tree_prompt = self.prompt.a11y_tree_prompt.format(
+                a11y_tree = current_step.curr_env_state.a11y_tree,
+            )
+            prompt_list.append(a11y_tree_prompt)
+        
         prompt_list.append(f"  {IMAGE_PLACEHOLDER}")
 
         prompt = "\n\n".join(prompt_list)

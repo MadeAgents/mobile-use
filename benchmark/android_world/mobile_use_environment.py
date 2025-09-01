@@ -50,6 +50,7 @@ class MobileUseEnvironment(Environment):
             if self.aw_env is None:
                 logger.warning("AndroidWorld environment is not provided, cannot get a11y_tree.")
             try:
+                logger.info("Getting a11y tree...")
                 a11y_tree = get_a11y_tree(self.aw_env)
             except Exception as e:
                 logger.warning(f"Failed to get a11y_tree: {e}")

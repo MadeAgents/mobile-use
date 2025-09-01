@@ -164,6 +164,7 @@ def _get_agent(env: interface.AsyncEnv, family: str | None = None) -> base_agent
       config_path=_MOBILEUSE_CONFIG_PATH.value,
     ))
     if hasattr(agent.config, 'operator') and agent.config.operator and agent.config.operator.include_a11y_tree:
+      print("Lode MobileUseEnvironment to get a11y tree.")
       import mobile_use_environment
       new_env = mobile_use_environment.MobileUseEnvironment(
         serial_no=agent.env.serial_no,

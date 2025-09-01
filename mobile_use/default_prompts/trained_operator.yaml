@@ -108,3 +108,10 @@ global_reflection_prompt: |-
   In the last step, you think the task is finished. However, the evaluator find that the task is not finished. This is the evaluation result:
   Evaluation: {global_reflection_error}
   If you think the evaluation is reasonable, perform more actions to finish the task. Otherwise, you can terminate the task.
+
+
+a11y_tree_prompt: |-
+  ### Screenshot information ###
+  In order to help you better perceive the content in this screenshot, we extract some information on the current screenshot through system files. The information is as follow:
+  {a11y_tree}
+  Please note that this information is not necessarily accurate. You need to combine the screenshot to understand.
