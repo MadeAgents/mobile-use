@@ -242,13 +242,13 @@ class HierarchicalAgent(Agent):
                     step_data.answer = answer
                     self.status = AgentStatus.FINISHED
                     logger.info("Terminate the task after answering question.")
-                elif self.enable_pre_reflection and action.name == 'type' and \
-                        len(self.trajectory) > 1 and self.trajectory[-2].action.name == 'type' and \
-                        'coordinate' not in action.parameters:
-                        skip_reflector = True
-                        step_data.reflection_outcome = 'C'
-                        step_data.reflection_error = "Action executed failed. You should first click the corresponding text field before typing in text."
-                        logger.info(f"Skip the reflector since there is continuous type action.")
+                elif self.enable_pre_reflection and action.name == 'type' and len(self.trajectory) > 1 and \
+                    self.trajectory[-2].action is not None and self.trajectory[-2].action.name == 'type' and \
+                    'coordinate' not in action.parameters:
+                    skip_reflector = True
+                    step_data.reflection_outcome = 'C'
+                    step_data.reflection_error = "Action executed failed. You should first click the corresponding text field before typing in text."
+                    logger.info(f"Skip the reflector since there is continuous type action.")
                 else:
                     logger.info(f"Execute the action: {action}")
                     start_exec_time = time.time()
