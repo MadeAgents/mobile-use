@@ -13,11 +13,13 @@ class EnvState:
     Attributes:
         pixels: Screenshot of the current state.
         package: Current foreground app package name.
+        a11y_tree: Current accessibility tree.
         device_time: Current device time in string format, e.g., "Tue Aug 12 03:04:58 GMT 2025".
     """
 
     pixels: Image.Image
-    package: str
+    package: Optional[str] = None
+    a11y_tree: Optional[Any] = None
     device_time: Optional[str] = None
 
 

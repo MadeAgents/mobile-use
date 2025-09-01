@@ -163,6 +163,16 @@ def _get_agent(env: interface.AsyncEnv, family: str | None = None) -> base_agent
       type=_MOBILEUSE_AGENT_NAME.value,
       config_path=_MOBILEUSE_CONFIG_PATH.value,
     ))
+    if hasattr(agent.config, 'operator') and agent.config.operator and agent.config.operator.include_a11y_tree:
+      import mobile_use_environment
+      new_env = mobile_use_environment.MobileUseEnvironment(
+        serial_no=agent.env.serial_no,
+        host=agent.env.host,
+        port=agent.env.port,
+        wait_after_action_seconds=agent.env.wait_after_action_seconds,
+        aw_env=env,
+      )
+      agent.env = new_env
     import adb_utils
     def open_androidworld_app(self, **kwargs):
       adb_utils.launch_app(kwargs['text'], self._d)

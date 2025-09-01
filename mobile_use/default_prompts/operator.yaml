@@ -116,6 +116,13 @@ observation_prompt: |-
   {image_placeholder}
 
 
+a11y_tree_prompt: |-
+  ### Screenshot information ###
+  In order to help you better perceive the content in this screenshot, we extract some information on the current screenshot through system files. The information is as follow:
+  {a11y_tree}
+  Please note that this information is not necessarily accurate. You need to combine the screenshot to understand.
+
+
 response_prompt: |-
   ### Response Requirements ###
   First, think about the requirements that have been completed in previous operations and the requirements that need to be completed in the next one operation. Put your thinking process in one sentence in `Thought` part.

@@ -83,6 +83,7 @@ class OperatorPrompt(Prompt):
     trajectory_reflection_prompt: str = ""
     global_reflection_prompt: str = ""
     observation_prompt: str = ""
+    a11y_tree_prompt: str = ""
     response_prompt: str = ""
 
 

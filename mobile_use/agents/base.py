@@ -12,6 +12,7 @@ class Agent(ABC, Registrable):
     def __init__(self, config_path: str):
         super().__init__()
         config = AgentConfig.from_yaml(config_path)
+        self.config = config
         self.env = Environment(**config.env.model_dump())
         self.vlm = VLMWrapper(**config.vlm.model_dump())
         self._init_data()

@@ -156,6 +156,7 @@ class Operator(SubAgent):
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
         self.include_tips = config.include_tips
+        self.include_a11y_tree = config.include_a11y_tree
         self.max_pixels = config.max_pixels
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
@@ -256,6 +257,12 @@ class Operator(SubAgent):
             image_placeholder = IMAGE_PLACEHOLDER,
         )
         prompt_list.append(observation_prompt)
+
+        if self.include_a11y_tree and current_step.curr_env_state.a11y_tree is not None:
+            a11y_tree_prompt = self.prompt.a11y_tree_prompt.format(
+                a11y_tree = current_step.curr_env_state.a11y_tree,
+            )
+            prompt_list.append(a11y_tree_prompt)
 
         if self.include_tips:
             init_tips = self.prompt.init_tips
