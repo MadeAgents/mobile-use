@@ -131,7 +131,7 @@ class HierarchicalAgent(Agent):
         #                 self.episode_data.goal = self.task_data.sub_tasks[0]
         if self.enable_hierarchical_planning and self.curr_step_idx == 0:
             task_classification_messages = self.task_classifier.get_message(self.task_data)
-            show_message(task_classification_messages, "TaskClassifier")
+            # show_message(task_classification_messages, "TaskClassifier")
             response = self.task_classifier.vlm.predict(task_classification_messages)
             try:
                 content = response.choices[0].message.content
@@ -143,7 +143,7 @@ class HierarchicalAgent(Agent):
                 logger.warning(f"Failed to parse the task type. Error: {e}")
             if self.task_data.task_type in ['A']:
                 task_orchestrator_messages = self.task_orchestrator.get_message(self.task_data)
-                show_message(task_orchestrator_messages, "TaskOrchestrator")
+                # show_message(task_orchestrator_messages, "TaskOrchestrator")
                 response = self.task_orchestrator.vlm.predict(task_orchestrator_messages)
                 try:
                     content = response.choices[0].message.content
@@ -155,8 +155,7 @@ class HierarchicalAgent(Agent):
                         self.task_data.sub_tasks_return = [None] * len(sub_tasks)
                         self.task_data.sub_tasks_episode_data = [None] * len(sub_tasks)
                         self.task_data.current_sub_task_idx = 0
-                        self.goal = self.task_data.sub_tasks[0]
-                        self.episode_data.goal = self.goal
+                        self.episode_data.goal = self.task_data.sub_tasks[0]
                         logger.info(f"Update the goal to the first sub task: {self.goal}")
                 except Exception as e:
                     logger.warning(f"Failed to parse the sub tasks. Error: {e}")
