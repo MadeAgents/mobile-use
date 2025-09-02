@@ -1245,10 +1245,34 @@ class TaskClassifier(SubAgent):
     def get_message(self, taskdata: HierarchicalAgentTaskData) -> list:
         messages = []
 
+        system_message = generate_message("system", self.prompt.system_prompt)
+        messages.append(system_message)
+
+        user_prompt = self.prompt.user_prompt.format(
+            task_description = taskdata.task,
+        )
+        user_message = generate_message("user", user_prompt)
+        messages.append(user_message)
+
         return messages
 
     def parse_response(self, response: str):
-        pass
+        # The response is in the format of:
+        # 1. sub task 1
+        # 2. sub task 2
+        # 3. ...
+        sub_tasks = []
+        for line in response.split('\n'):
+            line = line.strip()
+            if line == "":
+                continue
+            if re.match(r'^\d+[\.\)]\s*', line):
+                line = re.sub(r'^\d+[\.\)]\s*', '', line)                
+            sub_tasks.append(line)
+        
+        if ".jpg" in sub_tasks[0] or ".png" in sub_tasks[0]:
+            sub_tasks[0] += " Don't end the task when only thumbnails or small image are visible!!! Stay in the page where the image fills the (almost) entire screen!"
+        return sub_tasks
 
 
 class TaskOrchestrator(SubAgent):
@@ -1258,6 +1282,15 @@ class TaskOrchestrator(SubAgent):
 
     def get_message(self, taskdata: HierarchicalAgentTaskData) -> list:
         messages = []
+
+        system_message = generate_message("system", self.prompt.system_prompt)
+        messages.append(system_message)
+
+        user_prompt = self.prompt.user_prompt.format(
+            task_description = taskdata.task,
+        )
+        user_message = generate_message("user", user_prompt)
+        messages.append(user_message)
 
         return messages
 

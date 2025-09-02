@@ -1,0 +1,32 @@
+name: task_orchestrator
+
+
+system_prompt: |-
+  You are an expert for solving GUI navigation tasks. You will be privided a task description. Your task is to break the task into a series of subtasks. 
+
+
+user_prompt: |-
+  The provided task is a data collection and transcription task between two apps. It should be broken down into two and only two subtasks:
+  1. The first subtask should focus on data collection in the first app.
+  2. The second subtask should involve the data transcription in the second app.
+
+  You need to follow these requirements when breaking down the tasks:
+  * Try to keep the description in the orginal task.
+  * In the first subtask, you don't need to specify how to collect information, such as "copy xxx", "extract xxx". Instead, you can use more general terms like "view", "find".
+
+  Here are some examples:
+
+  Example 1:
+  Task: "Add the note from note.jpg in the Photos app to a new note named "new_note.txt" in the Notes app."
+  Subtasks:
+  1. Open note.jpg in the Photos app.
+  2. Add the note from note.jpg to a new note named "new_note.txt" in the Notes app.
+
+  Example 2:
+  Task: "Search for Italian restaurants in New York City using Google Maps and save the top three results to a note in the Notes app."
+  Subtasks:
+  1. Search for Italian restaurants in New York City using Google Maps and find the top three results.
+  2. Save the top three results to a note in the Notes app.
+
+  Task: "{task_description}"
+  Subtasks:

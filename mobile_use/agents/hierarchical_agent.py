@@ -113,53 +113,53 @@ class HierarchicalAgent(Agent):
         show_step = [0,4]
 
         # Task classification and planning
-        if self.enable_hierarchical_planning and self.curr_step_idx == 0:
-            import json
-            task_type_json = json.load(open("benchmark/android_world/tasks_type.json", "r"))
-            for task_info in task_type_json:
-                if task_info['goal'] == self.goal:
-                    if task_info['type'] in ['A', 'C']:
-                        task_type = task_info['type']
-                        sub_tasks = task_info['sub_tasks']
-                        logger.info("Task Type: %s" % task_type)
-                        logger.info("Sub Tasks: %s" % str(sub_tasks))
-                        self.task_data.task_type = task_type
-                        self.task_data.sub_tasks = sub_tasks
-                        self.task_data.sub_tasks_return = [None] * len(sub_tasks)
-                        self.task_data.sub_tasks_episode_data = [None] * len(sub_tasks)
-                        self.task_data.current_sub_task_idx = 0
-                        self.episode_data.goal = self.task_data.sub_tasks[0]
         # if self.enable_hierarchical_planning and self.curr_step_idx == 0:
-        #     task_classification_messages = self.task_classifier.get_message(self.task_data)
-        #     show_message(task_classification_messages, "TaskClassifier")
-        #     response = self.task_classifier.vlm.predict(task_classification_messages)
-        #     try:
-        #         content = response.choices[0].message.content
-        #         logger.info("Task Classification from VLM:\n%s" % content)
-        #         task_type = self.task_classifier.parse_response(content)
-        #         logger.info("Task Type: %s" % task_type)
-        #         self.task_data.task_type = task_type
-        #     except Exception as e:
-        #         logger.warning(f"Failed to parse the task type. Error: {e}")
-        #     if self.task_data.task_type in ['A', 'C']:
-        #         task_orchestrator_messages = self.task_orchestrator.get_message(self.task_data)
-        #         show_message(task_orchestrator_messages, "TaskOrchestrator")
-        #         response = self.task_orchestrator.vlm.predict(task_orchestrator_messages)
-        #         try:
-        #             content = response.choices[0].message.content
-        #             logger.info("Task Orchestration from VLM:\n%s" % content)
-        #             sub_tasks = self.task_orchestrator.parse_response(content)
-        #             if sub_tasks is not None and len(sub_tasks) > 0:
+        #     import json
+        #     task_type_json = json.load(open("benchmark/android_world/tasks_type.json", "r"))
+        #     for task_info in task_type_json:
+        #         if task_info['goal'] == self.goal:
+        #             if task_info['type'] in ['A', 'C']:
+        #                 task_type = task_info['type']
+        #                 sub_tasks = task_info['sub_tasks']
+        #                 logger.info("Task Type: %s" % task_type)
         #                 logger.info("Sub Tasks: %s" % str(sub_tasks))
+        #                 self.task_data.task_type = task_type
         #                 self.task_data.sub_tasks = sub_tasks
         #                 self.task_data.sub_tasks_return = [None] * len(sub_tasks)
         #                 self.task_data.sub_tasks_episode_data = [None] * len(sub_tasks)
         #                 self.task_data.current_sub_task_idx = 0
-        #                 self.goal = self.task_data.sub_tasks[0]
-        #                 self.episode_data.goal = self.goal
-        #                 logger.info(f"Update the goal to the first sub task: {self.goal}")
-        #         except Exception as e:
-        #             logger.warning(f"Failed to parse the sub tasks. Error: {e}")
+        #                 self.episode_data.goal = self.task_data.sub_tasks[0]
+        if self.enable_hierarchical_planning and self.curr_step_idx == 0:
+            task_classification_messages = self.task_classifier.get_message(self.task_data)
+            show_message(task_classification_messages, "TaskClassifier")
+            response = self.task_classifier.vlm.predict(task_classification_messages)
+            try:
+                content = response.choices[0].message.content
+                logger.info("Task Classification from VLM:\n%s" % content)
+                task_type = self.task_classifier.parse_response(content)
+                logger.info("Task Type: %s" % task_type)
+                self.task_data.task_type = task_type
+            except Exception as e:
+                logger.warning(f"Failed to parse the task type. Error: {e}")
+            if self.task_data.task_type in ['A']:
+                task_orchestrator_messages = self.task_orchestrator.get_message(self.task_data)
+                show_message(task_orchestrator_messages, "TaskOrchestrator")
+                response = self.task_orchestrator.vlm.predict(task_orchestrator_messages)
+                try:
+                    content = response.choices[0].message.content
+                    logger.info("Task Orchestration from VLM:\n%s" % content)
+                    sub_tasks = self.task_orchestrator.parse_response(content)
+                    if sub_tasks is not None and len(sub_tasks) > 0:
+                        logger.info("Sub Tasks: %s" % str(sub_tasks))
+                        self.task_data.sub_tasks = sub_tasks
+                        self.task_data.sub_tasks_return = [None] * len(sub_tasks)
+                        self.task_data.sub_tasks_episode_data = [None] * len(sub_tasks)
+                        self.task_data.current_sub_task_idx = 0
+                        self.goal = self.task_data.sub_tasks[0]
+                        self.episode_data.goal = self.goal
+                        logger.info(f"Update the goal to the first sub task: {self.goal}")
+                except Exception as e:
+                    logger.warning(f"Failed to parse the sub tasks. Error: {e}")
 
         # Get the current environment screen
         env_state = self.env.get_state()

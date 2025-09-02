@@ -169,12 +169,14 @@ class NoteTakerPrompt(Prompt):
 @dataclass
 class TaskClassifierPrompt(Prompt):
     config: str = "task_classifier.yaml"
-
+    system_prompt: str = ""
+    user_prompt: str = ""
 
 @dataclass
 class TaskOrchestratorPrompt(Prompt):
     config: str = "task_orchestrator.yaml"
-
+    system_prompt: str = ""
+    user_prompt: str = ""
 
 @dataclass
 class TaskExtractorPrompt(Prompt):
