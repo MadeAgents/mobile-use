@@ -395,7 +395,7 @@ class HierarchicalAgent(Agent):
                 if self.task_data.task_type == 'A':
                     # extract sub task info
                     sub_task_info_messages = self.task_extractor.get_message(self.task_data)
-                    show_message(sub_task_info_messages, "TaskExtractor")
+                    # show_message(sub_task_info_messages, "TaskExtractor")
                     response = self.task_extractor.vlm.predict(sub_task_info_messages)
                     try:
                         content = response.choices[0].message.content
@@ -409,7 +409,7 @@ class HierarchicalAgent(Agent):
 
                     # rewrite the next sub task
                     sub_task_rewrite_messages = self.task_rewriter.get_message(self.task_data)
-                    show_message(sub_task_rewrite_messages, "TaskRewriter")
+                    # show_message(sub_task_rewrite_messages, "TaskRewriter")
                     response = self.task_rewriter.vlm.predict(sub_task_rewrite_messages)
                     try:
                         content = response.choices[0].message.content

@@ -13,6 +13,7 @@ user_prompt: |-
   You need to follow these requirements when breaking down the tasks:
   * Try to keep the description in the orginal task.
   * In the first subtask, you don't need to specify how to collect information, such as "copy xxx", "extract xxx". Instead, you can use more general terms like "view", "find".
+  * Similarly, in the second subtask, you don't need to specify how to add the information, such as "copy xxx", "paste xxx". Instead, you can use more general terms like "add". Or use the term that is used in the original task.
 
   Here are some examples:
 
