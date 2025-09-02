@@ -1257,22 +1257,8 @@ class TaskClassifier(SubAgent):
         return messages
 
     def parse_response(self, response: str):
-        # The response is in the format of:
-        # 1. sub task 1
-        # 2. sub task 2
-        # 3. ...
-        sub_tasks = []
-        for line in response.split('\n'):
-            line = line.strip()
-            if line == "":
-                continue
-            if re.match(r'^\d+[\.\)]\s*', line):
-                line = re.sub(r'^\d+[\.\)]\s*', '', line)                
-            sub_tasks.append(line)
-        
-        if ".jpg" in sub_tasks[0] or ".png" in sub_tasks[0]:
-            sub_tasks[0] += " Don't end the task when only thumbnails or small image are visible!!! Stay in the page where the image fills the (almost) entire screen!"
-        return sub_tasks
+        task_type = response.split("Task Type:")[-1].strip().upper()
+        return task_type
 
 
 class TaskOrchestrator(SubAgent):
@@ -1295,7 +1281,18 @@ class TaskOrchestrator(SubAgent):
         return messages
 
     def parse_response(self, response: str):
-        pass
+        sub_tasks = []
+        for line in response.split('\n'):
+            line = line.strip()
+            if line == "":
+                continue
+            if re.match(r'^\d+[\.\)]\s*', line):
+                line = re.sub(r'^\d+[\.\)]\s*', '', line)                
+            sub_tasks.append(line)
+        
+        if ".jpg" in sub_tasks[0] or ".png" in sub_tasks[0]:
+            sub_tasks[0] += " Don't end the task when only thumbnails or small image are visible!!! Stay in the page where the image fills the (almost) entire screen!"
+        return sub_tasks
 
 
 class TaskExtractor(SubAgent):
