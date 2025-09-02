@@ -72,7 +72,11 @@
     {
         "task": "ExpenseAddMultipleFromGallery",
         "goal": "Add the expenses from expenses.jpg in Simple Gallery Pro to pro expense.",
-        "type": "A"
+        "type": "A",
+        "sub_tasks": [
+            "Open expenses.jpg in Simple Gallery Pro.",
+            "Add the expenses from expenses.jpg in Simple Gallery Pro to pro expense."
+        ]
     },
     {
         "task": "ExpenseAddMultipleFromMarkor",
@@ -194,7 +198,7 @@
         "goal": "Create a file in Markor, called receipt.md with the transactions from the receipt.png. Use Simple Gallery to view the receipt. Please enter transactions in csv format including the header \"Date, Item, Amount\".",
         "type": "A",
         "sub_tasks": [
-            "View the transactions from the receipt.png. Use Simple Gallery to view the receipt.",
+            "View the transactions from the receipt.png with Simple Gallery app.",
             "Create a file in Markor, called receipt.md with the transactions from the receipt.png. Use csv format including the header \"Date, Item, Amount\"."
         ]
     },
@@ -258,7 +262,7 @@
         "goal": "Add the recipes from recipes.jpg in Simple Gallery Pro to the Broccoli recipe app.",
         "type": "A",
         "sub_tasks": [
-            "View the recipes from recipes.jpg in Simple Gallery Pro. Stay in the page where the content can be clearly seen.",
+            "Open recipes.jpg in Simple Gallery Pro. Don't end the task when only thumbnails or small image are visible!!! Stay in the page where the image fills the (almost) entire screen!",
             "Add the recipes from recipes.jpg in Simple Gallery Pro to the Broccoli recipe app."
         ]
     },

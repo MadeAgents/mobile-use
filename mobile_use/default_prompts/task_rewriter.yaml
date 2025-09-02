@@ -23,8 +23,22 @@ user_prompt: |-
 
   Now you need to rewrite the next sub task by combining the collect information.
   Here are some guidances:
-  * Keep the complete content and format of the information collect from previous sub tasks.
-  * Replace the corresponding content in the next sub task with the collect information.
+  * Keep the complete content and raw format of the information collect from previous sub tasks.
+  * Replace the corresponding content in the next sub task with the collect information. DO NOT mention the file and app where the information comes from!
   
-  New sub task:
+  Here is an example:
+
+  If the collected information from provious sub tasks is:
+  Alice +12-3456
+  Bob +1-22222
+
+  The next sub task is: 
+  Add the numbers from numbers.txt in Note to the Message app.
+
+  Then the rewritten sub task should be:
+  Add the following numbers to the Message app:
+  Alice +12-3456
+  Bob +1-22222
+
+  Now output the new sub task:
   

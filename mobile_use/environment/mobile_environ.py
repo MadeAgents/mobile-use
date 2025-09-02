@@ -108,6 +108,9 @@ class Environment:
                     else:
                         self._d.shell(["input", "text", text])
 
+                    # Sleep to ensure that all text is successfully entered
+                    time.sleep(len(text) * 0.1)
+
                 case 'key':
                     text = action.parameters['text']
                     self._d.keyevent(text)

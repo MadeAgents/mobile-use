@@ -182,7 +182,12 @@ def launch_app(
     activity = get_adb_activity(app_name)
     if activity is None:
         #  If the app name is not in the mapping, assume it is a package name.
-        device.shell(['monkey', '-p', app_name, '1'])
+        re = device.shell(['monkey', '-p', app_name, '1'])
+        if isinstance(re, str) and "No activities found to run, monkey aborted" in re:
+            raise ValueError(
+                f'Unrecognized app name: {app_name}. Please provide a valid'
+                ' app name or package name.'
+            )
         logger.info(f'Launch app {app_name} by package name.')
         return app_name
 

@@ -15,8 +15,9 @@ user_prompt: |-
   {completed_sub_tasks}
 
   To complete the remaining sub tasks, you need to extract content from the latest screenshots to provide enough information.
-  Note that the screenshots are not visible for the sub tasks, so you need to extract all necessary content on the screenshot into text.
+  Note that the screenshots are not visible for the sub tasks, so you need to extract ALL necessary contents on the screenshot into text. DO NOT only provide a outline or overview!
   Keep the original content and format as much as possible. Do not rewrite it.
+  Pay attention to the upper and lower case letters in the screenshots. Make sure the extracted text is consistent with the screenshot.
 
   Here is the latest screenshots of the phone. The screen's resolution is {resized_width}x{resized_height}.
   {image_placeholders}
