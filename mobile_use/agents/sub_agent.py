@@ -424,16 +424,14 @@ class TrainedOperator(Operator):
             embedding_model=Jinaembedding(embedding_model_path) 
             db=Vectordatabase()
             db.load_vector(database_path)
-            print(episodedata.goal)
             answer = db.query_score(episodedata.goal,embedding_model,1)
             similarity, key, value = answer[0]
-            print(value[0])
-            knowledge = ""
-            knowledge += value[0]
+            logger.info(f"Retrieved knowledge: {str(value)}")
+            knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
             knowledge_prompt = self.prompt.knowledge_prompt.format(
                 knowledge = knowledge,
             )
-            print("Knowledge is added.")
+            logger.info("Knowledge is added.")
             prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
