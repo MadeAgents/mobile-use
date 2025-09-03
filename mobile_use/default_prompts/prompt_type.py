@@ -78,6 +78,7 @@ class OperatorPrompt(Prompt):
     subgoal_prompt: str = ""
     history_prompt: str = ""
     progress_prompt: str = ""
+    knowledge_prompt: str = ""
     memory_prompt: str = ""
     reflection_prompt: str = ""
     trajectory_reflection_prompt: str = ""

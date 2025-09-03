@@ -3,6 +3,10 @@ import math
 import base64
 from io import BytesIO
 from typing import Tuple, Union, List
+import os
+import subprocess
+import shutil
+import sys
 
 from PIL import Image
 import numpy as np
@@ -209,3 +213,24 @@ def diff_image(
     new_img1 = Image.fromarray(cv2.cvtColor(new_img1, cv2.COLOR_BGR2RGB))
     new_img2 = Image.fromarray(cv2.cvtColor(new_img2, cv2.COLOR_BGR2RGB))
     return new_img1, new_img2
+
+def download_hf_model(repo_url: str, target_dir: str):
+    # Check if target_dir already exists
+    if os.path.exists(target_dir):
+        print(f"Already exists: {target_dir}, skip download.")
+        return
+
+    # Check if git-lfs is installed
+    try:
+        subprocess.run(["git", "lfs", "version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        logger.warning("git-lfs is not installed. It may cause some files not downloaded correctly.")
+
+    try:
+        subprocess.run(
+            ["git", "clone", repo_url, target_dir],
+            check=True
+        )
+        logger.info(f"Finished downloading model {repo_url} to {target_dir}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error downloading model from {repo_url}: {e}")
