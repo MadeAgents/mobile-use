@@ -97,7 +97,7 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
     'simple calendar pro|simple calendar': 'com.simplemobiletools.calendar.pro/com.simplemobiletools.calendar.pro.activities.MainActivity',
     'simple gallery pro|simple gallery|gallery': 'com.simplemobiletools.gallery.pro/com.simplemobiletools.gallery.pro.activities.MainActivity',
     'miniwob': 'com.google.androidenv.miniwob/com.google.androidenv.miniwob.app.MainActivity',
-    'simple draw pro': 'com.simplemobiletools.draw.pro/com.simplemobiletools.draw.pro.activities.MainActivity',
+    'simple draw pro|simple draw|draw': 'com.simplemobiletools.draw.pro/com.simplemobiletools.draw.pro.activities.MainActivity',
     'pro expense|pro expense app': (
         'com.arduia.expense/com.arduia.expense.ui.MainActivity'
     ),
@@ -134,6 +134,14 @@ def get_adb_activity(app_name: str) -> Optional[str]:
     for pattern, activity in _PATTERN_TO_ACTIVITY.items():
         if re.match(pattern.lower(), app_name.lower()):
             return activity
+    
+    # If no exact match, try partial match for multi-word app names.
+    if len(app_name.lower().split()) > 1:
+        for pattern, activity in _PATTERN_TO_ACTIVITY.items():
+            for word in app_name.lower().split():
+                if re.match(pattern, word):
+                    logger.warning(f"Partial match for app name '{app_name}' with pattern '{pattern}'.")
+                    return activity
 
 
 
@@ -185,8 +193,7 @@ def launch_app(
         re = device.shell(['monkey', '-p', app_name, '1'])
         if isinstance(re, str) and "No activities found to run, monkey aborted" in re:
             raise ValueError(
-                f'Unrecognized app name: {app_name}. Please provide a valid'
-                ' app name or package name.'
+                f'Unrecognized app name: {app_name}. Please provide a valid app name or package name.'
             )
         logger.info(f'Launch app {app_name} by package name.')
         return app_name
