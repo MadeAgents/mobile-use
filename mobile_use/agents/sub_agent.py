@@ -160,6 +160,16 @@ class Operator(SubAgent):
         self.include_knowledge = config.include_knowledge
         self.include_a11y_tree = config.include_a11y_tree
         self.max_pixels = config.max_pixels
+        if self.include_knowledge:
+            logger.info("Loading RAG database for knowledge retrieval...")
+            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
+            database_path = os.path.join(script_dir, 'rag_database')
+            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
+            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
+            self.embedding_model=Jinaembedding(embedding_model_path) 
+            self.db=Vectordatabase()
+            self.db.load_vector(database_path)
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -221,15 +231,7 @@ class Operator(SubAgent):
 
         if self.include_knowledge:
             # Add knowledge
-            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
-            database_path = os.path.join(script_dir, 'rag_database')
-            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
-            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
-            embedding_model=Jinaembedding(embedding_model_path) 
-            db=Vectordatabase()
-            db.load_vector(database_path)
-            answer = db.query_score(episodedata.goal,embedding_model,1)
+            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
             similarity, key, value = answer[0]
             logger.info(f"Retrieved knowledge: {str(value)}")
             if len(value) > 0 and value[0] != "":
@@ -415,18 +417,9 @@ class TrainedOperator(Operator):
 
         if self.include_knowledge:
             # Add knowledge
-            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
-            database_path = os.path.join(script_dir, 'rag_database')
-            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
-            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
-            embedding_model=Jinaembedding(embedding_model_path) 
-            db=Vectordatabase()
-            db.load_vector(database_path)
-            answer = db.query_score(episodedata.goal,embedding_model,1)
+            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
             similarity, key, value = answer[0]
             logger.info(f"Retrieved knowledge: {str(value)}")
-            knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
             if len(value) > 0 and value[0] != "":
                 knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
                 knowledge_prompt = self.prompt.knowledge_prompt.format(
