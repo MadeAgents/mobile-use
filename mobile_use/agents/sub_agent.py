@@ -232,12 +232,13 @@ class Operator(SubAgent):
             answer = db.query_score(episodedata.goal,embedding_model,1)
             similarity, key, value = answer[0]
             logger.info(f"Retrieved knowledge: {str(value)}")
-            knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
-            knowledge_prompt = self.prompt.knowledge_prompt.format(
-                knowledge = knowledge,
-            )
-            logger.info("Knowledge is added.")
-            prompt_list.append(knowledge_prompt)
+            if len(value) > 0 and value[0] != "":
+                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
+                knowledge_prompt = self.prompt.knowledge_prompt.format(
+                    knowledge = knowledge,
+                )
+                logger.info("Knowledge is added.")
+                prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
@@ -426,11 +427,13 @@ class TrainedOperator(Operator):
             similarity, key, value = answer[0]
             logger.info(f"Retrieved knowledge: {str(value)}")
             knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
-            knowledge_prompt = self.prompt.knowledge_prompt.format(
-                knowledge = knowledge,
-            )
-            logger.info("Knowledge is added.")
-            prompt_list.append(knowledge_prompt)
+            if len(value) > 0 and value[0] != "":
+                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
+                knowledge_prompt = self.prompt.knowledge_prompt.format(
+                    knowledge = knowledge,
+                )
+                logger.info("Knowledge is added.")
+                prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
