@@ -157,6 +157,7 @@ class Operator(SubAgent):
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
         self.include_tips = config.include_tips
+        self.include_knowledge = config.include_knowledge
         self.include_a11y_tree = config.include_a11y_tree
         self.max_pixels = config.max_pixels
 
@@ -218,26 +219,27 @@ class Operator(SubAgent):
         )
         prompt_list.append(history_prompt)
 
-        # Add knowledge
-        project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
-        database_path = os.path.join(script_dir, 'rag_database')
-        embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
-        download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
-        embedding_model=Jinaembedding(embedding_model_path) 
-        db=Vectordatabase()
-        db.load_vector(database_path)
-        print(episodedata.goal)
-        answer = db.query_score(episodedata.goal,embedding_model,1)
-        similarity, key, value = answer[0]
-        print(value[0])
-        knowledge = ""
-        knowledge += value[0]
-        knowledge_prompt = self.prompt.knowledge_prompt.format(
-            knowledge = knowledge,
-        )
-        print("Knowledge is added.")
-        prompt_list.append(knowledge_prompt)
+        if self.include_knowledge:
+            # Add knowledge
+            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
+            database_path = os.path.join(script_dir, 'rag_database')
+            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
+            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
+            embedding_model=Jinaembedding(embedding_model_path) 
+            db=Vectordatabase()
+            db.load_vector(database_path)
+            print(episodedata.goal)
+            answer = db.query_score(episodedata.goal,embedding_model,1)
+            similarity, key, value = answer[0]
+            print(value[0])
+            knowledge = ""
+            knowledge += value[0]
+            knowledge_prompt = self.prompt.knowledge_prompt.format(
+                knowledge = knowledge,
+            )
+            print("Knowledge is added.")
+            prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
@@ -412,26 +414,27 @@ class TrainedOperator(Operator):
             )
             prompt_list.append(subgoal_prompt)
 
-        # Add knowledge
-        project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
-        database_path = os.path.join(script_dir, 'rag_database')
-        embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
-        download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
-        embedding_model=Jinaembedding(embedding_model_path) 
-        db=Vectordatabase()
-        db.load_vector(database_path)
-        print(episodedata.goal)
-        answer = db.query_score(episodedata.goal,embedding_model,1)
-        similarity, key, value = answer[0]
-        print(value[0])
-        knowledge = ""
-        knowledge += value[0]
-        knowledge_prompt = self.prompt.knowledge_prompt.format(
-            knowledge = knowledge,
-        )
-        print("Knowledge is added.")
-        prompt_list.append(knowledge_prompt)
+        if self.include_knowledge:
+            # Add knowledge
+            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
+            database_path = os.path.join(script_dir, 'rag_database')
+            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
+            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
+            embedding_model=Jinaembedding(embedding_model_path) 
+            db=Vectordatabase()
+            db.load_vector(database_path)
+            print(episodedata.goal)
+            answer = db.query_score(episodedata.goal,embedding_model,1)
+            similarity, key, value = answer[0]
+            print(value[0])
+            knowledge = ""
+            knowledge += value[0]
+            knowledge_prompt = self.prompt.knowledge_prompt.format(
+                knowledge = knowledge,
+            )
+            print("Knowledge is added.")
+            prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]

@@ -46,6 +46,7 @@ class OperatorConfig(SubAgentConfig):
     num_histories: int = None
     include_device_time: bool = True
     include_tips: bool = True
+    include_knowledge: bool = False
     include_a11y_tree: bool = False
     max_pixels: int = None
 
