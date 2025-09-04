@@ -11,7 +11,6 @@ from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 from mobile_use.utils.utils import *
 from mobile_use.schema.config import *
 import mobile_use.agents.agent_qwen as agent_qwen
-from RAGToolbox import Jinaembedding, Vectordatabase
 
 __all__ = [
     "SubAgent",
@@ -166,6 +165,7 @@ class Operator(SubAgent):
         self.max_pixels = config.max_pixels
         if self.include_knowledge:
             logger.info("Loading RAG database for knowledge retrieval...")
+            from RAGToolbox import Jinaembedding, Vectordatabase
             project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
             database_path = os.path.join(script_dir, 'rag_database')
@@ -565,6 +565,7 @@ class AnswerAgent(SubAgent):
         self.include_knowledge = config.include_knowledge
         if self.include_knowledge:
             logger.info("Loading RAG database for knowledge retrieval...")
+            from RAGToolbox import Jinaembedding, Vectordatabase
             project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
             database_path = os.path.join(script_dir, 'rag_database')
