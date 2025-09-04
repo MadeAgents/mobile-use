@@ -100,6 +100,7 @@ class ReflectorPrompt(Prompt):
     task_prompt: str = ""
     subgoal_prompt: str = ""
     observation_prompt: str = ""
+    same_image_prompt: str = ""
     diff_image_prompt: str = ""
     expection_prompt: str = ""
     response_prompt: str = ""

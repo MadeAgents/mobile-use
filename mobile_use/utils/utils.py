@@ -2,6 +2,7 @@ import logging
 import math
 import base64
 from io import BytesIO
+from PIL import Image, ImageDraw
 from typing import Tuple, Union, List
 import os
 import subprocess
@@ -35,7 +36,7 @@ def generate_message(
     """
     Generate a message with role, prompt and images.
     """
-    if images is None:
+    if images is None or len(images) == 0:
         return {"role": role, "content": [{"type": "text", "text": prompt}]}
     else:
         content = []
@@ -158,7 +159,18 @@ def compare_image(img1: Image.Image, img2: Image.Image):
     ssim_value = ssim(img1, img2)
     return ssim_value
 
-def is_same_image(img1: Image.Image, img2: Image.Image):
+def crop_top_by_ratio(img: Image.Image, ratio: float):
+    assert ratio >=0 and ratio < 1, "ratio must be in the range [0, 1)"
+    if ratio == 0:
+        return img
+    w, h = img.size
+    cut = int(round(h * ratio))
+    return img.crop((0, cut, w, h))
+
+def is_same_image(img1: Image.Image, img2: Image.Image, crop_top_ratio: float = 0.0):
+    if crop_top_ratio > 0:
+        img1 = crop_top_by_ratio(img1, crop_top_ratio)
+        img2 = crop_top_by_ratio(img2, crop_top_ratio)
     img1 = img1.convert('L')
     img2 = img2.convert('L')
     img1 = np.array(img1)
@@ -213,6 +225,24 @@ def diff_image(
     new_img1 = Image.fromarray(cv2.cvtColor(new_img1, cv2.COLOR_BGR2RGB))
     new_img2 = Image.fromarray(cv2.cvtColor(new_img2, cv2.COLOR_BGR2RGB))
     return new_img1, new_img2
+
+def draw_click_to_image(image, x, y, transparency=0.75, radius=20):
+    # Convert the image to RGBA for transparency handling
+    image = image.convert("RGBA")
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))  # Transparent overlay
+
+    # Draw the circle on the overlay
+    draw = ImageDraw.Draw(overlay)
+    color = (255, 0, 0, int(255 * transparency))
+    draw.ellipse(
+        (x - radius, y - radius, x + radius, y + radius), fill=color
+    )
+
+    # Composite the overlay with the original image
+    combined = Image.alpha_composite(image, overlay)
+
+    # Convert back to RGB for the output
+    return combined.convert("RGB")
 
 def download_hf_model(repo_url: str, target_dir: str):
     # Check if target_dir already exists

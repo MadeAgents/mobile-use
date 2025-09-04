@@ -909,7 +909,7 @@ class Reflector(SubAgent):
         pixels_after = current_step.exec_env_state.pixels.copy()
 
         diff_flag = False
-        new_img1, new_img2 = diff_image(pixels_before, pixels_after)
+        new_img1, new_img2 = diff_image(pixels_before.copy(), pixels_after.copy())
         if new_img1 is not None:
             pixels_before, pixels_after = new_img1, new_img2
             diff_flag = True
@@ -938,7 +938,10 @@ class Reflector(SubAgent):
             resized_width = resized_width,
             resized_height = resized_height,
         )
-        if diff_flag:
+        if is_same_image(pixels_before.copy(), pixels_after.copy(), crop_top_ratio=0.035):
+            logger.info("The last action does not produce any changes on the screen.")
+            observation_prompt += "\n" + self.prompt.same_image_prompt
+        elif diff_flag:
             logger.info("The last action successfully produces some changes. The difference between the two images is highlighted in red boxes.")
             observation_prompt += "\n" + self.prompt.diff_image_prompt
         prompt_list.append(observation_prompt)
@@ -998,7 +1001,7 @@ class TrajectoryReflector(SubAgent):
 
         # detect repeated actions
         repeat_action = 1
-        if current_step.action not in ["swipe", "scroll"]:
+        if current_step.action.name not in ["swipe", "wait"]:
             for step in trajectory[:-1][::-1]:
                 if step.action == current_step.action:
                     repeat_action += 1
@@ -1019,13 +1022,13 @@ class TrajectoryReflector(SubAgent):
         # detect repeated screenshots
         repeat_screen = 1
         for step in trajectory[:-1][::-1]:
-            if is_same_image(step.exec_env_state.pixels.copy(), current_step.exec_env_state.pixels.copy()):
+            if is_same_image(step.exec_env_state.pixels.copy(), current_step.exec_env_state.pixels.copy(), crop_top_ratio=0.035) and step.action.name not in ["wait"]:
                 repeat_screen += 1
             else:
                 break
             if repeat_screen >= self.max_repeat_screen:
                 error.append(f"The screen has kept unchanged for more than {self.max_repeat_screen} times. You may be stuck in a page. Change your action to explore other possibilities!")
-                if trajectory[-1].action == "swipe":
+                if trajectory[-1].action.name == "swipe":
                     error.append(f"You have performed several `swipe` actions but the screen is still unchanged. It indicates that you have swiped to the end of a page. If you are trying to find a specific item, you can try to swipe towards the opposite direction.")
                 break
 

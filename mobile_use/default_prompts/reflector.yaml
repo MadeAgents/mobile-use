@@ -20,7 +20,11 @@ observation_prompt: |-
   Screenshot after latest action: {screenshot2}
   The two images are two phone screenshots before and after your latest action.
   The width and height are {resized_width} and {resized_height} pixels, respectively.
-  
+
+
+same_image_prompt: |-
+  WARNING: The last action produces no observable changes. The two images are totally the same!
+
 
 diff_image_prompt: |-
   The last action successfully produces some observable changes. The difference between the two images is highlighted in red boxes. You can find it on the images.
