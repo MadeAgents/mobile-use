@@ -562,6 +562,17 @@ class AnswerAgent(SubAgent):
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
         self.max_pixels = config.max_pixels
+        self.include_knowledge = config.include_knowledge
+        if self.include_knowledge:
+            logger.info("Loading RAG database for knowledge retrieval...")
+            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
+            database_path = os.path.join(script_dir, 'rag_database')
+            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
+            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
+            self.embedding_model=Jinaembedding(embedding_model_path) 
+            self.db=Vectordatabase()
+            self.db.load_vector(database_path)
     
     def reset(self):
         self.raw_size = None
@@ -624,6 +635,19 @@ class AnswerAgent(SubAgent):
             history = history,
         )
         prompt_list.append(history_prompt)
+
+        if self.include_knowledge:
+            # Add knowledge
+            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
+            similarity, key, value = answer[0]
+            logger.info(f"Retrieved knowledge: {str(value)}")
+            if len(value) > 0 and value[0] != "":
+                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
+                knowledge_prompt = self.prompt.knowledge_prompt.format(
+                    knowledge = knowledge,
+                )
+                logger.info("Knowledge is added.")
+                prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
@@ -769,6 +793,19 @@ class TrainedAnswerAgent(AnswerAgent):
                 subgoal = current_step.sub_goal,
             )
             prompt_list.append(subgoal_prompt)
+
+        if self.include_knowledge:
+            # Add knowledge
+            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
+            similarity, key, value = answer[0]
+            logger.info(f"Retrieved knowledge: {str(value)}")
+            if len(value) > 0 and value[0] != "":
+                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
+                knowledge_prompt = self.prompt.knowledge_prompt.format(
+                    knowledge = knowledge,
+                )
+                logger.info("Knowledge is added.")
+                prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]

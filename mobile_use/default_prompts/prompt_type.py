@@ -89,22 +89,8 @@ class OperatorPrompt(Prompt):
 
 
 @dataclass
-class AnswerAgentPrompt(Prompt):
+class AnswerAgentPrompt(OperatorPrompt):
     config: str = "answer_agent.yaml"
-    system_prompt: str = ""
-    init_tips: str = ""
-    task_prompt: str = ""
-    device_time_prompt: str = ""
-    plan_prompt: str = ""
-    subgoal_prompt: str = ""
-    history_prompt: str = ""
-    progress_prompt: str = ""
-    memory_prompt: str = ""
-    reflection_prompt: str = ""
-    trajectory_reflection_prompt: str = ""
-    global_reflection_prompt: str = ""
-    observation_prompt: str = ""
-    response_prompt: str = ""
 
 
 @dataclass

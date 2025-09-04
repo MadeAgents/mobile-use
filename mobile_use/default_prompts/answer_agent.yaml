@@ -68,6 +68,12 @@ progress_prompt: |-
   {progress}
 
 
+knowledge_prompt: |-
+  ### Knowledge ###
+  I will provide you with some knowledge that may be relevant to completing the current task.
+  {knowledge}
+
+
 memory_prompt: |-
   ### Memory ###
   During the operations, you record the following contents on the screenshot for use in subsequent operations:
