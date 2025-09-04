@@ -72,12 +72,19 @@ class HierarchicalAgent(Agent):
         self.task_orchestrator = self._init_sub_agent(TaskOrchestrator, self.config.task_orchestrator)
         self.task_extractor = self._init_sub_agent(TaskExtractor, self.config.task_extractor)
         self.task_rewriter = self._init_sub_agent(TaskRewriter, self.config.task_rewriter)
+        self.agents = [
+            self.planner, self.operator, self.answer_agent, self.reflector, 
+            self.trajectory_reflector, self.global_reflector, self.progressor, self.note_taker,
+            self.task_classifier, self.task_orchestrator, self.task_extractor, self.task_rewriter 
+        ]
 
     def reset(self, goal: str='', max_steps: int = 10) -> None:
         """Reset the state of the agent.
         """
         self._init_data(goal=goal, max_steps=max_steps)
-        self._init_sub_agents()
+        for agent in self.agents:
+            if agent:
+                agent.reset()
 
     def _get_curr_step_data(self):
         if len(self.trajectory) > self.curr_step_idx:

@@ -86,6 +86,10 @@ class SubAgent(ABC):
     def __init__(self, config: SubAgentConfig):
         super().__init__()
         self.vlm = VLMWrapper(**config.vlm.model_dump())
+        self.reset()
+
+    def reset(self):
+        pass
 
     @abstractmethod
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
@@ -170,6 +174,10 @@ class Operator(SubAgent):
             self.embedding_model=Jinaembedding(embedding_model_path) 
             self.db=Vectordatabase()
             self.db.load_vector(database_path)
+    
+    def reset(self):
+        self.raw_size = None
+        self.resized_size = None
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -554,6 +562,10 @@ class AnswerAgent(SubAgent):
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
         self.max_pixels = config.max_pixels
+    
+    def reset(self):
+        self.raw_size = None
+        self.resized_size = None
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -920,7 +932,6 @@ class TrajectoryReflector(SubAgent):
         super().__init__(config)
         self.prompt: TrajectoryReflectorPrompt = load_prompt("trajectory_reflector", config.prompt_config)
         self.valid_options = ['A', 'B']
-        self.sleep_count = 0
         self.evoke_every_steps = config.evoke_every_steps
         self.cold_steps = config.cold_steps
         self.detect_error = config.detect_error
@@ -934,6 +945,9 @@ class TrajectoryReflector(SubAgent):
         self.max_repeat_action_series = config.max_repeat_action_series
         self.max_repeat_screen = config.max_repeat_screen
         self.max_fail_count = config.max_fail_count
+    
+    def reset(self):
+        self.sleep_count = 0
     
     def detect(
         self, 

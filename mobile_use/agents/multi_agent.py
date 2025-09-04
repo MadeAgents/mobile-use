@@ -66,12 +66,18 @@ class MultiAgent(Agent):
         self.global_reflector = self._init_sub_agent(GlobalReflector, self.config.global_reflector)
         self.progressor = self._init_sub_agent(Progressor, self.config.progressor)
         self.note_taker = self._init_sub_agent(NoteTaker, self.config.note_taker)
+        self.agents = [
+            self.planner, self.operator, self.answer_agent, self.reflector,
+            self.trajectory_reflector, self.global_reflector, self.progressor, self.note_taker
+        ]
 
     def reset(self, goal: str='', max_steps: int = 10) -> None:
         """Reset the state of the agent.
         """
         self._init_data(goal=goal, max_steps=max_steps)
-        self._init_sub_agents()
+        for agent in self.agents:
+            if agent:
+                agent.reset()
 
     def _get_curr_step_data(self):
         if len(self.trajectory) > self.curr_step_idx:
