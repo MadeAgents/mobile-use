@@ -55,6 +55,7 @@ class AnswerAgentConfig(SubAgentConfig):
     num_histories: int = None
     include_device_time: bool = True
     include_tips: bool = False
+    include_knowledge: bool = False
     max_pixels: int = None
 
 class ReflectorConfig(SubAgentConfig):
