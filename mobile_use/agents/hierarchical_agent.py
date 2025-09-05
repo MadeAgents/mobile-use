@@ -361,7 +361,7 @@ class HierarchicalAgent(Agent):
                         logger.warning(f"Failed to parse the trajectory reflection. Error: {e}")
 
         # Call AnswerAgent
-        if self.status == AgentStatus.FINISHED and answer is None:
+        if self.status == AgentStatus.FINISHED and answer is None and self.answer_agent:
             answer_messages = self.answer_agent.get_message(self.episode_data)
             show_message(answer_messages, "Answer")
             response = self.answer_agent.vlm.predict(answer_messages)
