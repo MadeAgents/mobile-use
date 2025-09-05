@@ -3,7 +3,7 @@ import re
 import json
 import logging
 from typing import Union, Literal
-import os
+import os, sys
 from mobile_use.default_prompts.prompt_type import *
 from mobile_use.utils.vlm import VLMWrapper
 from mobile_use.schema.schema import *
@@ -165,8 +165,9 @@ class Operator(SubAgent):
         self.max_pixels = config.max_pixels
         if self.include_knowledge:
             logger.info("Loading RAG database for knowledge retrieval...")
-            from RAGToolbox import Jinaembedding, Vectordatabase
             project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            sys.path += os.path.join(project_home, 'third_party', 'RAGToolbox')
+            from RAGToolbox import Jinaembedding, Vectordatabase
             script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
             database_path = os.path.join(script_dir, 'rag_database')
             embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
@@ -565,8 +566,9 @@ class AnswerAgent(SubAgent):
         self.include_knowledge = config.include_knowledge
         if self.include_knowledge:
             logger.info("Loading RAG database for knowledge retrieval...")
-            from RAGToolbox import Jinaembedding, Vectordatabase
             project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            sys.path += os.path.join(project_home, 'third_party', 'RAGToolbox')
+            from RAGToolbox import Jinaembedding, Vectordatabase
             script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
             database_path = os.path.join(script_dir, 'rag_database')
             embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
