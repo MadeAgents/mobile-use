@@ -11,7 +11,7 @@
   ],
   "Open the file task.html in Downloads in the file manager; when prompted open it with Chrome. Then navigate the X to the bottom-right cell, by using the direction buttons.": [
     "NOTE: The .html file may contain additional interactable elements, such as a drawing canvas or a game. Do not open other apps without completing the task in the .html file.",
-    "The ultimate goal is to move X to the bottom-right cell.",
+    "The ultimate goal is to move X to the bottom-right cell with green color.",
     "Areas with black squares cannot be moved."
   ],
   "Open the file task.html in Downloads in the file manager; when prompted open it with Chrome. Then click the button 5 times, remember the numbers displayed, and enter their product in the form.": [
@@ -21,7 +21,8 @@
     ""
   ],
   "Take one video.": [
-    ""
+    "If you are in camera mode, click the MODE LIST and select Video mode to take a video. Note that now the video has not started yet.",
+    "If an icon with a square in the middle of a circle appears at the bottom of the screen, it means the video is being recorded and you must click again to end the recording!"
   ],
   "Pause the stopwatch.": [
     ""
@@ -51,13 +52,14 @@
     ""
   ],
   "Delete all but one of any expenses in pro expense that are exact duplicates, ensuring at least one instance of each unique expense remains.": [
-    "Task-specific:\nOnly two items with the same name, date, and details can be considered duplicates.\n\n"
+    "Only two items with the same name, date, and details can be considered duplicates!!",
+    "DO NOT click the items that are not exactly duplicates!!!"
   ],
   "Delete the following expenses from pro expense: Ride-Sharing, Flight Tickets, Taxi Fare.": [
     ""
   ],
   "Delete the following expenses from pro expense: Streaming Services, Unexpected Expenses, Pet Supplies.": [
-    ""
+    "If you swipe up to the bottom and still can't find the target item, try to swipe down to browse the list again."
   ],
   "Delete the following expenses from pro expense: Rental Income.": [
     ""
@@ -69,10 +71,12 @@
     ""
   ],
   "Update the Markor note 2023_08_10_neat_wolf.txt by adding the following text, along with a new blank line before the existing content: \"RnI8sP34yDzJQbvkfplR\", and rename it to busy_wolf_2023_07_23.txt.": [
-    "Renaming requires a long press on the file name to complete."
+    "If you want to rename a file, you must return to the file list!",
+    "Renaming requires a long press on the file name, then click the `A` icon on the menu."
   ],
   "Update the content of strong_jacket_h1hZ.txt to \"inNqu8UNNtyXBHCZpYp7\" in Markor and change its name to lively_fox_2023_03_22.md.": [
-    "Renaming requires a long press on the file name to complete."
+    "If you want to rename a file, you must return to the file list!",
+    "Renaming requires a long press on the file name, then click the `A` icon on the menu."
   ],
   "Create a new folder in Markor named folder_20250826_093633.": [
     ""
@@ -81,10 +85,10 @@
     ""
   ],
   "Create a new note in Markor named fair_ant_XOdi.txt with the following text: Actions speak louder than words.. Share the entire content of the note with the phone number +13192815309 via SMS using Simple SMS Messenger": [
-    ""
+    "When naming a file, if you want to change the file extension, try to select the corresponding file type."
   ],
   "Create a note in Markor named 2023_09_08_active_umbrella.txt. Perform a paste operation in the note and save the note.": [
-    ""
+    "When naming a file, if you want to change the file extension, try to select the corresponding file type."
   ],
   "Delete all my notes in Markor.": [
     ""
@@ -102,10 +106,11 @@
     ""
   ],
   "In Markor, move the note shy_king_copy.md from StudyGuides to MeetingMinutes.": [
+    "DO NOT mistake the file for any other with a similar name! Choose only the file with the exact SAME name specified, without exception!",
     "The selected folder needs to have SELECT THIS FOLDER chosen."
   ],
   "Create a file in Markor, called receipt.md with the transactions from the receipt.png. Use Simple Gallery to view the receipt. Please enter transactions in csv format including the header \"Date, Item, Amount\".": [
-    ""
+    "Remember to save the file after editing."
   ],
   "Transcribe the contents of video ZwUN_moment_70_.mp4 by watching it in VLC player (located in Download) and writing the sequence of strings shown on each frame to the text file ZwUN_moment_70__transcription.txt in Markor as a comma separated list. For example, if the first frame shows the text \"edna\" and the second frame shows the text \"pineapple\", then the text file should contain only the following text: \"edna, pineapple\".": [
     ""
@@ -172,7 +177,8 @@
     ""
   ],
   "Add the following songs, in order, Through the Storm, Hidden Paths, Forever Young, Whispers of the Past, Heartbeat Away to my playing queue in Retro music.": [
-    ""
+    "Search the name to find a song! Do not find it by viewing the list!",
+    "Before typing in text, you must click the input field to active the keyboard!"
   ],
   "Create a playlist in Retro Music titled \"Reggae Rhythms 51\" with a duration between 45 and 50 minutes using the provided songs.": [
     "If your duration is not between 45 and 50 minutes, you need to go back and continue adding or deleting songs."
@@ -229,7 +235,7 @@
     ""
   ],
   "What is my next upcoming event in Simple Calendar Pro? Answer with the title only. If there are multiples titles, format your answer in a comma separated list.": [
-    ""
+    "Don't just focus on the date. Also pay attention to the specific time, such as the hour and minute."
   ],
   "When is my next meeting with Ava in Simple Calendar Pro? Express your answer in the format <month name> <day> <year> <hour in 24-hour format>:<minutes>.": [
     ""
@@ -287,7 +293,10 @@
     ""
   ],
   "Copy the following text to the clipboard: Tracking #: 5K672F4C": [
-    ""
+    "If you want to type some text, you can click the search bar on the home screen.",
+    "Do not try to open the note app. There is no app named Note in current device.",
+    "To copy text, you need to first long press the text. Then if the text is not all selected, you need to click `Select all` before copying.",
+    "DO NOT use the Clipper app!"
   ],
   "Turn wifi off.": [
     ""
@@ -320,9 +329,13 @@
     ""
   ],
   "Create a playlist titled \"Ultimate Fails Series\" with the following files in VLC (located in Internal Memory/VLCVideos), in order: highlight_41_4K_2023_03_30.mp4, scene_68_4K_copy.mp4": [
-    ""
+    "Do not click the `Playlists` icon!",
+    "Do not click the `Playlists` icon!",
+    "Do not click the `Playlists` icon!"
   ],
   "Create a playlist titled \"Ultimate Fails Series\" with the following files in VLC (located in Internal Memory/VLCVideos), in order: 2023_03_29_highlight_14_.mp4, scene_94_HD_MYI6.mp4, moment_1_HD_2023_07_27.mp4, recording_61_4K_final.mp4. And then, create a playlist titled \"Adventure Marathon\" with the following files in VLC, in order: clip_12_HD_2023_02_25.mp4, 8u3n_footage_29_HD.mp4, footage_46_raw_jZFR.mp4, D7B0_highlight_2_4K.mp4.": [
-    ""
+    "Do not click the `Playlists` icon!",
+    "Do not click the `Playlists` icon!",
+    "Do not click the `Playlists` icon!"
   ]
 }

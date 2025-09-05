@@ -110,6 +110,7 @@ class MultiAgent(Agent):
         """
         start_time = time.time()
         logger.info("Step %d ... ..." % self.curr_step_idx)
+        answer = None
         show_step = [0,4]
 
         # Get the current environment screen
@@ -305,7 +306,7 @@ class MultiAgent(Agent):
                         logger.warning(f"Failed to parse the trajectory reflection. Error: {e}")
 
         # Call AnswerAgent
-        if self.status == AgentStatus.FINISHED:
+        if self.status == AgentStatus.FINISHED and answer is None and self.answer_agent:
             answer_messages = self.answer_agent.get_message(self.episode_data)
             show_message(answer_messages, "Answer")
             response = self.answer_agent.vlm.predict(answer_messages)
