@@ -13,7 +13,7 @@ class BaseConfig(pydantic.BaseModel):
 
 
 class MobileEnvConfig(BaseConfig):
-    serial_no: str = None
+    serial_no: str
     host: str="127.0.0.1"
     port: int=5037
     wait_after_action_seconds: float = 2.0
@@ -83,8 +83,8 @@ class NoteTakerConfig(SubAgentConfig):
 
 
 class AgentConfig(BaseConfig):
-    vlm: VLMConfig
-    env: MobileEnvConfig = MobileEnvConfig()
+    vlm: VLMConfig = None
+    env: MobileEnvConfig = None
     enable_log: bool = False
     log_dir: Optional[str] = None
 

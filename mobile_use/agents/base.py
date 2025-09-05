@@ -9,12 +9,15 @@ from mobile_use.schema.config import AgentConfig
 
 
 class Agent(ABC, Registrable):
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str = None, **kwargs):
         super().__init__()
-        config = AgentConfig.from_yaml(config_path)
-        self.config = config
-        self.env = Environment(**config.env.model_dump())
-        self.vlm = VLMWrapper(**config.vlm.model_dump())
+        if config_path is not None:
+            self.config = AgentConfig.from_yaml(config_path)
+        else:
+            self.config = AgentConfig(**kwargs)
+        
+        self.env = Environment(**self.config.env.model_dump()) if self.config.env else None
+        self.vlm = VLMWrapper(**self.config.vlm.model_dump()) if self.config.vlm else None
         self._init_data()
 
     def _init_data(self, goal: str='', max_steps: int=10):

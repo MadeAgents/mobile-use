@@ -81,7 +81,7 @@ class Environment:
         else:
             match action.name:
                 case 'open':
-                    package_name = action.parameters['package_name']
+                    package_name = action.parameters['text']
                     self._d.app_start(package_name)
 
                 case 'click':

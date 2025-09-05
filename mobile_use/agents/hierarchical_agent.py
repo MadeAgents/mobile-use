@@ -21,10 +21,12 @@ logger = logging.getLogger(__name__)
 
 @Agent.register('HierarchicalAgent')
 class HierarchicalAgent(Agent):
-    def __init__(self, config_path: str):
-        super().__init__(config_path)
-        config = HierarchicalAgentConfig.from_yaml(config_path)
-        self.config = config
+    def __init__(self, config_path: str = None, **kwargs):
+        super().__init__(config_path, **kwargs)
+        if config_path is not None:
+            self.config = HierarchicalAgentConfig.from_yaml(config_path)
+        else:
+            self.config = HierarchicalAgentConfig(**kwargs)
 
         self.subagent_map = {
             'Operator': Operator,
