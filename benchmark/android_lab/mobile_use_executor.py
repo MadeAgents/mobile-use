@@ -1,8 +1,8 @@
 import time
 import logging
 from PIL import Image
-from mobile_use.scheme import Action
-from mobile_use.environ import Environment, EnvState
+from mobile_use.schema.schema import Action
+from mobile_use.environment.mobile_environ import Environment, EnvState
 from third_party.android_lab.page_executor.text_executor import TextOnlyExecutor
 from third_party.android_lab.utils_mobile.and_controller import AndroidController
 from third_party.android_lab.utils_mobile.utils import print_with_color
@@ -31,48 +31,23 @@ class MobileUseExecutor(TextOnlyExecutor):
             package_name = action.parameters['text']
             self.controller.launch(package_name)
             self.current_return = {"operation": "do", "action": 'Launch', "kwargs": {"package": package_name}}
-        # elif action.name == 'open':
-        #     raise Exception('open action is unavailable, please use open_app')
-        elif action.name == 'click' or action.name == 'left_click':
-            if 'coordinate' in action.parameters:       # QwenAgent
-                x, y = action.parameters['coordinate']
-            elif 'start_box' in action.parameters:
-                x, y = action.parameters['start_box']
-            else:
-                x, y = action.parameters['point']
+        elif action.name == 'click':
+            x, y = action.parameters['coordinate']
             self.controller.tap(x, y)
             self.current_return = {"operation": "do", "action": 'Tap', "kwargs": {"element": [x, y]}}
         elif action.name == 'long_press':
-            if 'coordinate' in action.parameters:       # QwenAgent
-                x, y = action.parameters['coordinate']
-            elif 'start_box' in action.parameters:
-                x, y = action.parameters['start_box']
-            else:
-                x, y = action.parameters['point']
-            # duration = action.parameters.get('time', 2.0)
+            x, y = action.parameters['coordinate']
             self.controller.long_press(x, y)
             self.current_return = {"operation": "do", "action": 'Long Press', "kwargs": {"element": [x, y]}}
         elif action.name == 'type':
-            if 'content' in action.parameters:
-                text = action.parameters['content']
-            else:
-                text = action.parameters['text']
+            text = action.parameters['text']
             self.controller.text(text)
             self.current_return = {"operation": "do", "action": 'Type', "kwargs": {"text": text}}
         elif action.name == 'key':
             text = action.parameters['text']
             self.controller.run_command(f'adb shell input keyevent {text}')
             self.current_return = {"operation": "do", "action": f'Press {text}'}
-        elif action.name == 'scroll':
-            if 'start_box' in action.parameters:
-                x1, y1 = action.parameters['start_box']
-                x2, y2 = action.parameters['end_box']
-            else:
-                x1, y1 = action.parameters['start_point']
-                x2, y2 = action.parameters['end_point']
-            self.controller.run_command(f'adb shell input swipe {x1} {y1} {x2} {y2} 500')
-            self.current_return = {"operation": "do", "action": 'Swipe', "kwargs": {"start": [x1, y1], "end": [x2, y2]}}
-        elif action.name == 'swipe':       # QwenAgent
+        elif action.name == 'swipe':
             x1, y1 = action.parameters['coordinate']
             x2, y2 = action.parameters['coordinate2']
             self.controller.run_command(f'adb shell input swipe {x1} {y1} {x2} {y2} 500')
@@ -89,9 +64,6 @@ class MobileUseExecutor(TextOnlyExecutor):
             self.current_return = {"operation": "do", "action": 'Wait'}
         elif action.name == 'answer':
             answer = action.parameters['text']
-            # self.controller.execute_adb(
-            #     f'adb shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{answer}"',
-            #     type=self.controller.type)
         elif action.name == 'system_button':
             button = action.parameters['button']
             if button == 'Back':

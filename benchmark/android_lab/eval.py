@@ -2,8 +2,8 @@ import os
 import sys
 import datetime
 import argparse
-
 import yaml
+import logging
 
 parant_dir = os.path.dirname(__file__)
 project_home = os.path.dirname(os.path.dirname(parant_dir))
@@ -19,6 +19,9 @@ from third_party.android_lab.evaluation.configs import AppConfig, TaskConfig
 from third_party.android_lab.evaluation.auto_test import *
 from third_party.android_lab.evaluation.parallel import parallel_worker
 from third_party.android_lab.generate_result import find_all_task_files
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s')
+logger = logging.getLogger()
 
 
 if __name__ == '__main__':
