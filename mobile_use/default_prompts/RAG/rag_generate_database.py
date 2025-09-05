@@ -2,7 +2,7 @@ import json
 import os, sys
 
 project_home = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-sys.path += os.path.join(project_home, 'third_party', 'RAGToolbox')
+sys.path += [os.path.join(project_home, 'third_party', 'RAGToolbox')]
 
 from RAGToolbox import Jinaembedding, Vectordatabase
 

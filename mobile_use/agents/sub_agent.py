@@ -166,7 +166,7 @@ class Operator(SubAgent):
         if self.include_knowledge:
             logger.info("Loading RAG database for knowledge retrieval...")
             project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            sys.path += os.path.join(project_home, 'third_party', 'RAGToolbox')
+            sys.path += [os.path.join(project_home, 'third_party', 'RAGToolbox')]
             from RAGToolbox import Jinaembedding, Vectordatabase
             script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
             database_path = os.path.join(script_dir, 'rag_database')
@@ -567,7 +567,7 @@ class AnswerAgent(SubAgent):
         if self.include_knowledge:
             logger.info("Loading RAG database for knowledge retrieval...")
             project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            sys.path += os.path.join(project_home, 'third_party', 'RAGToolbox')
+            sys.path += [os.path.join(project_home, 'third_party', 'RAGToolbox')]
             from RAGToolbox import Jinaembedding, Vectordatabase
             script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
             database_path = os.path.join(script_dir, 'rag_database')
