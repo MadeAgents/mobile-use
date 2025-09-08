@@ -14,9 +14,6 @@ agent:
           max_tokens: 1024
           temperature: 0
 
-        env:
-          serial_no: emulator-5554
-
         enable_hierarchical_planning: true
 
         planner:
