@@ -1,11 +1,14 @@
 [submodule "third_party/android_world"]
 	path = third_party/android_world
 	url = https://github.com/MadeAgents/android_world.git
+	branch = main
 
 [submodule "third_party/android_env"]
 	path = third_party/android_env
 	url = https://github.com/google-deepmind/android_env.git
+	branch = main
 
 [submodule "third_party/android_lab"]
 	path = third_party/android_lab
 	url = https://github.com/THUDM/Android-Lab.git
+	branch = main
