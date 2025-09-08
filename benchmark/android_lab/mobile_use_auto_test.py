@@ -1,4 +1,5 @@
 import copy
+import time
 import logging
 import traceback
 from dataclasses import asdict
@@ -27,11 +28,14 @@ class MobileUse_AutoTask(AutoTask):
         pass
 
     def run_step(self, round_count):
+        if self.record.turn_number == 0:
+            time.sleep(5)
         self.record.update_before(controller=self.controller, need_screenshot=True, ac_status=self.accessibility)
         step_data = None
         try:
             self.agent.curr_step_idx = self.record.turn_number
             step_data = self.agent.step()
+            self.agent.episode_data.num_steps = len(self.agent.trajectory)
             if self.agent.status == mobile_use.scheme.AgentStatus.FINISHED:
                 self.page_executor.is_finish = True
                 message = "Task completed."
