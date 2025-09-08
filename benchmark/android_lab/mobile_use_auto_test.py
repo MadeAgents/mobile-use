@@ -17,7 +17,7 @@ class MobileUseAgent:
         self.agent_config = agent_config
 
     def construct(self, instruction, controller, config, page_executor):
-        agent = mobile_use.Agent.from_params(params=self.agent_config)
+        agent = mobile_use.Agent.from_params(params=copy.deepcopy(self.agent_config))
         agent.env = AndroidLabEnvironment(controller, config, page_executor)
         agent.reset(goal=instruction)
         return agent
@@ -36,7 +36,7 @@ class MobileUse_AutoTask(AutoTask):
             self.agent.curr_step_idx = self.record.turn_number
             step_data = self.agent.step()
             self.agent.episode_data.num_steps = len(self.agent.trajectory)
-            if self.agent.status == mobile_use.scheme.AgentStatus.FINISHED:
+            if self.agent.status == mobile_use.schema.AgentStatus.FINISHED:
                 self.page_executor.is_finish = True
                 message = "Task completed."
                 for step_data in self.agent.trajectory[::-1]:
