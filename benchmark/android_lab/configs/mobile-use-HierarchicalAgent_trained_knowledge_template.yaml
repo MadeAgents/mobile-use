@@ -66,11 +66,11 @@ agent:
 
 
 task:
-    class: MobileUse_AutoTest
-    args:
-        save_dir: "./logs/evaluation_mobile_use"
-        max_rounds: 25
-        request_interval: 3
+  class: MobileUse_AutoTest
+  args:
+    save_dir: "./logs/evaluation_mobile_use"
+    max_rounds: 25
+    request_interval: 3
 
 eval:
   avd_name: Pixel_7_Pro_API_33
