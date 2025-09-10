@@ -15,7 +15,8 @@ The user inputs the task description on the Web interface, and the Mobile Use au
 
 
 ## 🎉 News
-- **[2025/06/13]**: Our [paper](paper/MobileUse_2025_06_13.pdf) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" now is released!
+- **[2025/09/10]**: We achieved [75% success rate](https://docs.google.com/spreadsheets/d/1cchzP9dlTZ3WXQTfYNhh3avxoLipqHN75v1Tb86uhHo/edit?gid=0#gid=0) on the AndroidWorld benchmark, ranking first among all screenshot-only solutions! The updated code will be released soon.
+- **[2025/06/13]**: Our [paper](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" now is released!
 - **[2025/05/13]**: Mobile Use v0.3.0 now is released! AndroidLab dynamic environment now is support! Significant improvements have been achieved on the two evaluation benchmarks of [AndroidLab](https://github.com/THUDM/Android-Lab) and [AndroidWorld](https://github.com/google-research/android_world).
 - **[2025/03/28]**: The [document](benchmark/android_world/README.md) for running Mobile Use in the AndroidWorld dynamic environment now is released!
 - **[2025/03/17]**: Mobile Use now supports the [multi-agent](mobile_use/agents/multi_agent.py) framework! Equipped with planning, reflection, memorization and progress mechanisms, Mobile Use achieves impressive performance on AndroidWorld!
