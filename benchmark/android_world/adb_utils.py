@@ -88,7 +88,7 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
     'reddit': 'com.reddit.frontpage/com.reddit.frontpage.MainActivity',
     'pinterest': 'com.pinterest/com.pinterest.activity.PinterestActivity',
     'android world': 'com.example.androidworld/.MainActivity',
-    'files': 'com.google.android.documentsui/com.android.documentsui.files.FilesActivity',
+    'files|file|file manager': 'com.google.android.documentsui/com.android.documentsui.files.FilesActivity',
     'markor': 'net.gsantner.markor/net.gsantner.markor.activity.MainActivity',
     'clipper': 'ca.zgrs.clipper/ca.zgrs.clipper.Main',
     'messages': 'com.google.android.apps.messaging/com.google.android.apps.messaging.ui.ConversationListActivity',
