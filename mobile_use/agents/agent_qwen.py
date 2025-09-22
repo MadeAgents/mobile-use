@@ -96,18 +96,20 @@ def slim_messages(messages, num_image_limit = 5):
 
 @Agent.register('Qwen')
 class QwenAgent(Agent):
-    def __init__(self, config_path: str):
-        super().__init__(config_path)
-        config = QwenAgentConfig.from_yaml(config_path)
-        self.config = config
+    def __init__(self, config_path: str = None, **kwargs):
+        super().__init__(config_path, **kwargs)
+        if config_path is not None:
+            self.config = QwenAgentConfig.from_yaml(config_path)
+        else:
+            self.config = QwenAgentConfig(**kwargs)
 
-        self.max_action_retry = config.max_action_retry
-        self.enable_think = config.enable_think
-        self.min_pixels = config.min_pixels
-        self.max_pixels = config.max_pixels
-        self.message_type = config.message_type
-        self.num_image_limit = config.num_image_limit
-        self.prompt: QwenAgentPrompt = load_prompt("qwen_agent", config.prompt_config)
+        self.max_action_retry = self.config.max_action_retry
+        self.enable_think = self.config.enable_think
+        self.min_pixels = self.config.min_pixels
+        self.max_pixels = self.config.max_pixels
+        self.message_type = self.config.message_type
+        self.num_image_limit = self.config.num_image_limit
+        self.prompt: QwenAgentPrompt = load_prompt("qwen_agent", self.config.prompt_config)
 
     def _init_data(self, goal: str='', max_steps: int=10):
         super()._init_data(goal, max_steps)
