@@ -4,7 +4,7 @@
 
 <h2 style="text-align: center;">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
 
-![](docs/assets/framework.svg)
+![](docs/assets/framework.jpg)
 
 
 [ English | [中文](docs/README_zh.md) ]
@@ -15,7 +15,7 @@ The user inputs the task description on the Web interface, and the Mobile Use au
 
 
 ## 🎉 News
-- **[2025/09/9]**: Our paper [paper](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" is accept by NIPS 2025!
+- **[2025/09/19]**: Our paper [paper](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" is accept by NIPS 2025!
 - **[2025/09/10]**: We achieved [75% success rate](https://docs.google.com/spreadsheets/d/1cchzP9dlTZ3WXQTfYNhh3avxoLipqHN75v1Tb86uhHo/edit?gid=0#gid=0) on the AndroidWorld benchmark, ranking first among all screenshot-only solutions! The updated code will be released soon.
 - **[2025/06/13]**: Our [paper](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" now is released!
 - **[2025/05/13]**: Mobile Use v0.3.0 now is released! AndroidLab dynamic environment now is support! Significant improvements have been achieved on the two evaluation benchmarks of [AndroidLab](https://github.com/THUDM/Android-Lab) and [AndroidWorld](https://github.com/google-research/android_world).

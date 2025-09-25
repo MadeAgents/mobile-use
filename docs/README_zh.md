@@ -3,7 +3,7 @@
 
 <h2 style="text-align: center;">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
 
-![](assets/framework.png)
+![](assets/framework.jpg)
 
 [ 中文 | [English](../README.md) ]
 
