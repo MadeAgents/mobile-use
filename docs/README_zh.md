@@ -14,6 +14,7 @@ https://github.com/user-attachments/assets/5c4d3ce8-0135-4e6e-b003-b20f81f834d4
 **⚠️特别提醒**：操作动作由智能体自主决定，可能存在不可控的操作风险，建议体验是时刻关注手机动态如遇到操作风险及时终止任务或者使用测试手机进行体验，避免误操作带来问题。
 
 ## 🎉 News
+- **[2025/09/19]**: 我们的[论文](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 已被 NIPS 2025 接收！
 - **[2025/09/10]**: 我们在 AndroidWorld 评测集准上取得了 [75% 的成功率](https://docs.google.com/spreadsheets/d/1cchzP9dlTZ3WXQTfYNhh3avxoLipqHN75v1Tb86uhHo/edit?gid=0#gid=0)，在所有纯视觉方案中位列第一！我们将会很快发布更新后的代码。
 - **[2025/06/13]**: 我们的[论文](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 现已发布！
 - **[2025/05/13]**: Mobile Use v0.3.0 现已发布！支持 AndroidLab 动态环境评估！在 [AndroidLab](https://github.com/THUDM/Android-Lab) 和 [AndroidWorld](https://github.com/google-research/android_world) 评估基准测试中均取得了显著的改进.
@@ -22,9 +23,9 @@ https://github.com/user-attachments/assets/5c4d3ce8-0135-4e6e-b003-b20f81f834d4
 - **[2025/03/04]**: Mobile Use 已发布！我们还发布了 [mobile-use](https://github.com/MadeAgents/mobile-use) 库的 v0.1.0 版本，为您提供移动设备的 AI 助手——任何应用，任何任务！
 
 ## 📊 Benchmark
-![](assets/benchmark.png)
+![](./assets/androidworld_benchmark.png)
 
-我们在 [AndroidWord](https://github.com/google-research/android_world) 动态测评环境中评估了 Mobile Use 的多智能体方案（模型使用 Qwen2.5-VL-72B-Instruct），获得了 48% 的成功率。
+![](./assets/androidlab_benchmark.png)
 
 ## ✨ 核心特性
 - **自动操作手机**：基于用户的输入任务描述，自动操作UI完成任务
