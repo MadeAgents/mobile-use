@@ -4,7 +4,7 @@
 
 <h2 style="text-align: center;">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
 
-![](docs/assets/framework.svg)
+![](docs/assets/framework.jpg)
 
 
 [ English | [中文](docs/README_zh.md) ]
@@ -15,7 +15,9 @@ The user inputs the task description on the Web interface, and the Mobile Use au
 
 
 ## 🎉 News
-- **[2025/06/13]**: Our [paper](paper/MobileUse_2025_06_13.pdf) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" now is released!
+- **[2025/09/19]**: Our paper [paper](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" is accept by NIPS 2025!
+- **[2025/09/10]**: We achieved [75% success rate](https://docs.google.com/spreadsheets/d/1cchzP9dlTZ3WXQTfYNhh3avxoLipqHN75v1Tb86uhHo/edit?gid=0#gid=0) on the AndroidWorld benchmark, ranking first among all screenshot-only solutions! The updated code will be released soon.
+- **[2025/06/13]**: Our [paper](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" now is released!
 - **[2025/05/13]**: Mobile Use v0.3.0 now is released! AndroidLab dynamic environment now is support! Significant improvements have been achieved on the two evaluation benchmarks of [AndroidLab](https://github.com/THUDM/Android-Lab) and [AndroidWorld](https://github.com/google-research/android_world).
 - **[2025/03/28]**: The [document](benchmark/android_world/README.md) for running Mobile Use in the AndroidWorld dynamic environment now is released!
 - **[2025/03/17]**: Mobile Use now supports the [multi-agent](mobile_use/agents/multi_agent.py) framework! Equipped with planning, reflection, memorization and progress mechanisms, Mobile Use achieves impressive performance on AndroidWorld!
@@ -24,12 +26,7 @@ The user inputs the task description on the Web interface, and the Mobile Use au
 ## 📊 Benchmark
 ![](docs/assets/androidworld_benchmark.png)
 
-In the [AndroidWorld](https://github.com/google-research/android_world) dynamic evaluation environment, we evaluated the multi-agent version of Mobile Use agent with the multimodal large language model Qwen2.5-VL-72B-Instruct and achieved a 61.2% success rate.
-
-
 ![](docs/assets/androidlab_benchmark.png)
-
-In the [AndroidLab](https://github.com/THUDM/Android-Lab) dynamic evaluation environment, we evaluated the multi-agent version of Mobile Use agent with the multimodal large language model Qwen2.5-VL-72B-Instruct and achieved a 44.2% success rate.
 
 
 ## ✨ Key Features
@@ -250,12 +247,12 @@ This project is licensed under the MIT License, which permits free use and modif
 ## 📚 Citation
 If you have used this project in your research or work, please cite:
 ```
-@software{
-  title = {Mobile Use​: Your AI assistant for mobile - Any app, any task},
-  author = {Jiamu Zhou, Xiaoyun Mo, Ning Li, Qiuying Peng},
-  year = {2025},
-  publisher = {GitHub},
-  url = {https://github.com/MadeAgents/mobile-use}
+@article{li2025mobileuse,
+  title={MobileUse: A GUI Agent with Hierarchical Reflection for Autonomous Mobile Operation},
+  author={Li, Ning and Qu, Xiangmou and Zhou, Jiamu and Wang, Jun and Wen, Muning and Du, Kounianhua and Lou, Xingyu and Peng, Qiuying and Wang, Jun and Zhang, Weinan},
+  journal={arXiv preprint arXiv:2507.16853},
+  year={2025},
+  url={https://arxiv.org/abs/2507.16853}
 }
 ```
 

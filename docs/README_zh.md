@@ -3,7 +3,7 @@
 
 <h2 style="text-align: center;">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
 
-![](assets/framework.png)
+![](assets/framework.jpg)
 
 [ 中文 | [English](../README.md) ]
 
@@ -14,16 +14,18 @@ https://github.com/user-attachments/assets/5c4d3ce8-0135-4e6e-b003-b20f81f834d4
 **⚠️特别提醒**：操作动作由智能体自主决定，可能存在不可控的操作风险，建议体验是时刻关注手机动态如遇到操作风险及时终止任务或者使用测试手机进行体验，避免误操作带来问题。
 
 ## 🎉 News
-- **[2025/06/13]**: 我们的[论文](../paper/MobileUse_2025_06_13.pdf) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 现已发布！
+- **[2025/09/19]**: 我们的[论文](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 已被 NIPS 2025 接收！
+- **[2025/09/10]**: 我们在 AndroidWorld 评测集准上取得了 [75% 的成功率](https://docs.google.com/spreadsheets/d/1cchzP9dlTZ3WXQTfYNhh3avxoLipqHN75v1Tb86uhHo/edit?gid=0#gid=0)，在所有纯视觉方案中位列第一！我们将会很快发布更新后的代码。
+- **[2025/06/13]**: 我们的[论文](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 现已发布！
 - **[2025/05/13]**: Mobile Use v0.3.0 现已发布！支持 AndroidLab 动态环境评估！在 [AndroidLab](https://github.com/THUDM/Android-Lab) 和 [AndroidWorld](https://github.com/google-research/android_world) 评估基准测试中均取得了显著的改进.
 - **[2025/03/28]**: 在 AndroidWorld 动态环境中运行 Mobile Use 的[文档](AndroidWorld.md)现已发布！
 - **[2025/03/17]**: Mobile Use 现在支持[多智能体](../mobile_use/agents/multi_agent.py)框架！配备了规划、反思、记忆和进展机制，Mobile Use 在 AndroidWorld 上实现了令人印象深刻的性能！
 - **[2025/03/04]**: Mobile Use 已发布！我们还发布了 [mobile-use](https://github.com/MadeAgents/mobile-use) 库的 v0.1.0 版本，为您提供移动设备的 AI 助手——任何应用，任何任务！
 
 ## 📊 Benchmark
-![](assets/benchmark.png)
+![](./assets/androidworld_benchmark.png)
 
-我们在 [AndroidWord](https://github.com/google-research/android_world) 动态测评环境中评估了 Mobile Use 的多智能体方案（模型使用 Qwen2.5-VL-72B-Instruct），获得了 48% 的成功率。
+![](./assets/androidlab_benchmark.png)
 
 ## ✨ 核心特性
 - **自动操作手机**：基于用户的输入任务描述，自动操作UI完成任务
@@ -239,12 +241,12 @@ while going:
 ## 📚 引用
 如果您在您的研究或工作中使用了本项目，请引用：
 ```
-@software{
-  title = {Mobile Use​: Your AI assistant for mobile - Any app, any task},
-  author = {Jiamu Zhou, Xiaoyun Mo, Ning Li, Qiuying Peng},
-  year = {2025},
-  publisher = {GitHub},
-  url = {https://github.com/MadeAgents/mobile-use}
+@article{li2025mobileuse,
+  title={MobileUse: A GUI Agent with Hierarchical Reflection for Autonomous Mobile Operation},
+  author={Li, Ning and Qu, Xiangmou and Zhou, Jiamu and Wang, Jun and Wen, Muning and Du, Kounianhua and Lou, Xingyu and Peng, Qiuying and Wang, Jun and Zhang, Weinan},
+  journal={arXiv preprint arXiv:2507.16853},
+  year={2025},
+  url={https://arxiv.org/abs/2507.16853}
 }
 ```
 
