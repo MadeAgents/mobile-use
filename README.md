@@ -1,17 +1,20 @@
 # Mobile Use 📱
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Paper: ColorAgent](https://img.shields.io/badge/Paper-ColorAgent-green?logo=gitbook)
+[![Static Badge](https://img.shields.io/badge/Paper-MobileUse-8A2BE2?logo=gitbook)](https://arxiv.org/abs/2507.16853)
 
 
-<h2 style="text-align: center;">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
 
-![](docs/assets/framework.jpg)
+<h2 align="center">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
+
+![](docs/assets/overview.svg)
 
 
-[ English | [中文](docs/README_zh.md) ]
+[ [English](README.md) | [中文](docs/README_zh.md) ]
 
 https://github.com/user-attachments/assets/5c4d3ce8-0135-4e6e-b003-b20f81f834d4
 
-The user inputs the task description on the Web interface, and the Mobile Use automatically operates the mobile phone and completes the task.
+The user inputs the task description on the Web interface, and the agent automatically operates the mobile phone and completes the task.
 
 
 ## 🎉 News
