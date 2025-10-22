@@ -69,6 +69,11 @@ def contains_non_ascii(text):
             return True
     return False
 
+def contains_chinese(text):
+    for char in text:
+        if '\u4e00' <= char <= '\u9fff':
+            return True
+    return False
 
 def smart_resize(
     height: int, width: int, factor: int = 28, min_pixels: int = 4 * 28 * 28, max_pixels: int = 16384 * 28 * 28

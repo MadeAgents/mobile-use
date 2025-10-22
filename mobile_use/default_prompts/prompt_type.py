@@ -6,6 +6,8 @@ import yaml
 
 def load_prompt(prompt_type: str, prompt_config: str=None) -> Optional["Prompt"]:
     match prompt_type:
+        case "react_agent":
+            return ReActAgentPrompt(config=prompt_config) if prompt_config else ReActAgentPrompt()
         case "qwen_agent":
             return QwenAgentPrompt(config=prompt_config) if prompt_config else QwenAgentPrompt()
         case "planner":
@@ -47,6 +49,14 @@ class Prompt:
 
         for attr, value in data.items():
             setattr(self, attr, value)
+
+
+@dataclass
+class ReActAgentPrompt(Prompt):
+    config: str = "react_agent.yaml"
+    system_prompt_en: str = ""
+    system_prompt_zh: str = ""
+    task_prompt: str = ""
 
 
 @dataclass

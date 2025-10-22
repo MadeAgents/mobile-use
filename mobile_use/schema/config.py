@@ -89,6 +89,12 @@ class AgentConfig(BaseConfig):
     log_dir: Optional[str] = None
 
 
+class ReActAgentConfig(AgentConfig):
+    num_latest_screenshots: int = 10
+    max_action_retry: int = 3
+    prompt_config: str = None
+
+
 class QwenAgentConfig(AgentConfig):
     max_action_retry: int = 3
     enable_think: bool = True

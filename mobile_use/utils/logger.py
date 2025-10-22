@@ -68,7 +68,7 @@ def setup_logger(name: str=None, level: str='INFO', file_handler: Dict=None, cal
         return
     level = level.upper()
     logger.setLevel(level=level)
-    log_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    log_format = logging.Formatter('%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s')
     color_log = ColoredFormatter('%(message)s', callbacks=callbacks)
 
     console_handler = logging.StreamHandler()
