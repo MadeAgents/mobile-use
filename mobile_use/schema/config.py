@@ -13,9 +13,10 @@ class BaseConfig(pydantic.BaseModel):
 
 
 class MobileEnvConfig(BaseConfig):
-    serial_no: str = None
+    serial_no: Union[str, None] = None
     host: str = "127.0.0.1"
     port: int = 5037
+    go_home: bool = True
     wait_after_action_seconds: float = 2.0
 
 

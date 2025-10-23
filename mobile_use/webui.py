@@ -2,6 +2,7 @@ import re
 import os
 import time
 import json
+import copy
 import pprint
 import logging
 from typing import Dict, Any
@@ -47,10 +48,11 @@ class Worker:
 
     def reset(self, env: Dict[str, Any], vlm: Dict[str, Any], agent: Dict[str, Any], goal: str):
         logger.info("Reset Agent and Environment")
-        env = Environment(**env)
-        vlm = VLMWrapper(**vlm)
+        params = copy.deepcopy(agent)
+        params['env'] = env
+        params['vlm'] = vlm
         self._images.clear()
-        self._agent = Agent.from_params({'env': env, 'vlm': vlm, **agent})
+        self._agent = Agent.from_params(params)
         i = 0
         name = re.sub(r'[^\w\u4e00-\u9fff\s-]', '', goal[:128])
         history_path = os.path.join(IMAGE_OUTPUT, name)
@@ -175,6 +177,14 @@ def run_agent(request: gr.Request, input_content, messages, image, *args):
         params[prefix][name] = value
     print('============== params ==============')
     pprint.pprint(params)
+
+    # Add default env params if not provided
+    if not params["env"]['host']:
+        params["env"]['host'] = "127.0.0.1"
+    if not params["env"]['port']:
+        params["env"]['port'] = 5037
+    if not params["env"]["serial_no"]:
+        params["env"]["serial_no"] = None
 
     # Try to get the base_url and api_key from the env if it is not available
     if not params['vlm']['base_url']:
@@ -302,12 +312,12 @@ def build_agent_ui_demo():
                             )
                             port = gr.Number(
                                 label="Android ADB Server Port",
-                                value=5037,
+                                placeholder=5037,
                                 info="Android ADB server port",
                             )
                             serial_no = gr.Textbox(
                                 label="Device Serial No.",
-                                placeholder='a22d0110',
+                                placeholder='None',
                                 info="Serial No. for connected device",
                             )
                             reset_to_home = gr.Checkbox(
