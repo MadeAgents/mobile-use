@@ -18,6 +18,7 @@ class Environment:
         serial_no: str=None,
         host: str="127.0.0.1",
         port: int=5037,
+        go_home: bool = True,
         wait_after_action_seconds: float=2.0
     ):
         self.host = host
@@ -31,6 +32,7 @@ class Environment:
         self._register_function = {}
 
         self._d = self._setup_device(serial_no, host, port)
+        self.reset(go_home=go_home)
         self.window_size = self._d.window_size(landscape=False)
 
     def _setup_device(self, serial_no: str, host: str, port: int):

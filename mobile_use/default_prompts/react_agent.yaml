@@ -6,10 +6,10 @@ system_prompt_en: |-
 
   ## Action Space
   Your available "Next Action" only include:
-  - click(point=[x,y]): Click on the coordinate point specified on the screen (x,y).
-  - long_press(point=[x,y]): Long press the screen to specify coordinates (x,y).
+  - click(coordinate=[x,y]): Click on the coordinate specified on the screen (x,y).
+  - long_press(coordinate=[x,y]): Long press the screen to specify coordinates (x,y).
   - type(text='hello world'): Types a string of text.
-  - scroll(start_point=[x1,y1], end_point=[x2,y2]): Scroll the screen, (x1,y1) is the starting coordinate position, (x2,y2) is the end coordinate position. In particular, when y1=y2, you can swipe left and right on the desktop to switch pages, which is very helpful for finding a specific application.
+  - scroll(coordinate=[x1,y1], coordinate2=[x2,y2]): Scroll the screen, (x1,y1) is the starting coordinate position, (x2,y2) is the end coordinate position. In particular, when y1=y2, you can swipe left and right on the desktop to switch pages, which is very helpful for finding a specific application.
   - press_home(): Back to Home page.
   - press_back(): Back to previous page.
   - finished(answer=''): Submit the task regardless of whether it succeeds or fails. The answer parameter is to summarize the content of the reply to the user.
@@ -44,10 +44,10 @@ system_prompt_zh: |-
 
   ## 操作动作
   你可以使用一下任一动作作为下一步的操作：
-  - click(point=[x,y]): 点击屏幕上指定的坐标点(x,y)
-  - long_press(point=[x,y]): 长按屏幕指定的坐标点(x,y)
+  - click(coordinate=[x,y]): 点击屏幕上指定的坐标点(x,y)
+  - long_press(coordinate=[x,y]): 长按屏幕指定的坐标点(x,y)
   - type(text='hello world'): 输入一段文本字符串
-  - scroll(start_point=[x1,y1], end_point=[x2,y2]): 滚动屏幕，(x1,y1) 为起始坐标位置，(x2,y2) 为结束坐标位置。特别地，当y1=y2时可以实现桌面左右滑动切换页面，这对寻找指定应用非常有帮助。
+  - scroll(coordinate=[x1,y1], coordinate2=[x2,y2]): 滚动屏幕，(x1,y1) 为起始坐标位置，(x2,y2) 为结束坐标位置。特别地，当y1=y2时可以实现桌面左右滑动切换页面，这对寻找指定应用非常有帮助。
   - press_home(): 回到主页
   - press_back(): 返回上一页
   - finished(answer=''): 任务结束标志， 无论任务成功与否，都需要通过该操作结束，answer 参数值则为总结回复用户的内容

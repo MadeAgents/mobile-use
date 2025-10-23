@@ -13,9 +13,9 @@ class BaseConfig(pydantic.BaseModel):
 
 
 class MobileEnvConfig(BaseConfig):
-    serial_no: str
-    host: str="127.0.0.1"
-    port: int=5037
+    serial_no: str = None
+    host: str = "127.0.0.1"
+    port: int = 5037
     wait_after_action_seconds: float = 2.0
 
 
@@ -90,7 +90,7 @@ class AgentConfig(BaseConfig):
 
 
 class ReActAgentConfig(AgentConfig):
-    num_latest_screenshots: int = 10
+    num_latest_screenshots: int = 3
     max_action_retry: int = 3
     prompt_config: str = None
 

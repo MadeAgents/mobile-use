@@ -26,7 +26,7 @@ def parse_reason_and_action(content: str, size: tuple[float, float], raw_size: t
     else:
         reason_s = None
     
-    action_name = '|'.join(ACTION_SPACE.keys())
+    action_name = '|'.join(ACTION_SPACE)
     search_res = re.search(fr'Action: *({action_name})\((.*)\)', content, flags=re.DOTALL)
 
     if not search_res:
@@ -36,7 +36,7 @@ def parse_reason_and_action(content: str, size: tuple[float, float], raw_size: t
     params = eval(f"dict({search_res.group(2)})")
 
     for k, v in params.items():
-        if ACTION_SPACE[name].get('parameters', {}).get(k, {}).get('type') == 'array':
+        if k in ['click', 'long_press', 'scroll']:
             try:
                 x = round(v[0] / size[0] * raw_size[0])
                 y = round(v[1] / size[1] * raw_size[1])
@@ -124,7 +124,7 @@ class ReActAgent(Agent):
             user_message = generate_message("user", IMAGE_PLACEHOLDER, images=[pixels])
             self.messages.append(user_message)
 
-        self.messages = slim_messages(self.messages, num_image_limit=self.num_image_limit)
+        self.messages = slim_messages(self.messages, num_image_limit=self.num_latest_screenshots)
 
         # Call VLM
         response = self.vlm.predict(self.messages)
