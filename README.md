@@ -18,7 +18,7 @@ The user inputs the task description on the Web interface, and the agent automat
 
 
 ## 🎉 News
-- **[2025/10/22]**: Our [techniqual report](https://arxiv.org/abs/2510.19386), **ColorAgent: Building A Robust, Personalized, and Interactive OS Agent**, now is released! We have released the latest code of the updated agent framework.
+- **[2025/10/22]**: Our [techniqual report](https://arxiv.org/abs/2510.19386), **ColorAgent: Building A Robust, Personalized, and Interactive OS Agent**, now is released! We have also released the latest code of the updated agent framework.
 - **[2025/09/19]**: [MobileUse](https://arxiv.org/abs/2507.16853) is accepted by The Thirty-ninth Annual Conference on Neural Information Processing Systems (NeurIPS 2025)!
 - **[2025/09/10]**: We achieved 75% success rate on the AndroidWorld benchmark, ranking first among all screenshot-only solutions! The updated code will be released soon.
 - **[2025/06/13]**: Our [paper](https://arxiv.org/abs/2507.16853), **MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation**, now is released!
@@ -28,9 +28,12 @@ The user inputs the task description on the Web interface, and the agent automat
 - **[2025/03/04]**: Mobile Use is released! We have also released v0.1.0 of [mobile-use](https://github.com/MadeAgents/mobile-use) library, providing you an AI assistant for mobile - Any app, any task!
 
 ## 📊 Benchmark
-![](docs/assets/androidworld_benchmark.png)
 
-![](docs/assets/androidlab_benchmark.png)
+![](docs/assets/benchmark.png)
+
+<!-- ![](docs/assets/androidworld_benchmark.png)
+
+![](docs/assets/androidlab_benchmark.png) -->
 
 
 ## ✨ Key Features
