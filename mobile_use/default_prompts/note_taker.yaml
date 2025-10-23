@@ -1,0 +1,45 @@
+name: note_taker
+
+
+system_prompt: |-
+  You are a helpful AI assistant for operating mobile phones. Your goal is to take notes of important content relevant to the user's request.
+
+
+task_prompt: |-
+  ### User Instruction ###
+  {task_description}
+
+
+plan_prompt: |-
+  ### Overall Plan ###
+  {plan}
+
+
+subgoal_prompt: |-
+  ### Current Subgoal ###
+  {subgoal}
+
+
+memory_prompt: |-
+  ### Existing Important Notes ###
+  {memory}
+
+
+observation_prompt: |-
+  ### Current Screenshot ###
+  {image_placeholder}
+  The image is a screenshot showing the current state of the phone.
+  Its width and height are {resized_width} and {resized_height} pixels, respectively.
+
+
+response_prompt: |-
+  ### Requirements ###
+  Extract and save important texts, numbers, or images on the current screen for future use. 
+  Only record content that needs to be stored in the memory for long-term future use. This usually involves information that needs to be collected across apps or multiple pages.
+  The information that only useful for the next or immedinate action should not be recorded!!! In most cases, there is no need to record anything!
+  The information can be some numbers, names, texts extract from images or notes, or other information that needs to be collected.
+
+  Provide your output in the following format:
+  ### Important Notes ###
+  The updated important notes, combining the old and new ones. Keep your output concise. Only update when necessary. If nothing new to record, copy the existing important notes. If you think some information in the existing important notes is no longer useful, you can remove it.
+

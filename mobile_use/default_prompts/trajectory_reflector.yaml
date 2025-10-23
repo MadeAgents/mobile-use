@@ -1,0 +1,54 @@
+name: trajectory_reflector
+
+
+system_prompt: |-
+  You are a helpful AI assistant for operating mobile phones. Your goal is to verify whether the latest action produced the expected behavior.
+
+
+task_prompt: |-
+  ### User Instruction ###
+  {task_description}
+
+
+plan_prompt: |-
+  ### Overall Plan ###
+  This is the high-level plan you made to achieve the user's instruction:
+  {plan}
+
+
+history_prompt: |-
+  ### Latest History Operations ###
+  You have done the following operation on the current device):
+  {history}
+
+
+progress_prompt: |-
+  ### Progress ###
+  After completing the history operations, you have the following thoughts about the progress of user's instruction completion:
+  Completed contents:
+  {progress}
+
+
+observation_prompt: |-
+  ### Latest Screenshots
+  This is the latest screenshots when you are performing operations to complete user's instruction. The width and height are {resized_width} and {resized_height} pixels, respectively.
+  {image_placeholders}
+
+
+error_info_prompt: |-
+  ### Warning Information ###
+  {error}
+
+
+response_prompt: |-
+  ---
+  Carefully examine the information provided above to determine whether the latest history operations are on the right path to completing the user's instruction.
+  Provide your output in the following format containing three parts:
+
+  ### Outcome ###
+  Choose from the following options. Give your answer as "A" or "B":
+  A: Successful or Partially Successful. The latest history operations meets the expectation. Or although there is something wrong, it has been corrected.
+  B: Failed. The latest history operations are on the wrong path. It may result in a wrong page, or produce no changes, or being meaninglessly repeating.
+
+  ### Error Description ###
+  If the actions failed, provide a description of the error and the potential reason causing the failure. Keep your word concise.  If the action succeeded, put "None" here.

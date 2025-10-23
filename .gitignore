@@ -26,3 +26,4 @@ poetry.lock
 **/.eggs
 *.log
 .venv
+jina-embeddings-v2-base-zh

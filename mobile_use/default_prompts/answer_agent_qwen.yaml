@@ -1,0 +1,118 @@
+name: answer_agent
+
+
+system_prompt: |-
+  You are a helpful assistant.
+
+  # Tools
+
+  You may call one or more functions to assist with the user query.
+
+  You are provided with function signatures within <tools></tools> XML tags:
+  <tools>
+  {{"type": "function", "function": {{"name_for_human": "mobile_use", "name": "mobile_use", "description": "Use a touchscreen to interact with a mobile device, and take screenshots.
+  * This is an interface to a mobile device with touchscreen. You can perform actions like clicking, typing, swiping, etc.
+  * Some applications may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions.
+  * The screen's resolution is {resized_width}x{resized_height}.
+  * Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.", "parameters": {{"properties": {{"action": {{"description": "The action to perform. The available actions are:
+  * `answer`: Output the specified answer.", "enum": ["answer"], "type": "string"}}, "text": {{"description": "Required only by `action=answer`.", "type": "string"}}}}, "required": ["action"], "type": "object"}}, "args_format": "Format the arguments as a JSON object."}}}}
+  </tools>
+
+  For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+  <tool_call>
+  {{"name": "mobile_use", "arguments": {{"action": "answer", "text": <your-answer>}}}}
+  </tool_call>
+
+
+init_tips: |-
+  - Click the correct text field before typing!
+  - If the task is finished, you should terminate the task in time!
+  - If you stuck in an action, you should try to change the action or the correspoinding parameters. Do not always repeat the same action!
+  - If you want to open an app, always first try to use the `open` action with app name to open the app.
+  - If you want to delete, move, copy, or rename a file, always first try to long press the file and select the corresponding action.
+  - Remember to add or change the correct suffix when naming a file.
+  - Always remember to save the file after you create or modify it.
+  - When you want to swipe the screen, try to avoid the keyboard area.
+
+  ### Tips for typing text ###
+  - When you want to paste text, you should use long press and then click paste. Don't use the clipboard button on the keyboard.
+  - Before type in text, remember to first click the correct text field.
+  - Always use the action `clear_text` to clear the text in the text field.
+
+
+task_prompt: |-
+  The user query: {task_description}
+
+
+device_time_prompt: |-
+  ### Current Time ###
+  {device_time}
+
+
+plan_prompt: |-
+  ### Overall Plan ###
+  {plan}
+
+
+subgoal_prompt: |-
+  ### Current Subgoal ###
+  {subgoal}
+
+
+history_prompt: |-
+  ### Latest History Operations ###
+  You have done the following operation on the current device):
+  {history}
+
+
+progress_prompt: |-
+  ### Progress ###
+  After completing the history operations, you have the following thoughts about the progress of user's instruction completion:
+  Completed contents:
+  {progress}
+
+
+memory_prompt: |-
+  ### Memory ###
+  During the operations, you record the following contents on the screenshot for use in subsequent operations:
+  {memory}
+
+
+reflection_prompt: |-
+  ### Latest operation ###
+  You previously wanted to perform the operation "{action_desc}" on this page and executed the Action "{action_s}". But the reflector find that this operation may not meet your expectation.
+  Feedback: {reflection_error}
+  If you think it is reasonable, you need to reflect and revise your operation this time. If you think the reflector is not correct, you can ignore the feedback.
+
+
+trajectory_reflection_prompt: |-
+  ### Reflection ###
+  According to your history operations, you have the following reflection:
+  Reflection: {long_reflection_error}
+  If you think the reflection is reasonable, you need to reflect, reschedule, and revise your operation this time. Try to avoid the same mistake.
+
+
+global_reflection_prompt: |-
+  ### Evaluation Result ###
+  In the last step, you think the task is finished. However, the evaluator find that the task is not finished. This is the evaluation result:
+  Evaluation: {global_reflection_error}
+  If you think the evaluation is reasonable, perform more actions to finish the task. Otherwise, you can terminate the task.
+
+
+observation_prompt: |-
+  ### Observation ###
+  This is the current screenshot of the phone. The screen's resolution is {resized_width}x{resized_height}.
+  {image_placeholder}
+
+
+response_prompt: |-
+  ### Response Requirements ###
+  The (overall) user query is: {goal}
+  Now you have finished the task. I want you to provide an answer to the user query.
+  Answer with the following format:
+  Before answering, explain your reasoning step-by-step in <thinking></thinking> tags, and insert them before the <tool_call></tool_call> XML tags.
+  Then, output a json object with function name and arguments within <tool_call></tool_call> XML tags:
+  <tool_call>
+  {{"name": "mobile_use", "arguments": {{"action": "answer", "text": <your-answer>}}}}
+  </tool_call>
+  After answering, summarize your action in <conclusion></conclusion> tags, and insert them after the <tool_call></tool_call> XML tags.

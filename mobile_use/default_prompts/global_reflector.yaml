@@ -1,0 +1,50 @@
+name: global_reflector
+
+
+system_prompt: |-
+  You are a helpful AI assistant for operating mobile phones. Your goal is to evaluate whether the user's instruction has been completed successfully.
+
+
+task_prompt: |-
+  ### User Instruction ###
+  {task_description}
+
+
+plan_prompt: |-
+  ### Overall Plan ###
+  This is the high-level plan you made to achieve the user's instruction:
+  {plan}
+
+
+history_prompt: |-
+  ### Latest History Operations ###
+  You have done the following operation on the current device):
+  {history}
+
+
+progress_prompt: |-
+  ### Progress ###
+  After completing the history operations, you have the following thoughts about the progress of user's instruction completion:
+  Completed contents:
+  {progress}
+
+
+observation_prompt: |-
+  ### Latest Screenshots ###
+  This is the latest screenshots when you are performing operations to complete user's instruction. The width and height are {resized_width} and {resized_height} pixels, respectively.
+  {image_placeholders}
+
+
+response_prompt: |-
+  ### Response requirements ###
+  Carefully examine the latest screenshots and the information provided above to determine whether the user's instruction is successfully completed or not. Provide your output in the following format:
+
+  ### Result ###
+  Choose from the following options. Give your answer as "Success", "Failed" or "Uncertain":
+  Success: The task is successfully finished.
+  Failed: The task is not finished.
+  Uncertain: Can't determain whether the task is finished or not.
+  NOTE: Be careful when judging the task as failed. If there is not enough evidence to determine whether the task is failed, you should choose "Uncertain".
+
+  ### Reason ###
+  Provide reason for your answer.

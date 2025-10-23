@@ -1,25 +1,31 @@
 import os
 import sys
+import datetime
 import argparse
 import yaml
+import logging
 
 parant_dir = os.path.dirname(__file__)
 project_home = os.path.dirname(os.path.dirname(parant_dir))
 sys.path = [
-    os.path.join(project_home, 'third_party/Android-Lab')
+    os.path.join(project_home, 'third_party/android_lab')
 ] + sys.path
 
-from agent import get_agent
-from evaluation.auto_test import *
-from evaluation.parallel import parallel_worker
-from generate_result import find_all_task_files
-from evaluation.configs import AppConfig, TaskConfig
-from mobile_use_auto_test import *
-from mobile_use_executor import *
+from benchmark.android_lab.mobile_use_auto_test import *
+from benchmark.android_lab.mobile_use_executor import MobileUseExecutor
+
+from third_party.android_lab.agent import get_agent
+from third_party.android_lab.evaluation.configs import AppConfig, TaskConfig
+from third_party.android_lab.evaluation.auto_test import *
+from third_party.android_lab.evaluation.parallel import parallel_worker
+from third_party.android_lab.generate_result import find_all_task_files
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s %(filename)s:%(lineno)s] %(message)s')
+logger = logging.getLogger()
 
 
 if __name__ == '__main__':
-    android_lab_dir = os.path.join(project_home, 'third_party/Android-Lab')
+    android_lab_dir = os.path.join(project_home, 'third_party/android_lab')
     task_yamls = os.listdir(f'{android_lab_dir}/evaluation/config')
     task_yamls = [f"{android_lab_dir}/evaluation/config/" + i for i in task_yamls if i.endswith(".yaml")]
 

@@ -1,0 +1,44 @@
+name: task_rewriter
+
+
+system_prompt: |-
+  You are an expert for solving GUI navigation tasks. Your task is to rewrite the sub task to help complete the user's instruction.
+
+
+user_prompt: |-
+  The user's instruction is:
+  {task_description}
+
+  You have breaked down the user's instruction into the following sub tasks:
+  {sub_tasks}
+
+  You have completed the following sub tasks:
+  {completed_sub_tasks}
+
+  After completing these sub tasks, you have collect the following informations:
+  {sub_task_info}
+
+  This is the next sub task you need to finish:
+  {next_sub_task}
+
+  Now you need to rewrite the next sub task by combining the collect information.
+  Here are some guidances:
+  * Keep the complete content and raw format of the information collect from previous sub tasks.
+  * Replace the corresponding content in the next sub task with the collect information. DO NOT mention the file and app where the information comes from!
+  
+  Here is an example:
+
+  If the collected information from provious sub tasks is:
+  Alice +12-3456
+  Bob +1-22222
+
+  The next sub task is: 
+  Add the numbers from numbers.txt in Note to the Message app.
+
+  Then the rewritten sub task should be:
+  Add the following numbers to the Message app:
+  Alice +12-3456
+  Bob +1-22222
+
+  Now output the new sub task:
+  

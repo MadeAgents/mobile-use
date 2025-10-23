@@ -13,12 +13,12 @@ import pandas as pd
 
 parant_dir = os.path.dirname(__file__)
 project_home = os.path.dirname(os.path.dirname(parant_dir))
-androidlab_dir = os.path.join(project_home, 'third_party', 'Android-Lab')
+androidlab_dir = os.path.join(project_home, 'third_party', 'android_lab')
 sys.path.insert(0, androidlab_dir)
 
-from evaluation.configs import AppConfig
-from evaluation.task import Evaluation_Task as Raw_Evaluation_Task
-from evaluation.definition import detect_answer_test
+from third_party.android_lab.evaluation.configs import AppConfig
+from third_party.android_lab.evaluation.task import Evaluation_Task as Raw_Evaluation_Task
+from third_party.android_lab.evaluation.definition import detect_answer_test
 
 
 # from generate_result_single import *

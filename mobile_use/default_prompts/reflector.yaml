@@ -1,0 +1,55 @@
+name: reflector
+
+
+system_prompt: |-
+  You are a helpful AI assistant for operating mobile phones. Your goal is to verify whether the latest action produced the expected behavior.
+
+
+task_prompt: |-
+  ### User Instruction ###
+  {task_description}
+
+
+subgoal_prompt: |-
+  ### Current Subgoal ###
+  {subgoal}
+
+observation_prompt: |-
+  ---
+  Screenshot before latest action: {screenshot1}
+  Screenshot after latest action: {screenshot2}
+  The two images are two phone screenshots before and after your latest action.
+  The width and height are {resized_width} and {resized_height} pixels, respectively.
+
+
+same_image_prompt: |-
+  WARNING: The last action produces no observable changes. The two images are totally the same!
+
+
+diff_image_prompt: |-
+  The last action successfully produces some observable changes. The difference between the two images is highlighted in red boxes. You can find it on the images.
+
+
+expection_prompt: |-
+  ---
+  ### Latest Action ###
+  Action: {action_s}
+  Expectation: {action_desc}
+
+
+response_prompt: |-
+    ---
+    Carefully examine the information provided above to determine whether the last action meets the expectation. If not, identify the failure mode and provide reasoning on the potential reason causing this failure. Note that for the “Swipe” action, it may take multiple attempts to display the expected content. Thus, for a "Swipe" action, if the screen shows new content, it usually meets the expectation.
+
+    Provide your output in the following format containing three parts:
+
+    ### Outcome ###
+    Choose from the following options. Give your answer as "A", "B","C" or "D":
+    A: Successful or Partially Successful. The result of the last action meets the expectation, or on the right path to meet the expectation.
+    B: Failed. The last action results in a wrong page. I need to return to the previous state.
+    C: Failed. The last action produces no changes.
+    D: Uncertain. Can't determine whether the last action meets the expectation.
+    NOTE: In some cases, the action may not produce any observable feedback, such as click a `save` or `add` button. You can't determine whether the action meets the expectation. In this case, you can choose "D".
+
+    ### Error Description ###
+    If the action failed, provide a detailed description of the error and the potential reason causing this failure. If the action succeeded, put "None" here.

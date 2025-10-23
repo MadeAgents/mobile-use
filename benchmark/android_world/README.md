@@ -27,6 +27,7 @@ We recommand you to install mobile-use in the same environment created for Andro
 
 ## Step 2: Perform the benchmark
 ```
-cd benchmark/android_world
-python run.py
+python benchmark/android_world/run.py \
+     --mobileuse_agent_name=MultiAgent \
+     --mobileuse_config_path=benchmark/android_world/configs/MultiAgent_template.yaml
 ```

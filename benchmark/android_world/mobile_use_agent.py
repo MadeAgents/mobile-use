@@ -30,15 +30,17 @@ class MobileUse(base_agent.EnvironmentInteractingAgent):
       self.agent.reset(goal=goal)
 
     answer = None
+    step_data = None
     try:
-      answer = self.agent.step()
+      step_data = self.agent.step()
+      answer = step_data.answer
     except Exception as e:
       logger.info("Some error happened during the MobileUse agent run.")
       traceback.print_exc()
       self.agent.status = mobile_use.AgentStatus.FAILED
       self.agent.episode_data.status = self.agent.status
       self.agent.episode_data.message = str(e)
-      return base_agent.AgentInteractionResult(True, {"step_data": self.agent.trajectory[-1]})
+      return base_agent.AgentInteractionResult(True, {"step_data": step_data})
 
     self.agent.episode_data.num_steps = self.agent.curr_step_idx + 1
     self.agent.episode_data.status = self.agent.status
@@ -50,11 +52,11 @@ class MobileUse(base_agent.EnvironmentInteractingAgent):
     if self.agent.status == mobile_use.AgentStatus.FINISHED:
         logger.info("Agent indicates task is done.")
         self.agent.episode_data.message = 'Agent indicates task is done.'
-        return base_agent.AgentInteractionResult(True, {"step_data": self.agent.trajectory[-1]})
+        return base_agent.AgentInteractionResult(True, {"step_data": step_data})
     elif self.agent.state == mobile_use.AgentState.CALLUSER:
         logger.warning("CALLUSER is not supported in AdroidWorld evaluation.")
-        return base_agent.AgentInteractionResult(True, {"step_data": self.agent.trajectory[-1]})
+        return base_agent.AgentInteractionResult(True, {"step_data": step_data})
     else:
         self.agent.curr_step_idx += 1
         logger.info("Agent indicates one step is done.")
-        return base_agent.AgentInteractionResult(False, {"step_data": self.agent.trajectory[-1]})
+        return base_agent.AgentInteractionResult(False, {"step_data": step_data})

@@ -2,15 +2,20 @@ import logging
 import math
 import base64
 from io import BytesIO
+from PIL import Image, ImageDraw
 from typing import Tuple, Union, List
+import os
+import subprocess
+import shutil
+import sys
 
 from PIL import Image
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 
-logger = logging.getLogger(__name__)
+from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 
-IMAGE_PLACEHOLDER = '<|vision_start|><|image_pad|><|vision_end|>'
+logger = logging.getLogger(__name__)
 
 def encode_image_url(image: Image.Image, resize: Union[Tuple, List]=None) -> str:
     """Encode an image to base64 string.
@@ -23,13 +28,52 @@ def encode_image_url(image: Image.Image, resize: Union[Tuple, List]=None) -> str
     base64_url = base64.b64encode(buffered.getvalue()).decode('utf-8')
     return f"data:image/png;base64,{base64_url}"
 
+def generate_message(
+    role: str,
+    prompt: str,
+    images: List[Image.Image] = None,
+) -> List[dict]:
+    """
+    Generate a message with role, prompt and images.
+    """
+    if images is None or len(images) == 0:
+        return {"role": role, "content": [{"type": "text", "text": prompt}]}
+    else:
+        content = []
+        prompts = prompt.split(IMAGE_PLACEHOLDER)
+        assert len(prompts) - 1 == len(images), "The number of images must be equal to the number of placeholders."
+
+        for i, p in enumerate(prompts):
+            if p:
+                content.append({"type": "text", "text": p})
+            if i < len(prompts) - 1:
+                content.append({"type": "image_url","image_url": {"url": encode_image_url(images[i])}})
+        
+        return {"role": role, "content": content}
+
+def show_message(messages: List[dict], name: str = None):
+    name = f"{name} " if name is not None else ""
+    logger.info(f"==============={name}MESSAGE==============")
+    for message in messages:
+        logger.info(f"ROLE: {message['role']}")
+        for content in message['content']:
+            if content['type'] == 'text':
+                logger.info(f"TEXT: {content['text']}")
+            else:
+                logger.info(f"{content['type']}: SKIP.")
+    logger.info(f"==============={name}MESSAGE END==============")
+
+def contains_non_ascii(text):
+    for char in text:
+        if ord(char) > 127:
+            return True
+    return False
 
 def contains_chinese(text):
     for char in text:
         if '\u4e00' <= char <= '\u9fff':
             return True
     return False
-
 
 def smart_resize(
     height: int, width: int, factor: int = 28, min_pixels: int = 4 * 28 * 28, max_pixels: int = 16384 * 28 * 28
@@ -54,6 +98,26 @@ def smart_resize(
         h_bar = math.ceil(height * beta / factor) * factor
         w_bar = math.ceil(width * beta / factor) * factor
     return h_bar, w_bar
+
+def resize_image(image: Image.Image, max_pixels: int=1024*1024, min_pixels=3136):
+    if isinstance(image, dict):
+        image = Image.open(BytesIO(image["bytes"]))
+    if isinstance(image, str):
+        image = Image.open(image)
+    if (image.width * image.height) > max_pixels:
+        resize_factor = math.sqrt(max_pixels / (image.width * image.height))
+        width, height = int(image.width * resize_factor), int(image.height * resize_factor)
+        image = image.resize((width, height))
+
+    if (image.width * image.height) < min_pixels:
+        resize_factor = math.sqrt(min_pixels / (image.width * image.height))
+        width, height = int(image.width * resize_factor), int(image.height * resize_factor)
+        image = image.resize((width, height))
+
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+
+    return image
 
 def remove_img_placeholder(messages, num_latest_screenshot=None):
     # find all image content
@@ -100,7 +164,18 @@ def compare_image(img1: Image.Image, img2: Image.Image):
     ssim_value = ssim(img1, img2)
     return ssim_value
 
-def is_same_image(img1: Image.Image, img2: Image.Image):
+def crop_top_by_ratio(img: Image.Image, ratio: float):
+    assert ratio >=0 and ratio < 1, "ratio must be in the range [0, 1)"
+    if ratio == 0:
+        return img
+    w, h = img.size
+    cut = int(round(h * ratio))
+    return img.crop((0, cut, w, h))
+
+def is_same_image(img1: Image.Image, img2: Image.Image, crop_top_ratio: float = 0.0):
+    if crop_top_ratio > 0:
+        img1 = crop_top_by_ratio(img1, crop_top_ratio)
+        img2 = crop_top_by_ratio(img2, crop_top_ratio)
     img1 = img1.convert('L')
     img2 = img2.convert('L')
     img1 = np.array(img1)
@@ -155,3 +230,42 @@ def diff_image(
     new_img1 = Image.fromarray(cv2.cvtColor(new_img1, cv2.COLOR_BGR2RGB))
     new_img2 = Image.fromarray(cv2.cvtColor(new_img2, cv2.COLOR_BGR2RGB))
     return new_img1, new_img2
+
+def draw_click_to_image(image, x, y, transparency=0.75, radius=20):
+    # Convert the image to RGBA for transparency handling
+    image = image.convert("RGBA")
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))  # Transparent overlay
+
+    # Draw the circle on the overlay
+    draw = ImageDraw.Draw(overlay)
+    color = (255, 0, 0, int(255 * transparency))
+    draw.ellipse(
+        (x - radius, y - radius, x + radius, y + radius), fill=color
+    )
+
+    # Composite the overlay with the original image
+    combined = Image.alpha_composite(image, overlay)
+
+    # Convert back to RGB for the output
+    return combined.convert("RGB")
+
+def download_hf_model(repo_url: str, target_dir: str):
+    # Check if target_dir already exists
+    if os.path.exists(target_dir):
+        print(f"Already exists: {target_dir}, skip download.")
+        return
+
+    # Check if git-lfs is installed
+    try:
+        subprocess.run(["git", "lfs", "version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        logger.warning("git-lfs is not installed. It may cause some files not downloaded correctly.")
+
+    try:
+        subprocess.run(
+            ["git", "clone", repo_url, target_dir],
+            check=True
+        )
+        logger.info(f"Finished downloading model {repo_url} to {target_dir}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error downloading model from {repo_url}: {e}")

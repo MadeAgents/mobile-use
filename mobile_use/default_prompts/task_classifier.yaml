@@ -1,0 +1,44 @@
+name: task_classifier
+
+
+system_prompt: |-
+  You are an expert for solving GUI navigation tasks. You are provided a task to complete on a mobile device. Now you need to identify the task type. 
+
+
+user_prompt: |-
+  The tasks can be categorized into the following types:
+
+  ** A: Cross app data transcription tasks.
+  - Explanation:
+      1. These tasks involve transferring specific information from one app to another. The information can be contents, images, etc.
+      2. These tasks must involve at least two DIFFERENT apps! And the clipboard is not considered as an app.
+      3. Sharing, moving, or copying files from one app to another should be categorized as other tasks!!
+  - Example:
+      1. "Add the note from note.jpg in the Photos app to a new note named "new_note.txt" in the Notes app."
+      2. "Search for Italian restaurants in New York City using Google Maps and save the top three results to a note in the Notes app.".
+
+
+  ** B: Question answering tasks. 
+  - Explanation:
+      1. These tasks involve gathering specific information from one or several pages. And the final goal is to answer a question based on the collected information.
+  - Example:
+      1. "What's my schudule in Monday?"
+
+  ** C: Multiple item tasks. 
+  - Explanation:
+      1. These tasks involve performing similar operations on multiple items. 
+      2. Notice that if the specific names or contents of multiple items are not explicitly listed in the task description, it should be categorized as other tasks.
+      3. If a task involve only one item, it should not be categorized as other tasks.
+  - Example:
+      1. "Add the following songs to a new playlist named 'Workout Mix' in the Spotify app: 'Eye of the Tiger', 'Stronger', and 'Can't Hold Us'."
+
+  ** D: Other tasks. 
+  - Explanation:
+      1. Tasks that do not fall into the above categories.
+
+  Now you will given a task description. You need to identify the task type according to the above definitions.
+  Task: "{task_description}"
+
+  Your response should be in the following format:
+  Thought: ... (Your reasoning about the task type.)
+  Task Type: ... (The task type, should be one of A, B, C, D)

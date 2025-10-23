@@ -3,7 +3,7 @@
 ## Step 1: Environment Setup
 **Install AndroidLab requirements**
 ```
-pip install -r third_party/Android_Lab/requirements.txt
+uv pip install -r third_party/android_lab/requirements.txt
 ```
 
 
@@ -26,7 +26,7 @@ cp benchmark/android_lab/configs/mobile-use-MultiAgent_template.yaml benchmark/a
 
 2. Start evaluation
 ```
-python eval.py -n test_name -c benchmark/android_lab/configs/mobile-use-MultiAgent.yaml
+python benchmark/android_lab/eval.py -n test_name -c benchmark/android_lab/configs/mobile-use-MultiAgent.yaml
 ```
 
 3. Calculate the metrics

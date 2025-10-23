@@ -1,0 +1,11 @@
+vlm:
+  model_name: qwen2.5-vl-72b-instruct
+  api_key: xxxxx
+  base_url: xxxxx
+  max_tokens: 1024
+  temperature: 0
+
+env:
+  serial_no: emulator-5554
+
+enable_log: false

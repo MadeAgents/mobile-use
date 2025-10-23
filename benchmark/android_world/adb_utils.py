@@ -14,14 +14,13 @@
 
 """Utilties to interact with the environment using adb."""
 
-import os
 import re
-import time
-from typing import Any, Callable, Collection, Iterable, Literal, Optional, TypeVar
-import unicodedata
+import logging
+from typing import Optional, TypeVar
+
 import immutabledict
 from adbutils import AdbDevice
-import logging
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
@@ -89,16 +88,16 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
     'reddit': 'com.reddit.frontpage/com.reddit.frontpage.MainActivity',
     'pinterest': 'com.pinterest/com.pinterest.activity.PinterestActivity',
     'android world': 'com.example.androidworld/.MainActivity',
-    'files': 'com.google.android.documentsui/com.android.documentsui.files.FilesActivity',
+    'files|file|file manager': 'com.google.android.documentsui/com.android.documentsui.files.FilesActivity',
     'markor': 'net.gsantner.markor/net.gsantner.markor.activity.MainActivity',
     'clipper': 'ca.zgrs.clipper/ca.zgrs.clipper.Main',
     'messages': 'com.google.android.apps.messaging/com.google.android.apps.messaging.ui.ConversationListActivity',
     'simple sms messenger|simple sms': 'com.simplemobiletools.smsmessenger/com.simplemobiletools.smsmessenger.activities.MainActivity',
     'dialer|phone': 'com.google.android.dialer/com.google.android.dialer.extensions.GoogleDialtactsActivity',
     'simple calendar pro|simple calendar': 'com.simplemobiletools.calendar.pro/com.simplemobiletools.calendar.pro.activities.MainActivity',
-    'simple gallery pro|simple gallery': 'com.simplemobiletools.gallery.pro/com.simplemobiletools.gallery.pro.activities.MainActivity',
+    'simple gallery pro|simple gallery|gallery': 'com.simplemobiletools.gallery.pro/com.simplemobiletools.gallery.pro.activities.MainActivity',
     'miniwob': 'com.google.androidenv.miniwob/com.google.androidenv.miniwob.app.MainActivity',
-    'simple draw pro': 'com.simplemobiletools.draw.pro/com.simplemobiletools.draw.pro.activities.MainActivity',
+    'simple draw pro|simple draw|draw': 'com.simplemobiletools.draw.pro/com.simplemobiletools.draw.pro.activities.MainActivity',
     'pro expense|pro expense app': (
         'com.arduia.expense/com.arduia.expense.ui.MainActivity'
     ),
@@ -126,68 +125,80 @@ _DEFAULT_URIS: dict[str, str] = {
     'browser': 'http://',
     'contacts': 'content://contacts/people/',
     'email': 'mailto:',
-    'gallery': 'content://media/external/images/media/',
+    # 'gallery': 'content://media/external/images/media/',
 }
 
 
 def get_adb_activity(app_name: str) -> Optional[str]:
-  """Get a mapping of regex patterns to ADB activities top Android apps."""
-  for pattern, activity in _PATTERN_TO_ACTIVITY.items():
-    if re.match(pattern.lower(), app_name.lower()):
-      return activity
+    """Get a mapping of regex patterns to ADB activities top Android apps."""
+    for pattern, activity in _PATTERN_TO_ACTIVITY.items():
+        if re.match(pattern.lower(), app_name.lower()):
+            return activity
+    
+    # If no exact match, try partial match for multi-word app names.
+    if len(app_name.lower().split()) > 1:
+        for pattern, activity in _PATTERN_TO_ACTIVITY.items():
+            for word in app_name.lower().split():
+                if re.match(pattern, word):
+                    logger.warning(f"Partial match for app name '{app_name}' with pattern '{pattern}'.")
+                    return activity
 
 
 
 def _launch_default_app(
     app_key: str,
     device: AdbDevice,
-    timeout_sec: Optional[float] = _DEFAULT_TIMEOUT_SECS,
-):
-  """Launches a default application with a predefined data URI."""
-  if app_key not in _DEFAULT_URIS:
-    raise ValueError(
-        f'Unrecognized app key: {app_key}. Must be one of'
-        f' {list(_DEFAULT_URIS.keys())}'
-    )
-  data_uri = _DEFAULT_URIS[app_key]
-  adb_command = [
-      'am',
-      'start',
-      '-a',
-      'android.intent.action.VIEW',
-      '-d',
-      data_uri,
-  ]
-  logger.info(f'Launche default app: {app_key}')
-  device.shell(adb_command)
+) -> None:
+    """Launches a default application with a predefined data URI."""
+    if app_key not in _DEFAULT_URIS:
+        raise ValueError(
+            f'Unrecognized app key: {app_key}. Must be one of'
+            f' {list(_DEFAULT_URIS.keys())}'
+        )
+    data_uri = _DEFAULT_URIS[app_key]
+    adb_command = [
+        'am',
+        'start',
+        '-a',
+        'android.intent.action.VIEW',
+        '-d',
+        data_uri,
+    ]
+    logger.info(f'Launche default app: {app_key}')
+    device.shell(adb_command)
 
 
 def launch_app(
     app_name: str,
     device: AdbDevice,
 ) -> Optional[str]:
-  """Uses regex and ADB activity to try to launch an app.
+    """Uses regex and ADB activity to try to launch an app.
 
-  Args:
-    app_name: The name of the app, as represented as a key in
-      _PATTERN_TO_ACTIVITY.
-    env: The environment.
+    Args:
+        app_name: The name of the app, as represented as a key in
+        _PATTERN_TO_ACTIVITY.
+        env: The environment.
 
-  Returns:
-    The name of the app that is launched.
-  """
+    Returns:
+        The name of the app that is launched.
+    """
 
-  if app_name in _DEFAULT_URIS:
-    _launch_default_app(app_name, device)
+    if app_name in _DEFAULT_URIS:
+        _launch_default_app(app_name, device)
+        return app_name
+
+    activity = get_adb_activity(app_name)
+    if activity is None:
+        #  If the app name is not in the mapping, assume it is a package name.
+        re = device.shell(['monkey', '-p', app_name, '1'])
+        if isinstance(re, str) and "No activities found to run, monkey aborted" in re:
+            raise ValueError(
+                f'Unrecognized app name: {app_name}. Please provide a valid app name or package name.'
+            )
+        logger.info(f'Launch app {app_name} by package name.')
+        return app_name
+
+    # use adbtutils to start the activity
+    device.shell(['am', 'start', '-n', activity])
+    logger.info(f'Launch app {app_name} by activity.')
     return app_name
-
-  activity = get_adb_activity(app_name)
-  if activity is None:
-    #  If the app name is not in the mapping, assume it is a package name.
-    device.shell(['monkey', '-p', app_name, '1'])
-    logger.info(f'Launch app {app_name} by package name.')
-    return app_name
-  # use adbtutils to start the activity
-  device.shell(['am', 'start', '-n', activity])
-  logger.info(f'Launch app {app_name} by activity.')
-  return app_name

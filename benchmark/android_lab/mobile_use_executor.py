@@ -1,11 +1,11 @@
 import time
 import logging
 from PIL import Image
-from mobile_use.scheme import Action
-from mobile_use.environ import Environment, EnvState
-from page_executor.text_executor import TextOnlyExecutor
-from utils_mobile.and_controller import AndroidController
-from evaluation.evaluation import print_with_color
+from mobile_use.schema.schema import Action
+from mobile_use.environment.mobile_environ import Environment, EnvState
+from third_party.android_lab.page_executor.text_executor import TextOnlyExecutor
+from third_party.android_lab.utils_mobile.and_controller import AndroidController
+from third_party.android_lab.utils_mobile.utils import print_with_color
 
 
 logger = logging.getLogger(__name__)
@@ -23,60 +23,35 @@ class MobileUseExecutor(TextOnlyExecutor):
         local_context = self.__get_class_methods__()
         local_context.update(**{'self': self})
         return current_return
-    
+
     def execute_action(self, action: Action):
         print_with_color(f"Execute Action {action}", "green")
         answer = None
-        if action.name == 'open_app':
-            package_name = action.parameters['package_name']
+        if action.name in ["open", "open_app"]:
+            package_name = action.parameters['text']
             self.controller.launch(package_name)
             self.current_return = {"operation": "do", "action": 'Launch', "kwargs": {"package": package_name}}
-        elif action.name == 'open':
-            raise Exception('open action is unavailable, please use open_app')
-        elif action.name == 'click' or action.name == 'left_click':
-            if 'coordinate' in action.parameters:       # QwenAgent
-                x, y = action.parameters['coordinate']
-            elif 'start_box' in action.parameters:
-                x, y = action.parameters['start_box']
-            else:
-                x, y = action.parameters['point']
+        elif action.name == 'click':
+            x, y = action.parameters['coordinate']
             self.controller.tap(x, y)
             self.current_return = {"operation": "do", "action": 'Tap', "kwargs": {"element": [x, y]}}
         elif action.name == 'long_press':
-            if 'coordinate' in action.parameters:       # QwenAgent
-                x, y = action.parameters['coordinate']
-            elif 'start_box' in action.parameters:
-                x, y = action.parameters['start_box']
-            else:
-                x, y = action.parameters['point']
-            # duration = action.parameters.get('time', 2.0)
+            x, y = action.parameters['coordinate']
             self.controller.long_press(x, y)
             self.current_return = {"operation": "do", "action": 'Long Press', "kwargs": {"element": [x, y]}}
         elif action.name == 'type':
-            if 'content' in action.parameters:
-                text = action.parameters['content']
-            else:
-                text = action.parameters['text']
+            text = action.parameters['text']
             self.controller.text(text)
             self.current_return = {"operation": "do", "action": 'Type', "kwargs": {"text": text}}
         elif action.name == 'key':
             text = action.parameters['text']
-            self.controller.execute_adb(f'adb shell input keyevent {text}', type=self.controller.type)
+            self.controller.run_command(f'adb shell input keyevent {text}')
             self.current_return = {"operation": "do", "action": f'Press {text}'}
-        elif action.name == 'scroll':
-            if 'start_box' in action.parameters:
-                x1, y1 = action.parameters['start_box']
-                x2, y2 = action.parameters['end_box']
-            else:
-                x1, y1 = action.parameters['start_point']
-                x2, y2 = action.parameters['end_point']
-            self.controller.execute_adb(f'adb shell input swipe {x1}, {y1}, {x2}, {y2} 500', type=self.controller.type)
-            self.current_return = {"operation": "do", "action": 'Swipe', "kwargs": {"element": [x1, y1], "direction": '', "dist": 'medium'}}
-        elif action.name == 'swipe':       # QwenAgent
+        elif action.name == 'swipe':
             x1, y1 = action.parameters['coordinate']
             x2, y2 = action.parameters['coordinate2']
-            self.controller.execute_adb(f'adb shell input swipe {x1}, {y1}, {x2}, {y2} 500', type=self.controller.type)
-            self.current_return = {"operation": "do", "action": 'Swipe', "kwargs": {"element": [x1, y1], "direction": '', "dist": 'medium'}}
+            self.controller.run_command(f'adb shell input swipe {x1} {y1} {x2} {y2} 500')
+            self.current_return = {"operation": "do", "action": 'Swipe', "kwargs": {"start": [x1, y1], "end": [x2, y2]}}
         elif action.name == 'press_home':
             self.controller.home()
             self.current_return = {"operation": "do", "action": 'Press Home'}
@@ -86,11 +61,9 @@ class MobileUseExecutor(TextOnlyExecutor):
         elif action.name == 'wait':
             duration = action.parameters.get('time', 5.0)
             time.sleep(duration)
+            self.current_return = {"operation": "do", "action": 'Wait'}
         elif action.name == 'answer':
             answer = action.parameters['text']
-            self.controller.execute_adb(
-                f'adb shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{answer}"',
-                type=self.controller.type)
         elif action.name == 'system_button':
             button = action.parameters['button']
             if button == 'Back':
@@ -100,27 +73,18 @@ class MobileUseExecutor(TextOnlyExecutor):
                 self.controller.home()
                 self.current_return = {"operation": "do", "action": 'Press Home'}
             elif button == 'Menu':
-                self.controller.execute_adb(f'adb shell input keyevent Menu', type=self.controller.type)
+                self.controller.run_command('adb shell input keyevent Menu')
                 self.current_return = {"operation": "do", "action": 'Press Menu'}
             elif button == 'Enter':
                 self.controller.enter()
                 self.current_return = {"operation": "do", "action": 'Press Enter'}
         elif action.name == 'clear_text':
-            self.controller.execute_adb(f'adb shell ime enable com.android.adbkeyboard/.AdbIME', type=self.controller.type)
-            logger.info(re)
-            self.controller.execute_adb(f'adb shell ime set com.android.adbkeyboard/.AdbIME', type=self.controller.type)
-            logger.info(re)
-            time.sleep(1)
-            self.controller.execute_adb(f'adb shell am broadcast -a ADB_CLEAR_TEXT', type=self.controller.type)
-            re = self.controller.execute_adb(
-                f'adb shell ime disable com.android.adbkeyboard/.AdbIME',
-                type=self.controller.type)
-            logger.info(re)
-            re = self.controller.execute_adb(f'adb shell input text ', type=self.controller.type)
-            logger.info(re)
-            self.current_return = {"operation": "do", "action": 'Clear text'}
+            # The default keyboard is ADBKeyBoard
+            self.controller.run_command('adb shell am broadcast -a ADB_CLEAR_TEXT')
+            self.current_return = {"operation": "do", "action": 'Clear Text'}
         elif action.name == 'take_note':
             note = action.parameters['text']
+            self.current_return = {"operation": "do", "action": 'Take Note', "kwargs": {"note": note}}
             return note
         else:
             raise ValueError(f"Unknown action: {action.name}")
@@ -150,96 +114,8 @@ class AndroidLabEnvironment(Environment):
         return state
 
     def get_time(self) -> str:
-        re = self.controller.execute_adb('adb shell date', type=self.controller.type)
+        re = self.controller.run_command('adb shell date')
         return re
     
     def execute_action(self, action):
         return self.executor.execute_action(action=action)
-
-    # def execute_action(self, action: Action):
-    #     print_with_color(f"Execute Action {action}", "green")
-    #     answer = None
-    #     if action.name == 'open_app':
-    #         package_name = action.parameters['package_name']
-    #         self.controller.launch(package_name)
-    #     elif action.name == 'open':
-    #         raise Exception('open action is unavailable, please use open_app')
-    #     elif action.name == 'click' or action.name == 'left_click':
-    #         if 'coordinate' in action.parameters:       # QwenAgent
-    #             x, y = action.parameters['coordinate']
-    #         elif 'start_box' in action.parameters:
-    #             x, y = action.parameters['start_box']
-    #         else:
-    #             x, y = action.parameters['point']
-    #         self.controller.tap(x, y)
-    #     elif action.name == 'long_press':
-    #         if 'coordinate' in action.parameters:       # QwenAgent
-    #             x, y = action.parameters['coordinate']
-    #         elif 'start_box' in action.parameters:
-    #             x, y = action.parameters['start_box']
-    #         else:
-    #             x, y = action.parameters['point']
-    #         # duration = action.parameters.get('time', 2.0)
-    #         self.controller.long_press(x, y)
-    #     elif action.name == 'type':
-    #         if 'content' in action.parameters:
-    #             text = action.parameters['content']
-    #         else:
-    #             text = action.parameters['text']
-    #         self.controller.text(text)
-    #     elif action.name == 'key':
-    #         text = action.parameters['text']
-    #         self.controller.execute_adb(f'adb shell input keyevent {text}', type=self.controller.type)
-    #     elif action.name == 'scroll':
-    #         if 'start_box' in action.parameters:
-    #             x1, y1 = action.parameters['start_box']
-    #             x2, y2 = action.parameters['end_box']
-    #         else:
-    #             x1, y1 = action.parameters['start_point']
-    #             x2, y2 = action.parameters['end_point']
-    #         self.controller.execute_adb(f'adb shell input swipe {x1}, {y1}, {x2}, {y2} 500', type=self.controller.type)
-    #     elif action.name == 'swipe':       # QwenAgent
-    #         x1, y1 = action.parameters['coordinate']
-    #         x2, y2 = action.parameters['coordinate2']
-    #         self.controller.execute_adb(f'adb shell input swipe {x1}, {y1}, {x2}, {y2} 500', type=self.controller.type)
-    #     elif action.name == 'press_home':
-    #         self.controller.home()
-    #     elif action.name == 'press_back':
-    #         self.controller.back()
-    #     elif action.name == 'wait':
-    #         duration = action.parameters.get('time', 5.0)
-    #         time.sleep(duration)
-    #     elif action.name == 'answer':
-    #         answer = action.parameters['text']
-    #         self.controller.execute_adb(
-    #             f'adb shell am broadcast com.example.ACTION_UPDATE_OVERLAY --es task_type_string "Agent answered:" --es goal_string "{answer}"',
-    #             type=self.controller.type)
-    #     elif action.name == 'system_button':
-    #         button = action.parameters['button']
-    #         if button == 'Back':
-    #             self.controller.back()
-    #         elif button == 'Home':
-    #             self.controller.home()
-    #         elif button == 'Menu':
-    #             self.controller.execute_adb(f'adb shell input keyevent Menu', type=self.controller.type)
-    #         elif button == 'Enter':
-    #             self.controller.enter()
-    #     elif action.name == 'clear_text':
-    #         self.controller.execute_adb(f'adb shell ime enable com.android.adbkeyboard/.AdbIME', type=self.controller.type)
-    #         logger.info(re)
-    #         self.controller.execute_adb(f'adb shell ime set com.android.adbkeyboard/.AdbIME', type=self.controller.type)
-    #         logger.info(re)
-    #         time.sleep(1)
-    #         self.controller.execute_adb(f'adb shell am broadcast -a ADB_CLEAR_TEXT', type=self.controller.type)
-    #         re = self.controller.execute_adb(
-    #             f'adb shell ime disable com.android.adbkeyboard/.AdbIME',
-    #             type=self.controller.type)
-    #         logger.info(re)
-    #         re = self.controller.execute_adb(f'adb shell input text ', type=self.controller.type)
-    #         logger.info(re)
-    #     elif action.name == 'take_note':
-    #         note = action.parameters['text']
-    #         return note
-    #     else:
-    #         raise ValueError(f"Unknown action: {action.name}")
-    #     return answer
