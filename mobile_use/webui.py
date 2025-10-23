@@ -11,8 +11,8 @@ import gradio as gr
 from gradio import ChatMessage
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
-from mobile_use.logger import setup_logger
-from mobile_use.scheme import AgentState
+from mobile_use.utils.logger import setup_logger
+from mobile_use.schema.schema import AgentState
 from mobile_use import Environment, VLMWrapper, Agent
 
 
