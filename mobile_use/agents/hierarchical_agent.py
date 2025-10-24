@@ -122,23 +122,6 @@ class HierarchicalAgent(Agent):
         answer = None
         show_step = [0,4]
 
-        # Task classification and planning
-        # if self.enable_hierarchical_planning and self.curr_step_idx == 0:
-        #     import json
-        #     task_type_json = json.load(open("benchmark/android_world/tasks_type.json", "r"))
-        #     for task_info in task_type_json:
-        #         if task_info['goal'] == self.goal:
-        #             if task_info['type'] in ['A', 'C']:
-        #                 task_type = task_info['type']
-        #                 sub_tasks = task_info['sub_tasks']
-        #                 logger.info("Task Type: %s" % task_type)
-        #                 logger.info("Sub Tasks: %s" % str(sub_tasks))
-        #                 self.task_data.task_type = task_type
-        #                 self.task_data.sub_tasks = sub_tasks
-        #                 self.task_data.sub_tasks_return = [None] * len(sub_tasks)
-        #                 self.task_data.sub_tasks_episode_data = [None] * len(sub_tasks)
-        #                 self.task_data.current_sub_task_idx = 0
-        #                 self.episode_data.goal = self.task_data.sub_tasks[0]
         if self.enable_hierarchical_planning and self.curr_step_idx == 0:
             task_classification_messages = self.task_classifier.get_message(self.task_data)
             # show_message(task_classification_messages, "TaskClassifier")
@@ -436,16 +419,21 @@ class HierarchicalAgent(Agent):
                         self.env.execute_action(Action(name="press_back"))
                     self.env.execute_action(Action(name="press_home"))
 
-                self.task_data.current_sub_task_idx += 1
-                new_goal = self.task_data.sub_tasks[self.task_data.current_sub_task_idx]
-                new_trajectory: List[MobileUseStepData] = []
-                new_episodedata = MobileUseEpisodeData(goal=new_goal, num_steps=0, trajectory=new_trajectory)
-                self.trajectory = new_trajectory
-                self.episode_data = new_episodedata
-                self.task_data.episode_data = new_episodedata
-                logger.info(f"Update the goal to the next sub task: {self.goal}")
-                self.status = None
-                # self.status = AgentStatus.FINISHED
+                    self.task_data.current_sub_task_idx += 1
+                    new_goal = self.task_data.sub_tasks[self.task_data.current_sub_task_idx]
+                    new_trajectory: List[MobileUseStepData] = []
+                    new_episodedata = MobileUseEpisodeData(goal=new_goal, num_steps=0, trajectory=new_trajectory)
+                    self.trajectory = new_trajectory
+                    self.episode_data = new_episodedata
+                    self.task_data.episode_data = new_episodedata
+                    logger.info(f"Update the goal to the next sub task: {self.goal}")
+                    self.status = None
+                    # self.status = AgentStatus.FINISHED
+
+                    # Reset all sub agents
+                    for agent in self.agents:
+                        if agent:
+                            agent.reset()
 
         step_data.memory = self.episode_data.memory
         step_data.step_duration = time.time() - start_time
