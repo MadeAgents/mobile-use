@@ -99,7 +99,7 @@ def run_exploration(
     env = env_launcher.load_and_setup_env(
         console_port=5554, 
         emulator_setup=False,
-        adb_path=r'C:\adb\platform-tools\adb.exe'
+        # adb_path=r'C:\adb\platform-tools\adb.exe'
     )
 
     # Register available tasks
@@ -119,7 +119,7 @@ def run_exploration(
 
     # Initialize mobile_use environment
     random.seed(42)
-    mobile_use_env = mobile_use.Environment(serial_no="emulator-5554", port=5038)
+    mobile_use_env = mobile_use.Environment(serial_no="emulator-5554", port=5037)
     mobile_use_env.reset()
     time.sleep(2)
 
