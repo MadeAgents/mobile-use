@@ -18,7 +18,7 @@ class Environment:
         serial_no: str=None,
         host: str="127.0.0.1",
         port: int=5037,
-        go_home: bool = True,
+        go_home: bool = False,
         wait_after_action_seconds: float=2.0
     ):
         self.host = host
@@ -44,7 +44,7 @@ class Environment:
             raise e
         return device
 
-    def reset(self, go_home: bool = True):
+    def reset(self, go_home: bool = False):
         if go_home:
             self._d.keyevent("HOME")
 
