@@ -111,6 +111,8 @@ class MobileUseStepData(SingleAgentStepData):
     trajectory_reflection_error: Optional[str] = None
     evaluation_result: Optional[str] = None
     evaluation_reason: Optional[str] = None
+    # Knowledge
+    knowledge: Optional[List[str]] = None
     # Time related
     step_duration: Optional[float] = None
     exec_duration: Optional[float] = None

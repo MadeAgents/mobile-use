@@ -160,25 +160,64 @@ class Operator(SubAgent):
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
         self.include_tips = config.include_tips
-        self.include_knowledge = config.include_knowledge
         self.include_a11y_tree = config.include_a11y_tree
         self.max_pixels = config.max_pixels
-        if self.include_knowledge:
-            logger.info("Loading RAG database for knowledge retrieval...")
-            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            sys.path += [os.path.join(project_home, 'third_party', 'RAGToolbox')]
-            from RAGToolbox import Jinaembedding, Vectordatabase
-            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
-            database_path = os.path.join(script_dir, 'rag_database')
-            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
-            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
-            self.embedding_model=Jinaembedding(embedding_model_path) 
-            self.db=Vectordatabase()
-            self.db.load_vector(database_path)
+        self.knowledge_config = config.knowledge
+
+        self.embedding_model = None
+        self.db = None
+        self.retrieved_knowledge = None
+        self.explored_knowledge = None
     
+    def get_knowledge(self, query: str):
+        # Retrieve knowledge from RAG database
+        embedding_model_path = self.knowledge_config.embedding_model_path
+        knowledge_database_dir = self.knowledge_config.knowledge_database_dir
+        if knowledge_database_dir is not None:
+            if self.retrieved_knowledge is None:
+                assert embedding_model_path is not None, "Embedding model path must be provided if knowledge database dir is provided."
+                if self.embedding_model is None:
+                    logger.info("Loading RAG database for knowledge retrieval...")
+                    project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                    sys.path += [os.path.join(project_home, 'third_party', 'RAGToolbox')]
+                    from RAGToolbox import Jinaembedding, Vectordatabase
+                    download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
+                    self.embedding_model=Jinaembedding(embedding_model_path)
+                    self.db=Vectordatabase()
+                    self.db.load_vector(knowledge_database_dir)
+                answer = self.db.query_score(query, self.embedding_model,1)
+                similarity, key, value = answer[0]
+                logger.info(f"Retrieved knowledge: {str(value)}")
+                if len(value) > 0 and value[0] != "":
+                    self.retrieved_knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
+
+        # Get explored knowledge
+        explored_knowledge_path = self.knowledge_config.explored_knowledge_path
+        if explored_knowledge_path is not None:
+            if self.explored_knowledge is None:
+                all_explored_knowledge = json.load(open(explored_knowledge_path, 'r', encoding='utf-8'))
+                app_names = list(all_explored_knowledge.keys())
+
+                messages = [generate_message("user", "Which app is most relevant to the following query: " + query + "\nApp names: " + ", ".join(app_names) + ". \nAnswer with only the app name:")]
+                response = self.vlm.predict(messages)
+                app_name = response.choices[0].message.content.strip()
+                if app_name in all_explored_knowledge:
+                    knowledge_list = all_explored_knowledge[app_name]
+                    explored_app_knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(knowledge_list)])
+                    logger.info(f"Explored knowledge from app {app_name} is added.")
+                    messages = [generate_message("user", f"The summary of pages explored:\n{explored_app_knowledge}\nuser query:\n{query}\nPlease extract the text snippet that helps complete the user's request without exceeding 100 tokens and must keeping the original description. Don't answer user query! Extract only!")]
+                    response = self.vlm.predict(messages)
+                    self.explored_knowledge = response.choices[0].message.content.strip()
+                else:
+                    logger.warning(f"App name {app_name} not found in explored knowledge.")
+
     def reset(self):
         self.raw_size = None
         self.resized_size = None
+        self.retrieved_knowledge = None
+        self.embedding_model = None
+        self.db = None
+        self.explored_knowledge = None
 
     def get_message(self, episodedata: MobileUseEpisodeData) -> list:
         messages = []
@@ -238,18 +277,19 @@ class Operator(SubAgent):
         )
         prompt_list.append(history_prompt)
 
-        if self.include_knowledge:
-            # Add knowledge
-            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
-            similarity, key, value = answer[0]
-            logger.info(f"Retrieved knowledge: {str(value)}")
-            if len(value) > 0 and value[0] != "":
-                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
-                knowledge_prompt = self.prompt.knowledge_prompt.format(
-                    knowledge = knowledge,
-                )
-                logger.info("Knowledge is added.")
-                prompt_list.append(knowledge_prompt)
+        self.get_knowledge(episodedata.goal)
+        if self.retrieved_knowledge or self.explored_knowledge:
+            knowledge = ""
+            if self.retrieved_knowledge:
+                knowledge += self.retrieved_knowledge + "\n"
+            if self.explored_knowledge:
+                knowledge += self.explored_knowledge
+
+            knowledge_prompt = self.prompt.knowledge_prompt.format(
+                knowledge = knowledge,
+            )
+            logger.info("Knowledge is added.")
+            prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
@@ -424,18 +464,19 @@ class TrainedOperator(Operator):
             )
             prompt_list.append(subgoal_prompt)
 
-        if self.include_knowledge:
-            # Add knowledge
-            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
-            similarity, key, value = answer[0]
-            logger.info(f"Retrieved knowledge: {str(value)}")
-            if len(value) > 0 and value[0] != "":
-                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
-                knowledge_prompt = self.prompt.knowledge_prompt.format(
-                    knowledge = knowledge,
-                )
-                logger.info("Knowledge is added.")
-                prompt_list.append(knowledge_prompt)
+        self.get_knowledge(episodedata.goal)
+        if self.retrieved_knowledge or self.explored_knowledge:
+            knowledge = ""
+            if self.retrieved_knowledge:
+                knowledge += self.retrieved_knowledge + "\n"
+            if self.explored_knowledge:
+                knowledge += self.explored_knowledge
+
+            knowledge_prompt = self.prompt.knowledge_prompt.format(
+                knowledge = knowledge,
+            )
+            logger.info("Knowledge is added.")
+            prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
@@ -563,20 +604,63 @@ class AnswerAgent(SubAgent):
         self.num_histories = config.num_histories
         self.include_device_time = config.include_device_time
         self.max_pixels = config.max_pixels
-        self.include_knowledge = config.include_knowledge
-        if self.include_knowledge:
-            logger.info("Loading RAG database for knowledge retrieval...")
-            project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            sys.path += [os.path.join(project_home, 'third_party', 'RAGToolbox')]
-            from RAGToolbox import Jinaembedding, Vectordatabase
-            script_dir = os.path.join(project_home, "mobile_use", "default_prompts", "RAG")
-            database_path = os.path.join(script_dir, 'rag_database')
-            embedding_model_path = os.path.join(script_dir, 'jina-embeddings-v2-base-zh')
-            download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
-            self.embedding_model=Jinaembedding(embedding_model_path) 
-            self.db=Vectordatabase()
-            self.db.load_vector(database_path)
+        self.knowledge_config = config.knowledge
+
+        self.embedding_model = None
+        self.db = None
+        self.retrieved_knowledge = None
+        self.explored_knowledge = None
     
+    def get_knowledge(self, query: str):
+        # Retrieve knowledge from RAG database
+        embedding_model_path = self.knowledge_config.embedding_model_path
+        knowledge_database_dir = self.knowledge_config.knowledge_database_dir
+        if knowledge_database_dir is not None:
+            if self.retrieved_knowledge is None:
+                assert embedding_model_path is not None, "Embedding model path must be provided if knowledge database dir is provided."
+                if self.embedding_model is None:
+                    logger.info("Loading RAG database for knowledge retrieval...")
+                    project_home = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                    sys.path += [os.path.join(project_home, 'third_party', 'RAGToolbox')]
+                    from RAGToolbox import Jinaembedding, Vectordatabase
+                    download_hf_model("https://huggingface.co/jinaai/jina-embeddings-v2-base-zh", embedding_model_path)
+                    self.embedding_model=Jinaembedding(embedding_model_path)
+                    self.db=Vectordatabase()
+                    self.db.load_vector(knowledge_database_dir)
+                answer = self.db.query_score(query, self.embedding_model,1)
+                similarity, key, value = answer[0]
+                logger.info(f"Retrieved knowledge: {str(value)}")
+                if len(value) > 0 and value[0] != "":
+                    self.retrieved_knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
+
+        # Get explored knowledge
+        explored_knowledge_path = self.knowledge_config.explored_knowledge_path
+        if explored_knowledge_path is not None:
+            if self.explored_knowledge is None:
+                all_explored_knowledge = json.load(open(explored_knowledge_path, 'r', encoding='utf-8'))
+                app_names = list(all_explored_knowledge.keys())
+
+                messages = [generate_message("user", "Which app is most relevant to the following query: " + query + "\nApp names: " + ", ".join(app_names) + ". \nAnswer with only the app name:")]
+                response = self.vlm.predict(messages)
+                app_name = response.choices[0].message.content.strip()
+                if app_name in all_explored_knowledge:
+                    knowledge_list = all_explored_knowledge[app_name]
+                    explored_app_knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(knowledge_list)])
+                    logger.info(f"Explored knowledge from app {app_name} is added.")
+                    messages = [generate_message("user", f"The summary of pages explored:\n{explored_app_knowledge}\nuser query:\n{query}\nPlease extract the text snippet that helps complete the user's request without exceeding 100 tokens and must keeping the original description. Don't answer user query! Extract only!")]
+                    response = self.vlm.predict(messages)
+                    self.explored_knowledge = response.choices[0].message.content.strip()
+                else:
+                    logger.warning(f"App name {app_name} not found in explored knowledge.")
+
+    def reset(self):
+        self.raw_size = None
+        self.resized_size = None
+        self.retrieved_knowledge = None
+        self.embedding_model = None
+        self.db = None
+        self.explored_knowledge = None
+
     def reset(self):
         self.raw_size = None
         self.resized_size = None
@@ -639,18 +723,19 @@ class AnswerAgent(SubAgent):
         )
         prompt_list.append(history_prompt)
 
-        if self.include_knowledge:
-            # Add knowledge
-            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
-            similarity, key, value = answer[0]
-            logger.info(f"Retrieved knowledge: {str(value)}")
-            if len(value) > 0 and value[0] != "":
-                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
-                knowledge_prompt = self.prompt.knowledge_prompt.format(
-                    knowledge = knowledge,
-                )
-                logger.info("Knowledge is added.")
-                prompt_list.append(knowledge_prompt)
+        self.get_knowledge(episodedata.goal)
+        if self.retrieved_knowledge or self.explored_knowledge:
+            knowledge = ""
+            if self.retrieved_knowledge:
+                knowledge += self.retrieved_knowledge + "\n"
+            if self.explored_knowledge:
+                knowledge += self.explored_knowledge
+
+            knowledge_prompt = self.prompt.knowledge_prompt.format(
+                knowledge = knowledge,
+            )
+            logger.info("Knowledge is added.")
+            prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]
@@ -797,18 +882,19 @@ class TrainedAnswerAgent(AnswerAgent):
             )
             prompt_list.append(subgoal_prompt)
 
-        if self.include_knowledge:
-            # Add knowledge
-            answer = self.db.query_score(episodedata.goal,self.embedding_model,1)
-            similarity, key, value = answer[0]
-            logger.info(f"Retrieved knowledge: {str(value)}")
-            if len(value) > 0 and value[0] != "":
-                knowledge = '\n'.join([f"{i+1}. {v}" for i, v in enumerate(value)])
-                knowledge_prompt = self.prompt.knowledge_prompt.format(
-                    knowledge = knowledge,
-                )
-                logger.info("Knowledge is added.")
-                prompt_list.append(knowledge_prompt)
+        self.get_knowledge(episodedata.goal)
+        if self.retrieved_knowledge or self.explored_knowledge:
+            knowledge = ""
+            if self.retrieved_knowledge:
+                knowledge += self.retrieved_knowledge + "\n"
+            if self.explored_knowledge:
+                knowledge += self.explored_knowledge
+
+            knowledge_prompt = self.prompt.knowledge_prompt.format(
+                knowledge = knowledge,
+            )
+            logger.info("Knowledge is added.")
+            prompt_list.append(knowledge_prompt)
 
         if len(trajectory) > 1:
             previous_step = trajectory[-2]

@@ -42,22 +42,27 @@ class SubAgentConfig(BaseConfig):
 class PlannerConfig(SubAgentConfig):
     pass
 
+class KnowledgeConfig(BaseConfig):
+    embedding_model_path: str = None
+    knowledge_database_dir: str = None
+    explored_knowledge_path: str = None
+
 class OperatorConfig(SubAgentConfig):
     name: str = "Operator"
     num_histories: int = None
     include_device_time: bool = True
     include_tips: bool = True
-    include_knowledge: bool = False
     include_a11y_tree: bool = False
     max_pixels: int = None
+    knowledge: Union[KnowledgeConfig, None] = None
 
 class AnswerAgentConfig(SubAgentConfig):
     name: str = "AnswerAgent"
     num_histories: int = None
     include_device_time: bool = True
     include_tips: bool = False
-    include_knowledge: bool = False
     max_pixels: int = None
+    knowledge: Union[KnowledgeConfig, None] = None
 
 class ReflectorConfig(SubAgentConfig):
     pass
