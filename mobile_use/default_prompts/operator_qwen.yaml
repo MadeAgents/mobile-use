@@ -87,6 +87,12 @@ progress_prompt: |-
   {progress}
 
 
+knowledge_prompt: |-
+  ### Knowledge ###
+  I will provide you with some knowledge that may be relevant to completing the current task.
+  {knowledge}
+
+
 memory_prompt: |-
   ### Memory ###
   During the operations, you record the following contents on the screenshot for use in subsequent operations:
@@ -118,6 +124,13 @@ observation_prompt: |-
   ### Observation ###
   This is the current screenshot of the phone. The screen's resolution is {resized_width}x{resized_height}.
   {image_placeholder}
+
+
+a11y_tree_prompt: |-
+  ### Screenshot information ###
+  In order to help you better perceive the content in this screenshot, we extract some information on the current screenshot through system files. The information is as follow:
+  {a11y_tree}
+  Please note that this information is not necessarily accurate. You need to combine the screenshot to understand.
 
 
 response_prompt: |-
