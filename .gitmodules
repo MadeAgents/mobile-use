@@ -10,5 +10,5 @@
 
 [submodule "third_party/android_lab"]
 	path = third_party/android_lab
-	url = https://github.com/THUDM/Android-Lab.git
+	url = https://github.com/MadeAgents/Android-Lab.git
 	branch = main
