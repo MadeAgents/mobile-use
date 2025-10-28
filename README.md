@@ -200,34 +200,36 @@ Click `VLM Configuration` to specify the Base URL and API Key of the multimodal 
 
 ### Use agent with code
 ```python
-import os
-from dotenv import load_dotenv
-from mobile_use.scheme import AgentState
-from mobile_use import Environment, VLMWrapper, Agent
-from mobile_use.logger import setup_logger
+import logging
+import mobile_use
+from mobile_use.utils.logger import setup_logger
 
-load_dotenv()
 setup_logger(name='mobile_use')
+logger = logging.getLogger('mobile_use')
 
-# Create environment controller
-env = Environment(serial_no='a22d0110')
-vlm = VLMWrapper(
-    model_name="qwen2.5-vl-72b-instruct", 
-    api_key=os.getenv('VLM_API_KEY'),
-    base_url=os.getenv('VLM_BASE_URL'),
-    max_tokens=128,
-    max_retry=1,
-    temperature=0.0
-)
+# Choose the Agent type and setup the config file
+# All agents can be found in `mobile_use/agents` folder.
+# Example configs can be found in `config` folder.
+config_path = "config/mobileuse.yaml"
+agent = mobile_use.Agent.from_params(dict(
+      type="MultiAgent",
+      config_path=config_path,
+    ))
 
-agent = Agent.from_params(dict(type='default', env=env, vlm=vlm, max_steps=3))
+# Run a task
+goal = "Close Wifi"
 
-going = True
-input_content = goal
-while going:
-    going = False
-    for step_data in agent.iter_run(input_content=input_content):
-        print(step_data.action, step_data.thought)
+# Option 1: Directly use the `run` method to run the task
+agent.set_max_steps(10)
+agent.run(input_content = goal)
+
+# Option 2: Only use the `step` method to custom your own running process.
+agent.reset(goal)
+for i in range(10):
+    agent.step()
+    agent.curr_step_idx += 1
+    if agent.status == mobile_use.AgentStatus.FINISHED:
+        break
 ```
 
 
@@ -242,11 +244,7 @@ See [AndroidWorld.md](docs/AndroidWorld.md).
 
 
 ## 🌱Contributing
-We welcome all forms of contributions! Please read our contribution guide to learn about:
-- How to submit an issue to report problems.
-- The process of participating in feature development, See [Developer Document](docs/develop_en.md).
-- Code style and quality standards, See [Developer Document](docs/develop_en.md).
-- Methods for suggesting documentation improvements.
+We welcome all forms of contributions! You can share your idea by creating a [Issue](https://github.com/MadeAgents/mobile-use/issues) or merge your code by submitting a [PR](https://github.com/MadeAgents/mobile-use/pulls).
 
 
 ## 📜 License
