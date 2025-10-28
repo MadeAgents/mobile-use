@@ -8,7 +8,7 @@
 
 <h2 align="center">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
 
-![](docs/assets/overview.svg)
+![](docs/assets/framework_new.svg)
 
 
 [ [English](README.md) | [中文](docs/README_zh.md) ]
@@ -19,7 +19,7 @@ The user inputs the task description on the Web interface, and the agent automat
 
 
 ## 🎉 News
-- **[2025/10/22]**: Our [techniqual report](https://arxiv.org/abs/2510.19386), **ColorAgent: Building A Robust, Personalized, and Interactive OS Agent**, now is released! We have also released the latest code of the updated agent framework.
+- **[2025/10/22]**: Our [techniqual report](https://arxiv.org/abs/2510.19386), **ColorAgent: Building A Robust, Personalized, and Interactive OS Agent**, now is released! The code is updated to support the agentic framework for both ColorAgent and MobileUse.
 - **[2025/09/19]**: [MobileUse](https://arxiv.org/abs/2507.16853) is accepted by The Thirty-ninth Annual Conference on Neural Information Processing Systems (NeurIPS 2025)!
 - **[2025/09/10]**: We achieved 75% success rate on the AndroidWorld benchmark, ranking first among all screenshot-only solutions! The updated code will be released soon.
 - **[2025/06/13]**: Our [paper](https://arxiv.org/abs/2507.16853), **MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation**, now is released!
@@ -78,12 +78,12 @@ a22d0110        device
 
 ### 4: Install mobile-use
 #### Option 1:  Install package directly (Recommended)
-With pip (Python>=3.10):
+With pip (Python>=3.10, python=3.12 is recommended.):
 ```
 pip install mobile-use
 ```
 
-#### Option 2:  Install from source code
+#### Option 2:  Install from source code to apply the latest updates
 ```
 # Clone github repo
 git clone https://github.com/MadeAgents/mobile-use.git
@@ -96,7 +96,7 @@ pip install uv
 
 # Create a virtual environment and install dependencies
 # We support using Python 3.10, 3.11, 3.12
-uv venv .venv --python=3.10
+uv venv .venv --python=3.12
 
 # Activate the virtual environment
 # For macOS/Linux
@@ -186,7 +186,7 @@ The `Android ADB Server Host` and `Android ADB Server Port` allow you to specify
 
 **⚙️ Agent Settings**
 
-The `Max Run Steps` parameter specifies the maximum number of iteration steps for the Agent. If the current task exceeds the maximum number of iteration steps, the task will be stopped. Therefore, you are advised to set a larger value for complex tasks with more operation steps. The `Maximum Latest Screenshot` is to control the number of latest screenshots that the Agent can see. Because pictures consume more tokens, when the task has more steps, Appropriately take a Screenshot of the latest `Maximum Latest Screenshot` and send it to VLM to generate the next operation accordingly. The `Maximum Reflection Action` is to control the maximum number of reflection times of the Agent. The greater the value, the higher the fault tolerance rate of the Agent, but the longer the processing time of the task. 
+The `Max Run Steps` parameter specifies the maximum number of iteration steps for the Agent. If the current task exceeds the maximum number of iteration steps, the task will be stopped. Therefore, you are advised to set a larger value for complex tasks with more operation steps. The `Maximum Latest Screenshot` is to control the number of latest screenshots that the Agent can see. Because pictures consume more tokens, when the task has more steps, Appropriately take a Screenshot of the latest `Maximum Latest Screenshot` and send it to VLM to generate the next operation accordingly. The `Maximum Action Retry` is to control the maximum number of retry times in one step if the action is failed to parsed. The greater the value, the higher the fault tolerance rate of the Agent, but the longer the processing time of the task. 
 
 ![alt text](docs/assets/agent_settings.png)
 
@@ -261,6 +261,13 @@ If you have used this project in your research or work, please cite:
   journal={arXiv preprint arXiv:2507.16853},
   year={2025},
   url={https://arxiv.org/abs/2507.16853}
+}
+
+@article{li2025coloragent,
+  title={ColorAgent: Building A Robust, Personalized, and Interactive OS Agent},
+  author={Li, Ning and Lin, Qiqiang and Wu, Zheng and Mo, Xiaoyun and Zhang, Weiming and Zhao, Yin and Qu, Xiangmou and Zhou, Jiamu and Wang, Jun and Zheng, Congmin and others},
+  journal={arXiv preprint arXiv:2510.19386},
+  year={2025}
 }
 ```
 
