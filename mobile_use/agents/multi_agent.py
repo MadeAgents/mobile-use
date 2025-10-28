@@ -44,8 +44,8 @@ class MultiAgent(Agent):
         self.logprob_threshold = self.config.logprob_threshold
         self.enable_pre_reflection = self.config.enable_pre_reflection
 
-    def _init_data(self, goal: str='', max_steps: int=10):
-        super()._init_data(goal, max_steps)
+    def _init_data(self, goal: str=''):
+        super()._init_data(goal)
         self.trajectory: List[MobileUseStepData] = []
         self.episode_data: MobileUseEpisodeData = MobileUseEpisodeData(goal=goal, num_steps=0, trajectory=self.trajectory)
 
@@ -73,10 +73,12 @@ class MultiAgent(Agent):
             self.trajectory_reflector, self.global_reflector, self.progressor, self.note_taker
         ]
 
-    def reset(self, goal: str='', max_steps: int = 10) -> None:
+    def reset(self, goal: str='', max_steps: int = None) -> None:
         """Reset the state of the agent.
         """
-        self._init_data(goal=goal, max_steps=max_steps)
+        self._init_data(goal=goal)
+        if isinstance(max_steps, int):
+            self.set_max_steps(max_steps)
         for agent in self.agents:
             if agent:
                 agent.reset()

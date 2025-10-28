@@ -91,6 +91,7 @@ class NoteTakerConfig(SubAgentConfig):
 class AgentConfig(BaseConfig):
     vlm: VLMConfig = None
     env: MobileEnvConfig = None
+    max_steps: int = 10
     enable_log: bool = False
     log_dir: Optional[str] = None
 

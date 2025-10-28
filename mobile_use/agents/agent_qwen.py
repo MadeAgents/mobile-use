@@ -111,16 +111,18 @@ class QwenAgent(Agent):
         self.num_image_limit = self.config.num_image_limit
         self.prompt: QwenAgentPrompt = load_prompt("qwen_agent", self.config.prompt_config)
 
-    def _init_data(self, goal: str='', max_steps: int=10):
-        super()._init_data(goal, max_steps)
+    def _init_data(self, goal: str=''):
+        super()._init_data(goal)
         self.trajectory: List[SingleAgentStepData] = []
         self.episode_data: BaseEpisodeData = BaseEpisodeData(goal=goal, num_steps=0, trajectory=self.trajectory)
         self.messages: List[Dict[str,Any]] = []
 
-    def reset(self, goal: str='', max_steps: int = 10) -> None:
+    def reset(self, goal: str='', max_steps: int = None) -> None:
         """Reset the state of the agent.
         """
-        self._init_data(goal=goal, max_steps=max_steps)
+        self._init_data(goal=goal)
+        if isinstance(max_steps, int):
+            self.set_max_steps(max_steps)
 
     def _get_curr_step_data(self) -> SingleAgentStepData:
         if len(self.trajectory) > self.curr_step_idx:

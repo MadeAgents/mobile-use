@@ -62,16 +62,18 @@ class ReActAgent(Agent):
         self.max_action_retry = self.config.max_action_retry
         self.prompt: ReActAgentPrompt = load_prompt('react_agent', self.config.prompt_config)
 
-    def _init_data(self, goal: str='', max_steps: int=10):
-        super()._init_data(goal, max_steps)
+    def _init_data(self, goal: str=''):
+        super()._init_data(goal)
         self.trajectory: List[SingleAgentStepData] = []
         self.episode_data: BaseEpisodeData = BaseEpisodeData(goal=goal, num_steps=0, trajectory=self.trajectory)
         self.messages: List[Dict[str,Any]] = []
 
-    def reset(self, goal: str='', max_steps: int = 10) -> None:
+    def reset(self, goal: str='', max_steps: int = None) -> None:
         """Reset the state of the agent.
         """
-        self._init_data(goal=goal, max_steps=max_steps)
+        self._init_data(goal=goal)
+        if isinstance(max_steps, int):
+            self.set_max_steps(max_steps)
 
     def _get_curr_step_data(self) -> SingleAgentStepData:
         if len(self.trajectory) > self.curr_step_idx:
@@ -193,15 +195,14 @@ class ReActAgent(Agent):
 
         for step_idx in range(self.curr_step_idx, self.max_steps):
             self.curr_step_idx = step_idx
+            # show init environment
+            yield SingleAgentStepData(
+                step_idx=self.curr_step_idx,
+                curr_env_state=self.env.get_state(),
+                vlm_call_history=[]
+            )
             try:
-                # show current environment
-                yield SingleAgentStepData(
-                    step_idx=self.curr_step_idx,
-                    curr_env_state=self.env.get_state(),
-                    vlm_call_history=[]
-                )
                 self.step()
-                yield self._get_curr_step_data()
             except Exception as e:
                 self.status = AgentStatus.FAILED
                 self.episode_data.status = self.status
