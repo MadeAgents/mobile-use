@@ -53,6 +53,8 @@ class Worker:
         params['vlm'] = vlm
         self._images.clear()
         self._agent = Agent.from_params(params)
+        if params.get('max_steps'):
+            self._agent.set_max_steps(params['max_steps'])
         i = 0
         name = re.sub(r'[^\w\u4e00-\u9fff\s-]', '', goal[:128])
         history_path = os.path.join(IMAGE_OUTPUT, name)
@@ -107,6 +109,7 @@ class Worker:
                     text += f"\n\nTask Finished: {a.parameters.get('answer')}"
 
             yield dict(text=text, img_file=img_file)
+            time.sleep(2)
 
             if step_data.exec_env_state is not None:
                 img_file = f'step_{step_data.step_idx}_1.png'
@@ -358,19 +361,19 @@ def build_agent_ui_demo():
                                     label="Maximum Latest Screenshot",
                                     info="Maximum latest screenshot for per vllm request",
                                 )
-                                max_reflection_action = gr.Slider(
+                                max_action_retry = gr.Slider(
                                     minimum=1,
                                     maximum=5,
                                     value=1,
                                     step=1,
                                     interactive=True,
-                                    label="Maximum Reflection Action",
-                                    info="Maximum reflection action for per request",
+                                    label="Maximum Action Retry",
+                                    info="Maximum action retry for per request",
                                 )
                                 add_params_component('agent', 'type', agent_type)
                                 add_params_component('agent', 'max_steps', max_steps)
                                 add_params_component('agent', 'num_latest_screenshot', num_latest_screenshot)
-                                add_params_component('agent', 'max_reflection_action', max_reflection_action)
+                                add_params_component('agent', 'max_action_retry', max_action_retry)
                     with gr.Accordion("🔧 VLM Configuration", open=False):
                         with gr.Group():
                             vlm_base_url = gr.Textbox(
