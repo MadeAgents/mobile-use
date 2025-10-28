@@ -170,6 +170,8 @@ class Operator(SubAgent):
         self.explored_knowledge = None
     
     def get_knowledge(self, query: str):
+        if not self.knowledge_config:
+            return
         # Retrieve knowledge from RAG database
         embedding_model_path = self.knowledge_config.embedding_model_path
         knowledge_database_dir = self.knowledge_config.knowledge_database_dir
@@ -612,6 +614,8 @@ class AnswerAgent(SubAgent):
         self.explored_knowledge = None
     
     def get_knowledge(self, query: str):
+        if not self.knowledge_config:
+            return
         # Retrieve knowledge from RAG database
         embedding_model_path = self.knowledge_config.embedding_model_path
         knowledge_database_dir = self.knowledge_config.knowledge_database_dir

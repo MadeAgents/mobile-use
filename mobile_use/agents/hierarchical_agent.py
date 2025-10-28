@@ -442,10 +442,10 @@ class HierarchicalAgent(Agent):
         return step_data
 
 
-    def iter_run(self, input_content: str, stream: bool=False) -> Iterator[MobileUseStepData]:
+    def iter_run(self, input_content: str) -> Iterator[MobileUseStepData]:
         """Execute the agent with user input content.
 
-        Returns: Iterator[StepData]
+        Returns: Iterator[MobileUseStepData]
         """
 
         if self.state == AgentState.READY:
@@ -460,9 +460,14 @@ class HierarchicalAgent(Agent):
 
         for step_idx in range(self.curr_step_idx, self.max_steps):
             self.curr_step_idx = step_idx
+            # show init environment
+            yield SingleAgentStepData(
+                step_idx=self.curr_step_idx,
+                curr_env_state=self.env.get_state(),
+                vlm_call_history=[]
+            )
             try:
                 self.step()
-                yield self._get_curr_step_data()
             except Exception as e:
                 self.status = AgentStatus.FAILED
                 self.episode_data.status = self.status
@@ -492,6 +497,6 @@ class HierarchicalAgent(Agent):
 
         Returns: EpisodeData
         """
-        for _ in self.iter_run(input_content, stream=False):
+        for _ in self.iter_run(input_content):
             pass
         return self.episode_data

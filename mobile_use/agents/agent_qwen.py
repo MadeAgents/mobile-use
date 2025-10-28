@@ -262,23 +262,32 @@ class QwenAgent(Agent):
         return step_data
 
 
-    def iter_run(self, input_content: str, stream: bool=False) -> Iterator[SingleAgentStepData]:
+    def iter_run(self, input_content: str) -> Iterator[SingleAgentStepData]:
         """Execute the agent with user input content.
 
-        Returns: Iterator[StepData]
+        Returns: Iterator[SingleAgentStepData]
         """
 
         if self.state == AgentState.READY:
             self.reset(goal=input_content)
             logger.info("Start task: %s, with at most %d steps" % (self.goal, self.max_steps))
+        elif self.state == AgentState.CALLUSER:
+            self._user_input = input_content      # user answer
+            self.state = AgentState.RUNNING       # reset agent state
+            logger.info("Continue task: %s, with user input %s" % (self.goal, input_content))
         else:
             raise Exception('Error agent state')
 
         for step_idx in range(self.curr_step_idx, self.max_steps):
             self.curr_step_idx = step_idx
+            # show init environment
+            yield SingleAgentStepData(
+                step_idx=self.curr_step_idx,
+                curr_env_state=self.env.get_state(),
+                vlm_call_history=[]
+            )
             try:
                 self.step()
-                yield self._get_curr_step_data()
             except Exception as e:
                 self.status = AgentStatus.FAILED
                 self.episode_data.status = self.status
@@ -294,10 +303,10 @@ class QwenAgent(Agent):
                 self.episode_data.message = 'Agent indicates task is done'
                 yield self._get_curr_step_data()
                 return
-            elif self.status == AgentStatus.FAILED:
-                logger.info("Agent indicates task is failed.")
-                self.episode_data.message = 'Agent indicates task is failed'
+            elif self.state == AgentState.CALLUSER:
+                logger.info("Agent indicates to ask user for help.")
                 yield self._get_curr_step_data()
+                return
             else:
                 logger.info("Agent indicates one step is done.")
             yield self._get_curr_step_data()
@@ -308,6 +317,6 @@ class QwenAgent(Agent):
 
         Returns: EpisodeData
         """
-        for _ in self.iter_run(input_content, stream=False):
+        for _ in self.iter_run(input_content):
             pass
         return self.episode_data

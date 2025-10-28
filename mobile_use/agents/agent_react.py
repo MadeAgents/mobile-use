@@ -232,6 +232,6 @@ class ReActAgent(Agent):
 
         Returns: EpisodeData
         """
-        for _ in self.iter_run(input_content, stream=False):
+        for _ in self.iter_run(input_content):
             pass
         return self.episode_data
