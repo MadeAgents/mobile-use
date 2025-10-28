@@ -1,0 +1,48 @@
+# This is an example config file for the Multiagent option in webui.
+
+# The vlm config will be overriden by the webui settings.
+vlm:
+  model_name: qwen2.5-vl-72b-instruct
+  api_key: xxxxx
+  base_url: xxxxx
+
+# The env config will be overriden by the webui settings.
+env:
+  serial_no: xxxxx
+
+max_steps: 10
+
+operator:
+  enabled: true
+  name: Operator
+  prompt_config: operator.yaml
+  # # To enable proactive exlporation, enable the following config.
+  # # See mobile_use/utils/proactive_exploration/README.md for more details.
+  # knowledge: 
+  #   explored_knowledge_path: <path-to-explored-knowledge-json-file>
+
+answer_agent:
+  enabled: true
+  name: AnswerAgent
+  prompt_config: answer_agent.yaml
+  # # To enable proactive exlporation, enable the following config.
+  # # See mobile_use/utils/proactive_exploration/README.md for more details.
+  # knowledge: 
+  #   explored_knowledge_path: <path-to-explored-knowledge-json-file>
+
+reflector:
+  enabled: true
+
+trajectory_reflector:
+  enabled: true
+
+global_reflector:
+  enabled: true
+
+progressor:
+  enabled: true
+
+# # To enable Reflection-on-Demand, enable the following config.
+# # You may need to adjust the reflection threshold.
+# reflect_on_demand: true
+# logprob_threshold: -0.001
