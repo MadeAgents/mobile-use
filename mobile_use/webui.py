@@ -3,6 +3,7 @@ import os
 import time
 import json
 import copy
+import yaml
 import pprint
 import logging
 from typing import Dict, Any
@@ -53,8 +54,6 @@ class Worker:
         params['vlm'] = vlm
         self._images.clear()
         self._agent = Agent.from_params(params)
-        if params.get('max_steps'):
-            self._agent.set_max_steps(params['max_steps'])
         i = 0
         name = re.sub(r'[^\w\u4e00-\u9fff\s-]', '', goal[:128])
         history_path = os.path.join(IMAGE_OUTPUT, name)
@@ -120,7 +119,8 @@ class Worker:
                 text = "\n\n**The task has been canceled!**"
                 yield dict(text=text.strip(), img_file=img_file)
                 break
-        if self._agent.curr_step_idx == self._agent.max_steps:
+        if self._agent.curr_step_idx == self._agent.max_steps - 1:
+            time.sleep(2)
             text = f"\n\n**The task has stopped because the maximum number of steps({self._agent.max_steps}) has been reached**"
             yield dict(text=text.strip(), img_file=img_file)
 
@@ -197,6 +197,22 @@ def run_agent(request: gr.Request, input_content, messages, image, *args):
         messages.append(ChatMessage(role="assistant", content=f'Missing vlm base url'))
         yield [messages, image] + get_button_state(True, False, True)
         return
+    
+    # Change params according to agent type
+    if params['agent']['type'] == 'SingleAgent':
+        params['agent'].pop('config_path', None)
+    elif params['agent']['type'] == 'MultiAgent':
+        params['agent'].pop('max_steps', None)
+        params['agent'].pop('num_latest_screenshot', None)
+        params['agent'].pop('max_action_retry', None)
+        if not params['agent']['config_path']:
+            params['agent']['config_path'] = 'configs/multiagent_webui.yaml'
+        with open(params['agent']['config_path'], "r") as file:
+            yaml_data = yaml.safe_load(file)
+            yaml_data.pop('env', None)
+            yaml_data.pop('vlm', None)
+            params['agent'] = yaml_data
+            params['agent']['type'] = 'MultiAgent'
 
     worker = session_workers.get_worker(session_id)
     if worker._agent is None or worker._agent.state != AgentState.CALLUSER:
@@ -320,7 +336,7 @@ def build_agent_ui_demo():
                             )
                             serial_no = gr.Textbox(
                                 label="Device Serial No.",
-                                placeholder='None',
+                                placeholder='Auto detect',
                                 info="Serial No. for connected device",
                             )
                             reset_to_home = gr.Checkbox(
@@ -341,8 +357,9 @@ def build_agent_ui_demo():
                                     choices=['SingleAgent', 'MultiAgent'],
                                     value='SingleAgent',
                                     interactive=True,
-                                    info="Select a agent framework"
+                                    info="Select an agent framework",
                                 )
+                                
                                 max_steps = gr.Slider(
                                     minimum=1,
                                     maximum=50,
@@ -352,6 +369,7 @@ def build_agent_ui_demo():
                                     label="Max Run Steps",
                                     info="Maximum number of steps the agent will take",
                                 )
+                                
                                 num_latest_screenshot = gr.Slider(
                                     minimum=1,
                                     maximum=10,
@@ -361,6 +379,7 @@ def build_agent_ui_demo():
                                     label="Maximum Latest Screenshot",
                                     info="Maximum latest screenshot for per vllm request",
                                 )
+                                
                                 max_action_retry = gr.Slider(
                                     minimum=1,
                                     maximum=5,
@@ -370,10 +389,25 @@ def build_agent_ui_demo():
                                     label="Maximum Action Retry",
                                     info="Maximum action retry for per request",
                                 )
+                                
+                                config_path = gr.Textbox(
+                                    label="Config Path",
+                                    placeholder='configs/multiagent_webui.yaml',
+                                    interactive=True,
+                                    visible=False,  # Hidden initially
+                                    info="Path to the configuration file for MultiAgent"
+                                )
+
+                                # Add all the components as parameters
                                 add_params_component('agent', 'type', agent_type)
                                 add_params_component('agent', 'max_steps', max_steps)
                                 add_params_component('agent', 'num_latest_screenshot', num_latest_screenshot)
                                 add_params_component('agent', 'max_action_retry', max_action_retry)
+                                add_params_component('agent', 'config_path', config_path)
+
+                                # Update visibility on agent_type change
+                                agent_type.change(fn=update_agent_type, inputs=agent_type, outputs=[max_steps, num_latest_screenshot, max_action_retry, config_path])
+
                     with gr.Accordion("🔧 VLM Configuration", open=False):
                         with gr.Group():
                             vlm_base_url = gr.Textbox(
@@ -407,7 +441,7 @@ def build_agent_ui_demo():
                                 step=1,
                                 interactive=True,
                                 label="Max Retry per Request",
-                                info="Maximum number of request to VLM",
+                                info="Maximum number of requests to VLM",
                             )
                             add_params_component('vlm', 'max_retry', vlm_max_retry)
                             vlm_temperature = gr.Slider(
@@ -469,7 +503,16 @@ def build_agent_ui_demo():
             inputs=[image_view],
             outputs=[image_view]
         )
+
     return demo
+
+
+def update_agent_type(agent_type):
+    # Show or hide components based on agent type
+    if agent_type == "SingleAgent":
+        return gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False)  # Show SingleAgent components
+    elif agent_type == "MultiAgent":
+        return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)  # Show MultiAgent config_path only
 
 
 if __name__ == "__main__":
