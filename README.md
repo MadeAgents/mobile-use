@@ -1,8 +1,8 @@
 # Mobile Use 📱
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code: Github](https://img.shields.io/badge/Code-Github-blue?logo=github)](https://github.com/MadeAgents/mobile-use)
-[![Paper: ColorAgent](https://img.shields.io/badge/Paper-ColorAgent-green?logo=gitbook)](https://arxiv.org/abs/2510.19386)
 [![Paper: MobileUse](https://img.shields.io/badge/Paper-MobileUse-8A2BE2?logo=gitbook)](https://arxiv.org/abs/2507.16853)
+[![Paper: ColorAgent](https://img.shields.io/badge/Paper-ColorAgent-green?logo=gitbook)](https://arxiv.org/abs/2510.19386)
 
 
 
@@ -77,11 +77,12 @@ a22d0110        device
 ```
 
 ### 4: Install mobile-use
-#### Option 1:  Install package directly (Recommended)
+#### Option 1:  Install package directly
 With pip (Python>=3.10, python=3.12 is recommended.):
 ```
 pip install mobile-use
 ```
+Note that the mobile-use installed using this method may not be the latest version.
 
 #### Option 2:  Install from source code to apply the latest updates
 ```

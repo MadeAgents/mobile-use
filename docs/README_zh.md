@@ -1,11 +1,14 @@
 # Mobile Use 📱
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code: Github](https://img.shields.io/badge/Code-Github-blue?logo=github)](https://github.com/MadeAgents/mobile-use)
+[![Paper: MobileUse](https://img.shields.io/badge/Paper-MobileUse-8A2BE2?logo=gitbook)](https://arxiv.org/abs/2507.16853)
+[![Paper: ColorAgent](https://img.shields.io/badge/Paper-ColorAgent-green?logo=gitbook)](https://arxiv.org/abs/2510.19386)
 
 <h2 style="text-align: center;">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
 
-![](assets/framework.jpg)
+![](assets/framework_new.svg)
 
-[ 中文 | [English](../README.md) ]
+[ [English](../README.md) | [中文](README_zh.md) ]
 
 https://github.com/user-attachments/assets/5c4d3ce8-0135-4e6e-b003-b20f81f834d4
 
@@ -14,18 +17,17 @@ https://github.com/user-attachments/assets/5c4d3ce8-0135-4e6e-b003-b20f81f834d4
 **⚠️特别提醒**：操作动作由智能体自主决定，可能存在不可控的操作风险，建议体验是时刻关注手机动态如遇到操作风险及时终止任务或者使用测试手机进行体验，避免误操作带来问题。
 
 ## 🎉 News
-- **[2025/09/19]**: 我们的[论文](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 已被 NIPS 2025 接收！
-- **[2025/09/10]**: 我们在 AndroidWorld 评测集准上取得了 [75% 的成功率](https://docs.google.com/spreadsheets/d/1cchzP9dlTZ3WXQTfYNhh3avxoLipqHN75v1Tb86uhHo/edit?gid=0#gid=0)，在所有纯视觉方案中位列第一！我们将会很快发布更新后的代码。
+- **[2025/10/22]**: 我们的[技术报告](https://arxiv.org/abs/2510.19386) **ColorAgent: Building A Robust, Personalized, and Interactive OS Agent** 已发布！代码已更新，同时支持 ColorAgent 与 MobileUse 的智能体框架。
+- **[2025/09/19]**: 我们的[论文](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 已被 NeurIPS 2025 接收！
+- **[2025/09/10]**: 我们在 AndroidWorld 评测集上取得了 75% 的成功率，在所有纯截图方案中位列第一！更新后的代码将很快发布。
 - **[2025/06/13]**: 我们的[论文](https://arxiv.org/abs/2507.16853) "MobileUse: A Hierarchical Reflection-Driven GUI Agent for Autonomous Mobile Operation" 现已发布！
-- **[2025/05/13]**: Mobile Use v0.3.0 现已发布！支持 AndroidLab 动态环境评估！在 [AndroidLab](https://github.com/THUDM/Android-Lab) 和 [AndroidWorld](https://github.com/google-research/android_world) 评估基准测试中均取得了显著的改进.
-- **[2025/03/28]**: 在 AndroidWorld 动态环境中运行 Mobile Use 的[文档](AndroidWorld.md)现已发布！
-- **[2025/03/17]**: Mobile Use 现在支持[多智能体](../mobile_use/agents/multi_agent.py)框架！配备了规划、反思、记忆和进展机制，Mobile Use 在 AndroidWorld 上实现了令人印象深刻的性能！
-- **[2025/03/04]**: Mobile Use 已发布！我们还发布了 [mobile-use](https://github.com/MadeAgents/mobile-use) 库的 v0.1.0 版本，为您提供移动设备的 AI 助手——任何应用，任何任务！
+- **[2025/05/13]**: Mobile Use v0.3.0 发布！支持 AndroidLab 动态环境评估！在 [AndroidLab](https://github.com/THUDM/Android-Lab) 和 [AndroidWorld](https://github.com/google-research/android_world) 基准上均取得显著提升。
+- **[2025/03/28]**: 在 AndroidWorld 动态环境中运行 Mobile Use 的[文档](../benchmark/android_world/README.md)现已发布！
+- **[2025/03/17]**: Mobile Use 现在支持[多智能体](../mobile_use/agents/multi_agent.py)框架！配备规划、反思、记忆和进展机制，在 AndroidWorld 上表现出色！
+- **[2025/03/04]**: Mobile Use 首次发布！同时发布 [mobile-use](https://github.com/MadeAgents/mobile-use) 库 v0.1.0，为您提供“任何应用，任何任务”的移动设备 AI 助手！
 
 ## 📊 Benchmark
-![](./assets/androidworld_benchmark.png)
-
-![](./assets/androidlab_benchmark.png)
+![](assets/benchmark.png)
 
 ## ✨ 核心特性
 - **自动操作手机**：基于用户的输入任务描述，自动操作UI完成任务
@@ -70,11 +72,12 @@ a22d0110        device
 ```
 
 ### 4: 安装 mobile-use
-#### Option 1: 直接安装包 (推荐)
-Python>=3.10
+#### Option 1: 直接安装
+Python>=3.10，推荐使用 Python 3.12。
 ```
 pip install mobile-use
 ```
+注意，通过此方法安装的 mobile-use 可能不是最新的.
 
 #### Option 2: 从源码安装
 ```
@@ -89,7 +92,7 @@ pip install uv
 
 # Create a virtual environment and install dependencies
 # We support using Python 3.10, 3.11, 3.12
-uv venv .venv --python=3.10
+uv venv .venv --python=3.12
 
 # Activate the virtual environment
 # For macOS/Linux
@@ -175,7 +178,7 @@ https://github.com/user-attachments/assets/c82ae51e-f0a2-4c7b-86e8-e3411d9749bb
 
 **⚙️ Agent Settings**
 
-`Max Run Steps` 参数是指定 Agent 最大迭代步数，当前任务超出最大迭代步数时，任务将被停止。因此，对于较操作步数较多的复杂任务，建议设置较大值。`Maximum Latest Screenshot` 是控制 Agent 能否看到的最新屏幕截图数量，由于图片消耗较多Token，因此当任务步数较多时，适当取最新的 `Maximum Latest Screenshot` 张截图发给 VLM 生成下一步操作相应。`Maximum Reflection Action` 则是控制 Agent 反思的最大次数，其值越大，Agent 的容错率就越高，但同时处理任务的耗时也随之越长。通过点击 **⚙️ Agent Settings** 选项可以设置这三个参数的值：
+`Max Run Steps` 参数是指定 Agent 最大迭代步数，当前任务超出最大迭代步数时，任务将被停止。因此，对于操作步数较多的复杂任务，建议设置较大值。`Maximum Latest Screenshot` 用于控制 Agent 可见的最新截图数量；由于图片会消耗更多 Token，当任务步数较多时，可仅选取最新的 `Maximum Latest Screenshot` 张截图用于生成下一步操作。`Maximum Action Retry` 用于控制单步动作解析失败时的最大重试次数，其值越大，Agent 的容错率越高，但处理时间也会更长。通过点击 **⚙️ Agent Settings** 选项可以设置这三个参数的值：
 
 ![alt text](assets/agent_settings.png)
 
@@ -186,38 +189,40 @@ https://github.com/user-attachments/assets/c82ae51e-f0a2-4c7b-86e8-e3411d9749bb
 
 ### 在 Python 脚本中使用 Agent 智能体
 ```python
-import os
-from dotenv import load_dotenv
-from mobile_use.scheme import AgentState
-from mobile_use import Environment, VLMWrapper, Agent
-from mobile_use.logger import setup_logger
+import logging
+import mobile_use
+from mobile_use.utils.logger import setup_logger
 
-load_dotenv()
 setup_logger(name='mobile_use')
+logger = logging.getLogger('mobile_use')
 
-# Create environment controller
-env = Environment(serial_no='a22d0110')
-vlm = VLMWrapper(
-    model_name="qwen2.5-vl-72b-instruct", 
-    api_key=os.getenv('VLM_API_KEY'),
-    base_url=os.getenv('VLM_BASE_URL'),
-    max_tokens=128,
-    max_retry=1,
-    temperature=0.0
-)
+# 选择 Agent 类型并设置配置文件
+# 所有 Agent 可在 `mobile_use/agents` 目录中找到
+# 示例配置位于 `config` 目录
+config_path = "config/mobileuse.yaml"
+agent = mobile_use.Agent.from_params(dict(
+      type="MultiAgent",
+      config_path=config_path,
+    ))
 
-agent = Agent.from_params(dict(type='default', env=env, vlm=vlm, max_steps=3))
+# 运行一个任务
+goal = "Close Wifi"
 
-going = True
-input_content = goal
-while going:
-    going = False
-    for step_data in agent.iter_run(input_content=input_content):
-        print(step_data.action, step_data.thought)
+# 方式一：直接使用 `run` 运行任务
+agent.set_max_steps(10)
+agent.run(input_content = goal)
+
+# 方式二：仅使用 `step` 自定义运行流程
+agent.reset(goal)
+for i in range(10):
+    agent.step()
+    agent.curr_step_idx += 1
+    if agent.status == mobile_use.AgentStatus.FINISHED:
+        break
 ```
 
-### 在 AndoirdWorld 中使用 Mobile Use
-见 [AndroidWorld.md](AndroidWorld.md).
+### 评测
+见 [benchmark/android_world/README.md](../benchmark/android_world/README.md) 和 [benchmark/android_lab/README.md](../benchmark/android_lab/README.md).
 
 ## 🗺️ Roadmap
 - [x] 改进智能体的记忆和提升智能体的反思能力 (summarize, compress.)
@@ -241,12 +246,19 @@ while going:
 ## 📚 引用
 如果您在您的研究或工作中使用了本项目，请引用：
 ```
-@article{li2025mobileuse,
-  title={MobileUse: A GUI Agent with Hierarchical Reflection for Autonomous Mobile Operation},
-  author={Li, Ning and Qu, Xiangmou and Zhou, Jiamu and Wang, Jun and Wen, Muning and Du, Kounianhua and Lou, Xingyu and Peng, Qiuying and Wang, Jun and Zhang, Weinan},
-  journal={arXiv preprint arXiv:2507.16853},
+@inproceedings{li2025mobileuse,
+  title={MobileUse: A Hierarchical Reflection-Driven {GUI} Agent for Autonomous Mobile Operation},
+  author={Ning Li and Xiangmou Qu and Jiamu Zhou and Jun Wang and Muning Wen and Kounianhua Du and Xingyu Lou and Qiuying Peng and Jun Wang and Weinan Zhang},
+  booktitle={The Thirty-ninth Annual Conference on Neural Information Processing Systems},
   year={2025},
-  url={https://arxiv.org/abs/2507.16853}
+  url={https://openreview.net/forum?id=KR6tnkb6h4}
+}
+
+@article{li2025coloragent,
+  title={ColorAgent: Building A Robust, Personalized, and Interactive OS Agent},
+  author={Li, Ning and Lin, Qiqiang and Wu, Zheng and Mo, Xiaoyun and Zhang, Weiming and Zhao, Yin and Qu, Xiangmou and Zhou, Jiamu and Wang, Jun and Zheng, Congmin and others},
+  journal={arXiv preprint arXiv:2510.19386},
+  year={2025}
 }
 ```
 
