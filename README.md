@@ -233,8 +233,8 @@ for i in range(10):
 ```
 
 
-### Running Mobile Use in AndoirdWorld
-See [AndroidWorld.md](docs/AndroidWorld.md).
+### Benchmark evaluation
+See [benchmark/android_world/README.md](benchmark/android_world/README.md) and [benchmark/android_lab/README.md](benchmark/android_lab/README.md).
 
 ## 🗺️ Roadmap
 - [x] Improve agent memory and reflection (summarize, compress.)
@@ -253,12 +253,12 @@ This project is licensed under the MIT License, which permits free use and modif
 ## 📚 Citation
 If you have used this project in your research or work, please cite:
 ```
-@article{li2025mobileuse,
-  title={MobileUse: A GUI Agent with Hierarchical Reflection for Autonomous Mobile Operation},
-  author={Li, Ning and Qu, Xiangmou and Zhou, Jiamu and Wang, Jun and Wen, Muning and Du, Kounianhua and Lou, Xingyu and Peng, Qiuying and Wang, Jun and Zhang, Weinan},
-  journal={arXiv preprint arXiv:2507.16853},
+@inproceedings{li2025mobileuse,
+  title={MobileUse: A Hierarchical Reflection-Driven {GUI} Agent for Autonomous Mobile Operation},
+  author={Ning Li and Xiangmou Qu and Jiamu Zhou and Jun Wang and Muning Wen and Kounianhua Du and Xingyu Lou and Qiuying Peng and Jun Wang and Weinan Zhang},
+  booktitle={The Thirty-ninth Annual Conference on Neural Information Processing Systems},
   year={2025},
-  url={https://arxiv.org/abs/2507.16853}
+  url={https://openreview.net/forum?id=KR6tnkb6h4}
 }
 
 @article{li2025coloragent,

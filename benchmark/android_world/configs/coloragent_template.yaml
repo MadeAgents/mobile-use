@@ -1,0 +1,58 @@
+vlm:
+  # Here we use GUI-Owl-32B as a example
+  model_name: GUI-Owl-32B
+  api_key: xxxxx
+  base_url: xxxxx
+  max_tokens: 1024
+  temperature: 0
+
+env:
+  # The serial_no of your android virtual / physical devices, use `adb devices` to find it.
+  serial_no: emulator-5554
+
+operator:
+  enabled: true
+  name: OperatorQwen
+  prompt_config: operator_qwen.yaml
+  # # To enable knowledge retrieval, enable the following config.
+  # # See mobile_use/utils/rag/README.md for more details.
+  # knowledge: 
+  #   embedding_model_path: <path-to-embedding-model>
+  #   knowledge_database_dir: <path-to-explored-knowledge-database>
+
+answer_agent:
+  enabled: true
+  name: AnswerAgentQwen
+  prompt_config: answer_agent_qwen.yaml
+  # # To enable knowledge retrieval, enable the following config.
+  # # See mobile_use/utils/rag/README.md for more details.
+  # knowledge: 
+  #   embedding_model_path: <path-to-embedding-model>
+  #   knowledge_database_dir: <path-to-explored-knowledge-database>
+
+reflector:
+  enabled: true
+
+trajectory_reflector:
+  enabled: true
+
+global_reflector:
+  enabled: true
+
+progressor:
+  enabled: false
+
+task_classifier:
+  enabled: true
+
+task_orchestrator:
+  enabled: true
+
+task_extractor:
+  enabled: true
+
+task_rewriter:
+  enabled: true
+
+enable_hierarchical_planning:
+  enabled: true
