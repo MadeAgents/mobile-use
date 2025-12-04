@@ -14,7 +14,7 @@ running_records/
 *__pycache__/*
 *.pkl
 *.ipynb
-*test*.py
+test.py
 *.out
 .idea/
 output
