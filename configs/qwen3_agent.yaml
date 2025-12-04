@@ -1,0 +1,31 @@
+# This is the config file for the Qwen3-VL single agent.
+# Choose the `QwenAgent` type to use it.
+# '''
+# import mobile_use
+# config_path = "config/qwen3_agent.yaml"
+# agent = mobile_use.Agent.from_params(dict(
+#       type="QwenAgent",
+#       config_path=config_path,
+#     ))
+# '''
+
+vlm:
+  model_name: qwen3-vl-32b-instruct
+  api_key: xxxxx
+  base_url: xxxxx
+  max_tokens: 1024
+  temperature: 0
+
+env:
+  # The serial_no of your android virtual / physical devices, use `adb devices` to find it.
+  serial_no: xxxxx
+
+max_steps: 20
+enable_log: true
+log_dir: ./logs/qwen3vl32b
+
+# The prompt config file for the Qwen3-VL single agent. For Qwen2.5-VL, use 'qwen_agent.yaml'. For Qwen3-VL, use 'qwen3_agent.yaml'.
+prompt_config: qwen3_agent.yaml
+
+# The coordinate type for the Qwen3-VL single agent. For Qwen2.5-VL, use 'absolute'. For Qwen3-VL, use 'relative'.
+coordinate_type: relative

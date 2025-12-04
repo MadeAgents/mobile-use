@@ -3,6 +3,8 @@ import re
 from typing import Iterator
 import json
 import copy
+import os
+from dataclasses import is_dataclass, fields as dataclass_fields
 
 from mobile_use.schema.schema import *
 from mobile_use.environment.mobile_environ import Environment
@@ -67,6 +69,58 @@ def _parse_response(content: str, size: tuple[float, float], raw_size: tuple[flo
     action_a = Action(name=name, parameters=params)
     return thought_s, action_a, action_s, summary_s
 
+def _parse_response_qwen3(content: str, size: tuple[float, float], raw_size: tuple[float, float]) -> Action:
+    def map_names(name: str) -> str:
+        maps = {
+            "left_click": "click",
+            "point": "coordinate",
+            "start_point": "coordinate",
+            "start_box": "coordinate",
+            "end_point": "coordinate2",
+            "end_box": "coordinate2",
+            "scroll": "swipe",
+            "content": "text",
+            "open_app": "open",
+        }
+        return maps.get(name, name)
+
+    # Thought: capture text after "Thought:" up to "Action:" or end
+    thought = re.search(r'Thought:\s*(.*?)(?:\n\s*Action:|\Z)', content, flags=re.DOTALL | re.IGNORECASE)
+    thought_s = thought.group(1).strip() if thought else None
+
+    # Summary: capture text after "Action:" up to <tool_call>
+    summary = re.search(r'Action:\s*(.*?)(?=\n?\s*<tool_call>)', content, flags=re.DOTALL | re.IGNORECASE)
+    summary_s = summary.group(1).strip() if summary else None
+
+    # Action JSON: between <tool_call> ... </tool_call>
+    action = re.search(r'<tool_call>(.*?)</tool_call>', content, flags=re.DOTALL | re.IGNORECASE)
+    if not action:
+        raise Exception("Cannot extract action in the content.")
+    action_s = action.group(1).strip()
+
+    action_obj = json.loads(action_s)
+    # Expecting {"name": "...", "arguments": {"action": "...", ...}}
+    name = map_names(action_obj['arguments']['action'])
+
+    # Remove the 'action' key and map the other keys in the arguments
+    action_obj['arguments'].pop('action')
+    params = {}
+
+    for k, v in action_obj['arguments'].items():
+        mapped_key = map_names(k)
+        if mapped_key in ['coordinate', 'coordinate2']:
+            try:
+                x = round(v[0] / 999 * raw_size[0])
+                y = round(v[1] / 999 * raw_size[1])
+                params[mapped_key] = (x, y)
+            except:
+                pass
+        else:
+            params[mapped_key] = v
+
+    action_a = Action(name=name, parameters=params)
+    return thought_s, action_a, action_s, summary_s
+
 def slim_messages(messages, num_image_limit = 5):
     keep_image_index = []
     image_ptr = 0
@@ -109,6 +163,7 @@ class QwenAgent(Agent):
         self.max_pixels = self.config.max_pixels
         self.message_type = self.config.message_type
         self.num_image_limit = self.config.num_image_limit
+        self.coordinate_type = self.config.coordinate_type
         self.prompt: QwenAgentPrompt = load_prompt("qwen_agent", self.config.prompt_config)
 
     def _init_data(self, goal: str=''):
@@ -148,7 +203,7 @@ class QwenAgent(Agent):
             factor=28,
             min_pixels=self.min_pixels,
             max_pixels=self.max_pixels,)
-        pixels = pixels.resize((resized_width, resized_height))
+        # pixels = pixels.resize((resized_width, resized_height))
 
         # Add new step data
         self.trajectory.append(MobileUseStepData(
@@ -212,7 +267,10 @@ class QwenAgent(Agent):
                 raw_action = response.choices[0].message.content
                 logger.info("Action from VLM:\n%s" % raw_action)
                 step_data.content = raw_action
-                thought_s, action, action_s, summary_s = _parse_response(raw_action, (resized_width, resized_height), raw_size)
+                if self.coordinate_type == 'relative':
+                    thought_s, action, action_s, summary_s = _parse_response_qwen3(raw_action, (resized_width, resized_height), raw_size)
+                else:
+                    thought_s, action, action_s, summary_s = _parse_response(raw_action, (resized_width, resized_height), raw_size)
                 logger.info(f"Thought: {thought_s}")
                 logger.info(f"Action: {action}")
                 logger.info(f"Action string: {action_s}")
@@ -258,6 +316,14 @@ class QwenAgent(Agent):
             step_data.thought = thought_s
             step_data.action_s = action_s
             step_data.summary = summary_s
+
+        # persist logs at the end of the step
+        try:
+            if self.enable_log:
+                self._save_episode_json()
+                self._save_step_log(step_data)
+        except Exception as e:
+            logger.warning(f"Failed to save logs for step {self.curr_step_idx}: {e}")
 
         return step_data
 
@@ -320,3 +386,80 @@ class QwenAgent(Agent):
         for _ in self.iter_run(input_content):
             pass
         return self.episode_data
+
+    # =========================
+    # Logging helpers
+    # =========================
+    def _to_jsonable(self, obj):
+        # Dataclasses
+        if is_dataclass(obj):
+            result = {}
+            for f in dataclass_fields(obj):
+                value = getattr(obj, f.name)
+                result[f.name] = self._to_jsonable(value)
+            return result
+        # Enums
+        if isinstance(obj, Enum):
+            return getattr(obj, "value", None) or getattr(obj, "name", None) or str(obj)
+        # Basic types
+        if isinstance(obj, (str, int, float, bool)) or obj is None:
+            return obj
+        # Dicts
+        if isinstance(obj, dict):
+            return {str(self._to_jsonable(k)): self._to_jsonable(v) for k, v in obj.items()}
+        # Iterables
+        if isinstance(obj, (list, tuple, set)):
+            return [self._to_jsonable(v) for v in obj]
+        # PIL Images or other non-serializable objects
+        try:
+            json.dumps(obj)
+            return obj
+        except Exception:
+            return str(obj)
+
+    def _episode_meta_dict(self) -> Dict[str, Any]:
+        meta = self._to_jsonable(self.episode_data)
+        # Exclude trajectory by requirement
+        if isinstance(meta, dict) and "trajectory" in meta:
+            meta.pop("trajectory", None)
+        return meta
+
+    def _save_episode_json(self) -> None:
+        if not self.enable_log or not self._episode_log_dir:
+            return
+        os.makedirs(self._episode_log_dir, exist_ok=True)
+        episode_path = os.path.join(self._episode_log_dir, "episode.json")
+        with open(episode_path, "w", encoding="utf-8") as f:
+            json.dump(self._episode_meta_dict(), f, ensure_ascii=False, indent=2)
+
+    def _serialize_step_data(self, step_data: SingleAgentStepData) -> Dict[str, Any]:
+        result: Dict[str, Any] = {}
+        for k, v in step_data.__dict__.items():
+            if k in ("curr_env_state", "exec_env_state"):
+                continue
+            result[k] = self._to_jsonable(v)
+        return result
+
+    def _save_step_log(self, step_data: SingleAgentStepData) -> None:
+        if not self.enable_log or not self._episode_log_dir:
+            return
+        step_idx_1 = (step_data.step_idx if isinstance(step_data.step_idx, int) else self.curr_step_idx) + 1
+        # Save images in root episode dir with step-indexed filenames
+        try:
+            if step_data.curr_env_state and getattr(step_data.curr_env_state, "pixels", None) is not None:
+                step_data.curr_env_state.pixels.save(
+                    os.path.join(self._episode_log_dir, f"step_{step_idx_1}_curr_env.png")
+                )
+        except Exception as e:
+            logger.warning(f"Failed to save curr_env image for step {step_idx_1}: {e}")
+        try:
+            if step_data.exec_env_state and getattr(step_data.exec_env_state, "pixels", None) is not None:
+                step_data.exec_env_state.pixels.save(
+                    os.path.join(self._episode_log_dir, f"step_{step_idx_1}_exec_env.png")
+                )
+        except Exception as e:
+            logger.warning(f"Failed to save exec_env image for step {step_idx_1}: {e}")
+        # Save step json in root episode dir with step-indexed filename
+        step_json = os.path.join(self._episode_log_dir, f"step_{step_idx_1}.json")
+        with open(step_json, "w", encoding="utf-8") as f:
+            json.dump(self._serialize_step_data(step_data), f, ensure_ascii=False, indent=2, default=str)

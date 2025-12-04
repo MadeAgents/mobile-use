@@ -110,6 +110,7 @@ class QwenAgentConfig(AgentConfig):
     max_pixels: int = 10035200
     message_type: Literal['single', 'chat'] = 'single'
     num_image_limit: int = 2
+    coordinate_type: Literal['absolute', 'relative'] = 'absolute'
 
 
 class MultiAgentConfig(AgentConfig):

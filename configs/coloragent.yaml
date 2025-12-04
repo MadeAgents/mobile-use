@@ -1,5 +1,5 @@
 # This is the config file for the MobileUse agent framework.
-# Choose the `HierarchicalAgent` type tp use it.
+# Choose the `HierarchicalAgent` type to use it.
 # '''
 # import mobile_use
 # config_path = "config/coloragent.yaml"
