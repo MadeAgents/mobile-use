@@ -53,6 +53,8 @@ class Worker:
         params['env'] = env
         params['vlm'] = vlm
         self._images.clear()
+        print('============== processed params ==============')
+        pprint.pprint(params)
         self._agent = Agent.from_params(params)
         i = 0
         name = re.sub(r'[^\w\u4e00-\u9fff\s-]', '', goal[:128])
@@ -219,7 +221,8 @@ def run_agent(request: gr.Request, input_content, messages, image, *args):
         try:
             worker.reset(goal=input_content, **params)
         except Exception as e:
-            logger.error(e)
+            import traceback
+            print(traceback.format_exc())
             messages.append(ChatMessage(role="assistant", content=f'The agent initialization fails: {e}'))
             yield [messages, image] + get_button_state(True, False, True)
             return
@@ -427,7 +430,7 @@ def build_agent_ui_demo():
                             add_params_component('vlm', 'api_key', vlm_api_key)
                             vlm_model_name = gr.Dropdown(
                                 label="Model Name",
-                                choices=['qwen2.5-vl-7b-instruct', 'qwen2.5-vl-72b-instruct'],
+                                choices=['qwen2.5-vl-7b-instruct', 'qwen2.5-vl-32b-instruct', 'qwen2.5-vl-72b-instruct'],
                                 value='qwen2.5-vl-72b-instruct',
                                 interactive=True,
                                 allow_custom_value=True,  # Allow users to input custom model names
