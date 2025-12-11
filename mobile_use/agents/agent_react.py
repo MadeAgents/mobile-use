@@ -123,7 +123,7 @@ class ReActAgent(Agent):
             user_message = generate_message("user", self._user_input)
             self.messages.append(user_message)
         else:
-            user_message = generate_message("user", IMAGE_PLACEHOLDER, images=[pixels])
+            user_message = generate_message("user", f'Observation: {IMAGE_PLACEHOLDER}', images=[pixels])
             self.messages.append(user_message)
 
         self.messages = slim_messages(self.messages, num_image_limit=self.num_latest_screenshots)
