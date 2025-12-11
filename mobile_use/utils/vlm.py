@@ -21,6 +21,7 @@ class VLMWrapper:
             retry_waiting_seconds: int = 2,
             max_tokens: int = 1024,
             temperature: float = 0.0,
+            max_pixels: Optional[int] = None,
             **vlm_kwargs
         ):
         self.model_name = model_name
@@ -32,6 +33,7 @@ class VLMWrapper:
 
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.max_pixels = max_pixels
 
         self.vlm_kwargs = vlm_kwargs
 
@@ -56,6 +58,17 @@ class VLMWrapper:
         #             cnt.pop('image_url', None)
         # import json
         # print("messages: ", json.dumps(messages_s, ensure_ascii=False, indent=2))
+
+        # Add max_pixels to all image content if specified
+        if self.max_pixels is not None:
+            import copy
+            messages = copy.deepcopy(messages)
+            for msg in messages:
+                content = msg.get('content')
+                if isinstance(content, list):
+                    for cnt in content:
+                        if 'image' in cnt.get('type', ''):
+                            cnt['max_pixels'] = self.max_pixels
 
         kwargs.update(self.vlm_kwargs)
         while counter > 0:

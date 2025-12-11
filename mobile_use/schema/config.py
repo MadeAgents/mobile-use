@@ -28,6 +28,7 @@ class VLMConfig(BaseConfig):
     retry_waiting_seconds: int = 2
     max_tokens: int = 1024
     temperature: float = 0.0
+    max_pixels: int = 12845056
 
     # This will allow arbitrary extra fields
     class Config:
