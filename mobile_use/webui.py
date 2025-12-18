@@ -83,7 +83,7 @@ class Worker:
                         else:
                             x, y = step_data.action.parameters['point']
                         draw.ellipse([x-r, y-r, x+r, y+r], fill=(255, 0, 0), outline='black', width=2)
-                    elif step_data.action.name == 'scroll':
+                    elif step_data.action.name == 'swipe':
                         x, y = step_data.action.parameters['start_point']
                         draw.ellipse([x-r, y-r, x+r, y+r], fill=(255, 0, 0), outline='black', width=2)
                         x, y = step_data.action.parameters['end_point']

@@ -14,7 +14,7 @@ from mobile_use.schema.config import ReActAgentConfig
 from mobile_use.utils.constants import IMAGE_PLACEHOLDER
 from mobile_use.default_prompts.prompt_type import load_prompt, ReActAgentPrompt
 
-ACTION_SPACE = ['click', 'long_press', 'type', 'scroll', 'press_home', 'press_back', 'finished', 'call_user', 'wait']
+ACTION_SPACE = ['click', 'long_press', 'type', 'swipe', 'press_home', 'press_back', 'finished', 'call_user', 'wait']
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def parse_reason_and_action(content: str, size: tuple[float, float], raw_size: t
     params = eval(f"dict({search_res.group(2)})")
 
     for k, v in params.items():
-        if k in ['click', 'long_press', 'scroll']:
+        if k in ['click', 'long_press', 'swipe']:
             try:
                 x = round(v[0] / size[0] * raw_size[0])
                 y = round(v[1] / size[1] * raw_size[1])

@@ -99,7 +99,7 @@ class TestQwenParseResponse:
     def test_parse_swipe_response(self):
         """Test parsing Qwen swipe response."""
         content = """<thinking>Need to scroll down.</thinking>
-<tool_call>{"name": "mobile_use", "arguments": {"action": "scroll", "start_point": [540, 1500], "end_point": [540, 500]}}</tool_call>
+<tool_call>{"name": "mobile_use", "arguments": {"action": "swipe", "start_point": [540, 1500], "end_point": [540, 500]}}</tool_call>
 <conclusion>Scrolling down.</conclusion>"""
         
         size = (1080, 1920)
