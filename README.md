@@ -1,9 +1,10 @@
-# Mobile Use 📱
+# MobileUse: Open-Source Mobile GUI Agent for Android Automation📱
+
+MobileUse is an open-source mobile GUI agent that controls real Android devices through ADB. It uses multimodal LLMs/VLMs, hierarchical reflection, proactive exploration, and a multi-agent framework to complete long-horizon mobile tasks across real apps. MobileUse supports WebUI usage, Python API usage, and benchmark evaluation on AndroidWorld and AndroidLab.
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code: Github](https://img.shields.io/badge/Code-Github-blue?logo=github)](https://github.com/MadeAgents/mobile-use)
 [![Paper: MobileUse](https://img.shields.io/badge/Paper-MobileUse-8A2BE2?logo=gitbook)](https://arxiv.org/abs/2507.16853)
 [![Paper: ColorAgent](https://img.shields.io/badge/Paper-ColorAgent-green?logo=gitbook)](https://arxiv.org/abs/2510.19386)
-
 
 
 <h2 align="center">Mobile Use​: Your AI assistant for mobile - Any app, any task.</h2>
